@@ -70,8 +70,7 @@ The app follows a unidirectional data flow pattern with a clear separation of co
 
 ## Screenshots
 
-| ![](screenshots/main_screen.png) | ![](screenshots/azkar_screen.png) | ![](screenshots/azkar_list_screen.png) | ![](screenshots/setting_screen.png) | ![](screenshots/![](screenshots/azkar_screen.png) | ![](screenshots/![](screenshots/onboarding2.png) | ![](screenshots/![](screenshots/onboarding3.png)
-
+| <img src="screenshots/main_screen.png" width="250"/> | <img src="screenshots/azkar_screen.png" width="250"/> | <img src="screenshots/azkar_list_screen.png" width="250"/> | <img src="screenshots/onboarding#1.png" width="250"/> | <img src="screenshots/onboarding2.png" width="250"/> | <img src="screenshots/onboarding3.png" width="250"/>
 
 ---
 
