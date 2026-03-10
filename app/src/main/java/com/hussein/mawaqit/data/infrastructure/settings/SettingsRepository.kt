@@ -38,7 +38,7 @@ class SettingsRepository(private val context: Context) {
         val CALCULATION_METHOD = stringPreferencesKey("calculation_method")
         val NOTIFICATION_SOUND = stringPreferencesKey("notification_sound")
         val APP_THEME = stringPreferencesKey("app_theme")
-
+        val APP_COLOR_SCHEME = stringPreferencesKey("app_color_scheme")
         val KEY_ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
 
     }
@@ -61,6 +61,9 @@ class SettingsRepository(private val context: Context) {
             ),
             appTheme = AppTheme.valueOf(
                 prefs[APP_THEME] ?: AppTheme.SYSTEM.name
+            ),
+            appColorScheme = AppColorScheme.valueOf(
+                prefs[APP_COLOR_SCHEME] ?: AppColorScheme.DYNAMIC.name
             )
         )
     }
@@ -83,6 +86,9 @@ class SettingsRepository(private val context: Context) {
         context.dataStore.edit { it[APP_THEME] = theme.name }
     }
 
+    suspend fun setAppColorScheme(scheme: AppColorScheme) {
+        context.dataStore.edit { it[APP_COLOR_SCHEME] = scheme.name }
+    }
 
     private fun prayerNotificationKey(prayer: String): Preferences.Key<Boolean>? = when (prayer) {
         "Fajr" -> NOTIFY_FAJR
@@ -122,7 +128,8 @@ data class AppSettings(
     val prayerNotifications: PrayerNotificationSettings,
     val calculationMethod: CalculationMethod,
     val notificationSound: NotificationSound,
-    val appTheme: AppTheme
+    val appTheme: AppTheme,
+    val appColorScheme: AppColorScheme
 )
 
 data class PrayerNotificationSettings(
@@ -143,4 +150,9 @@ enum class AppTheme(val displayName: String) {
     LIGHT("Light"),
     DARK("Dark"),
     SYSTEM("System Default")
+}
+
+enum class AppColorScheme(val displayName: String) {
+    DYNAMIC("Dynamic (Material You)"),
+    CUSTOM("Mawaqit Theme")
 }

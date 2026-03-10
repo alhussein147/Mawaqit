@@ -1,19 +1,27 @@
 package com.hussein.mawaqit.presentation.settings
 
 
+import android.R.attr.theme
 import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.batoulapps.adhan2.CalculationMethod
+import com.hussein.mawaqit.MyApp
 import com.hussein.mawaqit.data.infrastructure.location.CurrentLocationFetcher
 import com.hussein.mawaqit.data.infrastructure.location.LocationRepository
 import com.hussein.mawaqit.data.infrastructure.location.SavedLocation
+import com.hussein.mawaqit.data.infrastructure.settings.AppColorScheme
 import com.hussein.mawaqit.data.infrastructure.settings.AppSettings
 import com.hussein.mawaqit.data.infrastructure.settings.AppTheme
 import com.hussein.mawaqit.data.infrastructure.settings.NotificationSound
 import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
 import com.hussein.mawaqit.data.prayer.PrayerSchedulerManager
+import com.hussein.mawaqit.presentation.home.HomeViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -78,6 +86,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun onAppColorSchemeChanged(colorScheme: AppColorScheme) {
+        viewModelScope.launch {
+            repo.setAppColorScheme(colorScheme)
+        }
+    }
+
     // location updating
     // ---------------------------------------------------------------------------
     // Location update
@@ -110,6 +124,16 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun resetLocationState() {
         _locationState.update { LocationUpdateState.Idle }
+    }
+
+    companion object {
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val application = (this[APPLICATION_KEY] as MyApp)
+                val locationRepo = application.appContainer.locationRepository
+                HomeViewModel(locationRepo = locationRepo)
+            }
+        }
     }
 
     sealed interface LocationUpdateState {

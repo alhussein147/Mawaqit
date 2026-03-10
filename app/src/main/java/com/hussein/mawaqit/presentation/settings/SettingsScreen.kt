@@ -60,6 +60,7 @@ import com.batoulapps.adhan2.CalculationMethod
 import com.hussein.mawaqit.R
 import com.hussein.mawaqit.data.infrastructure.location.CurrentLocationFetcher
 import com.hussein.mawaqit.data.infrastructure.location.SavedLocation
+import com.hussein.mawaqit.data.infrastructure.settings.AppColorScheme
 import com.hussein.mawaqit.data.infrastructure.settings.AppSettings
 import com.hussein.mawaqit.data.infrastructure.settings.AppTheme
 import com.hussein.mawaqit.data.infrastructure.settings.NotificationSound
@@ -149,6 +150,7 @@ fun SettingsScreen(
                 onMethodChanged = viewModel::onCalculationMethodChanged,
                 onSoundChanged = viewModel::onNotificationSoundChanged,
                 onThemeChanged = viewModel::onAppThemeChanged,
+                onColorSchemeChanged = viewModel::onAppColorSchemeChanged,
                 modifier = Modifier.padding(innerPadding)
             )
         }
@@ -220,6 +222,7 @@ private fun SettingsContent(
     onMethodChanged: (CalculationMethod) -> Unit,
     onSoundChanged: (NotificationSound) -> Unit,
     onThemeChanged: (AppTheme) -> Unit,
+    onColorSchemeChanged: (AppColorScheme) -> Unit,
     onUpdateLocationTapped: () -> Unit,
     onLocationErrorDismissed: () -> Unit,
     modifier: Modifier = Modifier
@@ -245,7 +248,7 @@ private fun SettingsContent(
 
             AnimatedVisibility(
                 enabled,
-                enter = expandVertically () + fadeIn(), exit = shrinkVertically() + fadeOut()
+                enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()
             ) {
                 Column(modifier = Modifier.padding(vertical = 4.dp)) {
                     getPrayersDisplayNames().forEachIndexed { index, prayer ->
@@ -295,26 +298,35 @@ private fun SettingsContent(
             SectionHeader("Appearance")
             PickerRow(
                 label = "Theme",
+                shape = RoundedCornerShape(
+                    bottomStart = 2.dp,
+                    bottomEnd = 2.dp,
+                    topEnd = 16.dp,
+                    topStart = 16.dp
+                ),
                 currentValue = settings.appTheme.displayName,
                 options = AppTheme.entries.map { it.displayName },
                 onOptionSelected = { name ->
                     onThemeChanged(AppTheme.entries.first { it.displayName == name })
                 })
+            Spacer(Modifier.height(1.dp))
+            PickerRow(
+                label = "Color Scheme",
+                shape = RoundedCornerShape(
+                    bottomStart = 16.dp,
+                    bottomEnd = 16.dp,
+                    topEnd = 2.dp,
+                    topStart = 2.dp
+                ),
+                currentValue = settings.appColorScheme.displayName,
+                options = AppColorScheme.entries.map { it.displayName },
+                onOptionSelected = { name ->
+                    onColorSchemeChanged(AppColorScheme.entries.first { it.displayName == name })
+                })
         }
     }
 }
 
-
-@Composable
-private fun SectionHeader(title: String) {
-    Text(
-        text = title.uppercase(),
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.primary,
-        fontWeight = FontWeight.SemiBold,
-        modifier = Modifier.padding(vertical = 8.dp)
-    )
-}
 
 @Composable
 private fun ToggleRow(
@@ -342,11 +354,15 @@ private fun ToggleRow(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PickerRow(
-    label: String, currentValue: String, options: List<String>, onOptionSelected: (String) -> Unit
+    label: String,
+    currentValue: String,
+    shape: RoundedCornerShape = RoundedCornerShape(16.dp),
+    options: List<String>,
+    onOptionSelected: (String) -> Unit
 ) {
     var showSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
-    SettingOptionContainer(onClick = { showSheet = true }) {
+    SettingOptionContainer(onClick = { showSheet = true }, shape = shape) {
         Column(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.Start, verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -367,7 +383,7 @@ private fun PickerRow(
         ) {
             Column(
                 modifier = Modifier
-                    .padding(start = 16.dp , end = 16.dp , bottom = 32.dp)
+                    .padding(start = 16.dp, end = 16.dp, bottom = 32.dp)
             ) {
                 Text(
                     text = label,
@@ -405,6 +421,7 @@ private fun PickerRow(
         }
     }
 }
+
 
 @Composable
 private fun LocationRow(
@@ -521,6 +538,17 @@ private fun SettingOptionContainer(
     ) {
         content()
     }
+}
+
+@Composable
+private fun SectionHeader(title: String) {
+    Text(
+        text = title.uppercase(),
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.primary,
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier.padding(vertical = 8.dp)
+    )
 }
 
 private sealed interface LocationAction {

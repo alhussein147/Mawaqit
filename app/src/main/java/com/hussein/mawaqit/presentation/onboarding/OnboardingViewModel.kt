@@ -2,11 +2,17 @@ package com.hussein.mawaqit.presentation.onboarding
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.hussein.mawaqit.MyApp
 import com.hussein.mawaqit.data.infrastructure.location.CurrentLocationFetcher
 import com.hussein.mawaqit.data.infrastructure.location.LocationRepository
 import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
 import com.hussein.mawaqit.data.prayer.PrayerSchedulerManager
+import com.hussein.mawaqit.presentation.home.HomeViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -128,6 +134,15 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
+    companion object {
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val application = (this[APPLICATION_KEY] as MyApp)
+                val locationRepo = application.appContainer.locationRepository
+                HomeViewModel(locationRepo = locationRepo)
+            }
+        }
+    }
 
 }
 

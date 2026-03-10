@@ -61,7 +61,7 @@ import kotlin.time.ExperimentalTime
 fun HomeScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToAzkar: () -> Unit = {},
-    viewModel: HomeViewModel = viewModel()
+    viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory)
 ) {
     // Collect the main state. This doesn't change every second.
     val state by viewModel.uiState.collectAsStateWithLifecycle()

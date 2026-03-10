@@ -2,10 +2,18 @@ package com.hussein.mawaqit.presentation.home
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
+import androidx.lifecycle.application
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.islamicapp.prayer.PrayerTimeCalculator
+import com.hussein.mawaqit.MyApp
 import com.hussein.mawaqit.data.infrastructure.location.LocationRepository
 import com.hussein.mawaqit.data.infrastructure.location.SavedLocation
+import com.hussein.mawaqit.presentation.azkar.AzkarViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,9 +31,8 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 import com.example.islamicapp.prayer.Prayer as AppPrayer
 
-class HomeViewModel(application: Application) : AndroidViewModel(application) {
+class HomeViewModel(val locationRepo: LocationRepository) : ViewModel() {
 
-    private val locationRepo = LocationRepository(application)
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -161,6 +168,16 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     override fun onCleared() {
         super.onCleared()
         tickerJob?.cancel()
+    }
+
+    companion object {
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val application = (this[APPLICATION_KEY] as MyApp)
+                val locationRepo = application.appContainer.locationRepository
+                HomeViewModel(locationRepo = locationRepo)
+            }
+        }
     }
 }
 

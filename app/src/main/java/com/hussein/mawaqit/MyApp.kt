@@ -11,14 +11,10 @@ import com.hussein.mawaqit.data.infrastructure.services.AzanPlayerService.Compan
 
 class MyApp: Application() {
 
-    companion object {
-
-
-
-    }
-
+    lateinit var appContainer: AppContainer
     override fun onCreate() {
         super.onCreate()
+        appContainer = AppContainer(this)
         createPrayerNotificationChannel()
         createAzanNotificationChannel()
     }

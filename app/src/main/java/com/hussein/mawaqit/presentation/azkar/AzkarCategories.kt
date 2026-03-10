@@ -46,7 +46,7 @@ import com.hussein.mawaqit.data.azkar.Zikr
 fun AzkarCategoryScreen(
     onCategorySelected: (index: Int) -> Unit,
     onBack: () -> Unit,
-    viewModel: AzkarViewModel = viewModel()
+    viewModel: AzkarViewModel = viewModel(factory = AzkarViewModel.Factory)
 ) {
     val categories = viewModel.categoryTitles
     val isLoading = false
@@ -94,7 +94,7 @@ fun AzkarCategoryScreen(
 fun AzkarListScreen(
     categoryIndex: Int,
     onBack: () -> Unit,
-    viewModel: AzkarViewModel = viewModel()
+    viewModel: AzkarViewModel = viewModel(factory = AzkarViewModel.Factory)
 ) {
     val listState by viewModel.listState.collectAsStateWithLifecycle()
 
