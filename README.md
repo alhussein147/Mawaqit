@@ -7,6 +7,7 @@ A clean, modern Islamic companion app for Android built with Kotlin and Jetpack 
 ## Features
 
 ### 🕌 Prayer Times
+
 - Accurate prayer time calculation using the **Adhan** library (Hafs, multiple calculation methods)
 - Real-time countdown to the next prayer
 - Beautiful **arc stepper** that animates continuously between prayers throughout the day
@@ -14,6 +15,7 @@ A clean, modern Islamic companion app for Android built with Kotlin and Jetpack 
 - Exact alarm support with battery optimization handling
 
 ### 📿 Azan
+
 - Azan playback via a **foreground MediaPlayer service** at the exact prayer time
 - Separate Fajr azan support
 - Smart screen detection — silent notification if the user is already active on their device
@@ -21,6 +23,7 @@ A clean, modern Islamic companion app for Android built with Kotlin and Jetpack 
 - Respects per-prayer notification preferences
 
 ### 📖 Quran Reader *(in progress)*
+
 - Full **Madinah Mushaf** (Hafs 'an 'Asim) — 604 pages rendered as high-quality WebP images
 - Horizontal swipe navigation mimicking a real Mushaf
 - Surah index with page ranges for all 114 surahs
@@ -28,11 +31,13 @@ A clean, modern Islamic companion app for Android built with Kotlin and Jetpack 
 - Bookmark support
 
 ### 🌙 Azkar
+
 - Morning, Evening, and After-Prayer azkar
 - Full Arabic text with repeat count and reward (fadl) for each zikr
 - RTL-native layout throughout
 
 ### ⚙️ Settings & Onboarding
+
 - Guided onboarding flow covering location, notifications, exact alarms, and battery optimization
 - GPS-based location with manual fallback
 - Per-prayer notification and sound preferences
@@ -42,18 +47,18 @@ A clean, modern Islamic companion app for Android built with Kotlin and Jetpack 
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Language | Kotlin |
-| UI | Jetpack Compose + Material 3 |
-| Navigation | Navigation3 (Nav3) |
-| Prayer Calculation | adhan-kotlin (KMP) |
-| Persistence | DataStore Preferences |
-| Background Work | WorkManager |
-| Date & Time | kotlinx.datetime |
-| Serialization | kotlinx.serialization |
-| Image Loading | Coil |
-| Minimum SDK | 26 (Android 8.0) |
+| Layer              | Technology                   |
+|--------------------|------------------------------|
+| Language           | Kotlin                       |
+| UI                 | Jetpack Compose + Material 3 |
+| Navigation         | Navigation3 (Nav3)           |
+| Prayer Calculation | adhan-kotlin (KMP)           |
+| Persistence        | DataStore Preferences        |
+| Background Work    | WorkManager                  |
+| Date & Time        | kotlinx.datetime             |
+| Serialization      | kotlinx.serialization        |
+| Image Loading      | Coil                         |
+| Minimum SDK        | 26 (Android 8.0)             |
 
 ---
 
@@ -63,14 +68,16 @@ The app follows a unidirectional data flow pattern with a clear separation of co
 
 - **Repository layer** — DataStore-backed repositories for settings, location, and Quran state
 - **ViewModel layer** — exposes `StateFlow` to the UI; no business logic in composables
-- **Composable layer** — stateless where possible, lifecycle-aware effects for tickers and foreground detection
-- **Service layer** — foreground `MediaSessionCompat` service for azan playback with proper audio focus management
+- **Composable layer** — stateless where possible, lifecycle-aware effects for tickers and
+  foreground detection
+- **Service layer** — foreground `MediaSessionCompat` service for azan playback with proper audio
+  focus management
 
 ---
 
 ## Screenshots
 
-| <img src="screenshots/main_screen.png" width="250"/> | <img src="screenshots/azkar_screen.png" width="250"/> | <img src="screenshots/azkar_list_screen.png" width="250"/> | <img src="screenshots/onboarding#1.png" width="250"/> | <img src="screenshots/onboarding2.png" width="250"/> | <img src="screenshots/onboarding3.png" width="250"/>
+| <img src="screenshots/main_screen.png" width="250"/> | <img src="screenshots/azkar_screen.png" width="250"/> | <img src="screenshots/azkar_list_screen.png" width="250"/> | <img src="screenshots/onboarding1.png" width="250"/> | <img src="screenshots/onboarding2.png" width="250"/> | <img src="screenshots/onboarding3.png" width="250"/>
 
 ---
 
