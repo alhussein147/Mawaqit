@@ -11,7 +11,7 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
-import com.hussein.mawaqit.data.infrastructure.location.CurrentLocationFetcher.TIMEOUT_MS
+import com.hussein.mawaqit.data.infrastructure.location.CurrentLocationFetcher.Companion.TIMEOUT_MS
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
@@ -28,9 +28,11 @@ import kotlin.coroutines.resume
  * Requires: ACCESS_FINE_LOCATION or ACCESS_COARSE_LOCATION already granted.
  */
 
-object CurrentLocationFetcher {
+class CurrentLocationFetcher(val context: Context) {
 
-    private const val TIMEOUT_MS = 15_000L
+    companion object{
+        private const val TIMEOUT_MS = 15_000L
+    }
 
     /**
      * Always requests a fresh GPS/network fix.
@@ -39,7 +41,7 @@ object CurrentLocationFetcher {
      * Requires: ACCESS_FINE_LOCATION or ACCESS_COARSE_LOCATION already granted.
      */
     @SuppressLint("MissingPermission")
-    suspend fun fetch(context: Context): Pair<Double, Double>? {
+    suspend fun fetch(): Pair<Double, Double>? {
         if (!isLocationEnabled(context)) return null
 
         val fusedClient = LocationServices.getFusedLocationProviderClient(context)

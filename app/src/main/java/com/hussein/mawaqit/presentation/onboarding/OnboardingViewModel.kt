@@ -1,9 +1,10 @@
 package com.hussein.mawaqit.presentation.onboarding
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import android.content.Context
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
+import androidx.lifecycle.application
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -11,17 +12,18 @@ import com.hussein.mawaqit.MyApp
 import com.hussein.mawaqit.data.infrastructure.location.CurrentLocationFetcher
 import com.hussein.mawaqit.data.infrastructure.location.LocationRepository
 import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
-import com.hussein.mawaqit.data.prayer.PrayerSchedulerManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class OnboardingViewModel(application: Application) : AndroidViewModel(application) {
+class OnboardingViewModel(
+    private val locationRepo: LocationRepository,
+    private val settingsRepository: SettingsRepository,
+    private val locationFetcher: CurrentLocationFetcher
+) : ViewModel() {
 
-    private val locationRepo = LocationRepository(application)
-    private val settingsRepository = SettingsRepository(application)
 
     private val _uiState = MutableStateFlow(OnboardingUiState())
     val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
@@ -29,10 +31,6 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
     // ---------------------------------------------------------------------------
     // Events
     // ---------------------------------------------------------------------------
-
-    fun schedulePrayers() {
-        PrayerSchedulerManager.enqueueImmediate(getApplication())
-    }
 
     fun onGetStarted() {
         _uiState.update { it.copy(page = OnboardingPage.LOCATION) }
@@ -64,11 +62,11 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
     fun onSkipNotification() = advanceFromNotification()
 
     fun onExactAlarmResult() = advanceFromExactAlarm()
-    fun onSkipExactAlarm()   = advanceFromExactAlarm()
+    fun onSkipExactAlarm() = advanceFromExactAlarm()
 
     // Battery optimization is optional — skipping or granting both complete onboarding
     fun onBatteryOptimizationResult() = onOnboardingComplete()
-    fun onSkipBatteryOptimization()   = onOnboardingComplete()
+    fun onSkipBatteryOptimization() = onOnboardingComplete()
 
     /**
      * After notification: go to EXACT_ALARM on Android 12+ (where the permission
@@ -102,7 +100,7 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
         viewModelScope.launch {
             _uiState.update { it.copy(isLoadingLocation = true, errorMessage = null) }
             try {
-                val latLng = CurrentLocationFetcher.fetch(getApplication())
+                val latLng = locationFetcher.fetch()
                 if (latLng != null) {
                     val saved = locationRepo.saveLocation(latLng.first, latLng.second)
                     _uiState.update {
@@ -137,8 +135,12 @@ class OnboardingViewModel(application: Application) : AndroidViewModel(applicati
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val application = (this[APPLICATION_KEY] as MyApp)
-                val locationRepo = application
-                OnboardingViewModel(application = application)
+                val container = application.appContainer
+                OnboardingViewModel(
+                    locationRepo = container.locationRepository,
+                    settingsRepository = container.settingsRepository,
+                    locationFetcher = container.locationFetcher
+                )
             }
         }
     }

@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.hussein.mawaqit.data.azkar.AzkarRepository
 import com.hussein.mawaqit.data.infrastructure.alarm_manager.PrayerAlarmManager
+import com.hussein.mawaqit.data.infrastructure.location.CurrentLocationFetcher
 import com.hussein.mawaqit.data.infrastructure.location.LocationRepository
 import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
 
@@ -14,6 +15,8 @@ class AppContainer(private val context: Context) {
     val locationRepository by lazy { LocationRepository(context) }
     val settingsRepository by lazy { SettingsRepository(context) }
     val alarmManager by lazy { PrayerAlarmManager(context) }
+    val locationFetcher by lazy { CurrentLocationFetcher(context) }
+
 
     // azakr repo should be viewmodel scoped
     var azkarRepository: AzkarRepository? = null

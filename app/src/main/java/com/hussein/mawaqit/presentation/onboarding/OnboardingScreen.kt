@@ -20,13 +20,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.core.net.toUri
+import com.hussein.mawaqit.data.prayer.PrayerSchedulerManager
 
 /**
  * Single onboarding screen.
@@ -41,14 +44,18 @@ import androidx.core.net.toUri
 @Composable
 fun OnboardingScreen(
     onFinished: () -> Unit,
-    viewModel: OnboardingViewModel = viewModel()
+    viewModel: OnboardingViewModel = viewModel(factory = OnboardingViewModel.Factory)
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
-    if (state.page == OnboardingPage.DONE) {
-        viewModel.schedulePrayers()
-        onFinished()
-        return
+
+    LaunchedEffect(state.page) {
+        if (state.page == OnboardingPage.DONE) {
+            // this should be the viewmodel responsibility
+            PrayerSchedulerManager.enqueueImmediate(context)
+            onFinished()
+        }
     }
 
     val locationLauncher = rememberLauncherForActivityResult(
