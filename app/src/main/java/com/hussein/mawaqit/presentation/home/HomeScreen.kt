@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,14 +18,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -35,6 +38,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -50,7 +54,6 @@ import com.hussein.mawaqit.presentation.ext.formatTime
 import com.hussein.mawaqit.presentation.home.components.PrayerArchStepper
 import com.hussein.mawaqit.presentation.shared.ErrorContent
 import com.hussein.mawaqit.presentation.shared.LoadingContent
-import com.hussein.mawaqit.ui.listShapes
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -76,10 +79,9 @@ fun HomeScreen(
 
     Scaffold(topBar = {
         HomeTopAppBar(
-            cityName = state.cityName,
-            onNavigateToSettings = onNavigateToSettings
-        )}
-    ) { innerPadding ->
+            cityName = state.cityName, onNavigateToSettings = onNavigateToSettings
+        )
+    }) { innerPadding ->
         when {
             state.isLoading -> LoadingContent(Modifier.padding(innerPadding))
             state.error != null -> ErrorContent(state.error!!, Modifier.padding(innerPadding))
@@ -93,6 +95,7 @@ fun HomeScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun PrayerContent(
     modifier: Modifier = Modifier,
@@ -101,28 +104,33 @@ private fun PrayerContent(
     onNavigateToAzkar: () -> Unit = {}
 ) {
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 16.dp)
+        modifier = modifier.fillMaxSize(), contentPadding = PaddingValues(horizontal = 16.dp)
     ) {
         item { HeaderSection(state, countdownFlow = countdownFlow) }
 
         item {
-            Text(
-                text = "Today's Prayers",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(vertical = 8.dp , horizontal = 8.dp)
-            )
-        }
+            Surface(
+                Modifier.padding(vertical = 12.dp),
+                shape = RoundedCornerShape(50.dp),
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                border = BorderStroke(
+                    1.dp,
+                    color = MaterialTheme.colorScheme.primary.copy(0.6f)
+                )
+            ) {
+                Text(
+                    text = "Today's Prayers",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .padding(vertical = 8.dp, horizontal = 16.dp)
+                )
+            }
 
-        itemsIndexed(state.prayers, key = { _, prayer -> prayer.name }) { index, prayer ->
-            HomePrayerListItem(
-                prayer, shape = when (index) {
-                    0 -> listShapes.topItem
-                    4 -> listShapes.bottomItem
-                    else -> listShapes.midItem
-                }
-            )
+        }
+        items(items = state.prayers, key = { prayer -> prayer.name }) { prayer ->
+            HomePrayerListItem(prayer)
         }
 
         item { AzkarSection(onNavigateToAzkar = onNavigateToAzkar) }
@@ -134,8 +142,7 @@ private fun PrayerContent(
 @Composable
 private fun HeaderSection(state: HomeUiState, countdownFlow: StateFlow<CountdownTime?>) {
     Surface(
-        modifier = Modifier
-            .fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainer,
         border = BorderStroke(1.dp, color = MaterialTheme.colorScheme.primary.copy(0.6f)),
         shape = RoundedCornerShape(24.dp)
@@ -148,7 +155,7 @@ private fun HeaderSection(state: HomeUiState, countdownFlow: StateFlow<Countdown
         ) {
             if (state.hijriDate.isNotBlank()) {
                 Text(
-                    text  = state.hijriDate,
+                    text = state.hijriDate,
                     style = MaterialTheme.typography.titleSmall.copy(textDirection = TextDirection.Rtl),
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.9f)
                 )
@@ -184,8 +191,7 @@ private fun HeaderSection(state: HomeUiState, countdownFlow: StateFlow<Countdown
             }
 
             PrayerArchStepper(
-                prayers = state.prayers,
-                modifier = Modifier
+                prayers = state.prayers, modifier = Modifier
                     .fillMaxWidth()
                     .zIndex(1f)
             )
@@ -251,9 +257,7 @@ private fun CountdownDisplay(countdownFlow: StateFlow<CountdownTime?>) {
 
 @Composable
 private fun HomeTopAppBar(
-    modifier: Modifier = Modifier,
-    cityName: String,
-    onNavigateToSettings: () -> Unit
+    modifier: Modifier = Modifier, cityName: String, onNavigateToSettings: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -290,7 +294,7 @@ private fun HomeTopAppBar(
 
 @OptIn(ExperimentalTime::class)
 @Composable
-private fun HomePrayerListItem(prayer: PrayerUiModel, shape: RoundedCornerShape) {
+private fun HomePrayerListItem(prayer: PrayerUiModel) {
     val isCurrent = prayer.status == PrayerStatus.CURRENT
     val isPassed = prayer.status == PrayerStatus.PASSED
 //    val border = if (isCurrent) BorderStroke(
@@ -300,15 +304,16 @@ private fun HomePrayerListItem(prayer: PrayerUiModel, shape: RoundedCornerShape)
 
     val dotColor by animateColorAsState(
         targetValue = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-        animationSpec = tween(500), label = "dot"
+        animationSpec = tween(500),
+        label = "dot"
     )
 
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainer,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 1.dp),
-        shape = shape
+            .padding(vertical = 2.dp),
+        shape = RoundedCornerShape(24.dp)
     ) {
         Row(
             modifier = Modifier
@@ -345,7 +350,6 @@ private fun HeaderSectionPrev() {
         state = HomeUiState(
             nextPrayer = PrayerUiModel("Asr", Clock.System.now(), PrayerStatus.UPCOMING),
             prayers = emptyList()
-        ),
-        countdownFlow = MutableStateFlow(CountdownTime(0, 50))
+        ), countdownFlow = MutableStateFlow(CountdownTime(0, 50))
     )
 }
