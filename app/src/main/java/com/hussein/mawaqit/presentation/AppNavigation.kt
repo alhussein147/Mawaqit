@@ -2,9 +2,12 @@ package com.hussein.mawaqit.presentation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
 import com.hussein.mawaqit.presentation.azkar.AzkarCategoryScreen
@@ -52,7 +55,6 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
         }
     }
 
-    // Hold rendering until we know the start destination
 
     NavDisplay(
         backStack = backStack,

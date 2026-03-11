@@ -1,0 +1,86 @@
+package com.hussein.mawaqit.data.quran
+
+import android.content.Context
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+
+data class Ayah(
+    val number: Int,
+    val text: String
+)
+
+data class SurahDetail(
+    val index: Int,
+    val name: String,
+    val ayahs: List<Ayah>,
+    val count: Int,
+    val juzMap: Map<Int, Int> // ayah number → juz number
+)
+
+class QuranRepository(private val context: Context) {
+
+    private val json = Json { ignoreUnknownKeys = true }
+
+    // LRU-style cache — max 2 surahs in memory at a time
+    private val cache = object : LinkedHashMap<Int, SurahDetail>(3, 0.75f, true) {
+        override fun removeEldestEntry(eldest: Map.Entry<Int, SurahDetail>) = size > 2
+    }
+
+    suspend fun loadSurah(surahIndex: Int): SurahDetail = withContext(Dispatchers.IO) {
+        cache[surahIndex]?.let { return@withContext it }
+
+        val fileName = "quran/${surahIndex.toString().padStart(3, '0')}.json"
+        val raw = context.assets.open(fileName).bufferedReader().use { it.readText() }
+        val root = json.parseToJsonElement(raw).jsonObject
+
+        val verseObj = root["verse"]!!.jsonObject
+        val ayahs = verseObj.keys
+            .sortedBy { it.removePrefix("verse_").toInt() }
+            .map { key ->
+                Ayah(
+                    number = key.removePrefix("verse_").toInt(),
+                    text = verseObj[key]!!.jsonPrimitive.content
+                )
+            }
+
+        // Build ayah→juz map from the juz array
+        val juzArray = root["juz"]!!.let {
+            json.parseToJsonElement(it.toString())
+                .let { el -> el.jsonObject["juz"] ?: it }
+        }
+
+        val juzMap = mutableMapOf<Int, Int>()
+        root["juz"]?.let { juzEl ->
+            val arr = juzEl.toString()
+            // Parse juz entries manually via JsonArray
+            json.parseToJsonElement(arr).let { el ->
+                // el is a JsonArray of {index, verse:{start, end}}
+                try {
+                    val jsonArr = el as? kotlinx.serialization.json.JsonArray
+                        ?: return@let
+                    for (entry in jsonArr) {
+                        val obj = entry.jsonObject
+                        val juzNum = obj["index"]!!.jsonPrimitive.content.toInt()
+                        val startKey = obj["verse"]!!.jsonObject["start"]!!.jsonPrimitive.content
+                        val endKey = obj["verse"]!!.jsonObject["end"]!!.jsonPrimitive.content
+                        val startAyah = startKey.removePrefix("verse_").toInt()
+                        val endAyah = endKey.removePrefix("verse_").toInt()
+                        for (n in startAyah..endAyah) juzMap[n] = juzNum
+                    }
+                } catch (_: Exception) { /* malformed juz data — skip */
+                }
+            }
+        }
+
+        SurahDetail(
+            index = root["index"]!!.jsonPrimitive.content.toInt(),
+            name = root["name"]!!.jsonPrimitive.content,
+            ayahs = ayahs,
+            count = root["count"]!!.jsonPrimitive.content.toInt(),
+            juzMap = juzMap
+        ).also { cache[surahIndex] = it }
+    }
+}

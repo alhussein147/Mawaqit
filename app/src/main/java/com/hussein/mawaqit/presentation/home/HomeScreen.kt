@@ -38,6 +38,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -110,7 +111,7 @@ private fun PrayerContent(
                 text = "Today's Prayers",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(vertical = 16.dp)
+                modifier = Modifier.padding(vertical = 8.dp , horizontal = 8.dp)
             )
         }
 
@@ -134,8 +135,7 @@ private fun PrayerContent(
 private fun HeaderSection(state: HomeUiState, countdownFlow: StateFlow<CountdownTime?>) {
     Surface(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainer,
         border = BorderStroke(1.dp, color = MaterialTheme.colorScheme.primary.copy(0.6f)),
         shape = RoundedCornerShape(24.dp)
@@ -146,6 +146,14 @@ private fun HeaderSection(state: HomeUiState, countdownFlow: StateFlow<Countdown
                 .padding(top = 16.dp, bottom = 24.dp, start = 16.dp, end = 16.dp),
             horizontalAlignment = Alignment.Start
         ) {
+            if (state.hijriDate.isNotBlank()) {
+                Text(
+                    text  = state.hijriDate,
+                    style = MaterialTheme.typography.titleSmall.copy(textDirection = TextDirection.Rtl),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.9f)
+                )
+                Spacer(Modifier.height(4.dp))
+            }
             state.nextPrayer?.let { next ->
                 val label =
                     if (next.status == PrayerStatus.CURRENT) "Current Prayer" else "Next Prayer Is"
@@ -187,6 +195,7 @@ private fun HeaderSection(state: HomeUiState, countdownFlow: StateFlow<Countdown
 
 @Composable
 private fun AzkarSection(onNavigateToAzkar: () -> Unit) {
+    // TODO: user string resources for titles
     Card(
         onClick = onNavigateToAzkar,
         modifier = Modifier
