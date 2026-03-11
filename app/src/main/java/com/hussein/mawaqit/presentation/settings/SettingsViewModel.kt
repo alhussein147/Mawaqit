@@ -130,8 +130,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val application = (this[APPLICATION_KEY] as MyApp)
-                val locationRepo = application.appContainer.locationRepository
-                HomeViewModel(locationRepo = locationRepo)
+                SettingsViewModel(application = application)
             }
         }
     }

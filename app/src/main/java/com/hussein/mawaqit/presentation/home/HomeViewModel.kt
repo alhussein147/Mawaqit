@@ -6,16 +6,19 @@ import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.AP
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.batoulapps.adhan2.CalculationMethod
 import com.example.islamicapp.prayer.PrayerTimeCalculator
 import com.hussein.mawaqit.MyApp
 import com.hussein.mawaqit.data.infrastructure.location.LocationRepository
 import com.hussein.mawaqit.data.infrastructure.location.SavedLocation
+import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
@@ -28,13 +31,15 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 import com.example.islamicapp.prayer.Prayer as AppPrayer
 
-class HomeViewModel(val locationRepo: LocationRepository) : ViewModel() {
+class HomeViewModel(
+    val locationRepo: LocationRepository,
+    val settingsRepository: SettingsRepository
+) : ViewModel() {
 
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
-
-    private val _countdown = MutableStateFlow<CountdownTime?>(null)
+    val _countdown = MutableStateFlow<CountdownTime?>(null)
     val countdown: StateFlow<CountdownTime?> = _countdown.asStateFlow()
 
     private var tickerJob: Job? = null
@@ -48,21 +53,41 @@ class HomeViewModel(val locationRepo: LocationRepository) : ViewModel() {
         // Re-calculate prayers whenever the saved location changes.
         // This means navigating back from com.hussein.islamic.presentation.Settings after a location update
         // automatically shows the correct prayer times — no manual refresh needed.
+
+
         viewModelScope.launch {
-            locationRepo.locationFlow.collectLatest { location ->
-                reloadTrigger.collect {
-                    loadPrayers(location)
-                }
+            // Combine all sources: location, settings, and manual/daily reloads
+            combine(
+                locationRepo.locationFlow,
+                settingsRepository.settingsFlow,
+                reloadTrigger
+            ) { location, settings, _ ->
+                // Extract the data needed for loadPrayers
+                location to settings.calculationMethod
+            }.collectLatest { (location, method) ->
+                loadPrayers(location, method)
             }
         }
+//        viewModelScope.launch {
+//            combine(
+//                locationRepo.locationFlow,
+//                settingsRepository.settingsFlow,
+//                reloadTrigger
+//            ){
+//                location to settings.calculationMethod
+//            }.collectLatest {
+//
+//            }
+//            locationRepo.locationFlow.collectLatest { location ->
+//                reloadTrigger.collect {
+//                    loadPrayers(location)
+//                }
+//            }
+//        }
     }
 
-    // ---------------------------------------------------------------------------
-    // Load
-    // ---------------------------------------------------------------------------
-
     @OptIn(ExperimentalTime::class)
-    fun loadPrayers(location: SavedLocation?) {
+    fun loadPrayers(location: SavedLocation?, calculationMethod: CalculationMethod) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
 
@@ -74,7 +99,12 @@ class HomeViewModel(val locationRepo: LocationRepository) : ViewModel() {
             try {
                 val now = Clock.System.now()
                 val schedule =
-                    PrayerTimeCalculator.calculate(location.latitude, location.longitude, now)
+                    PrayerTimeCalculator.calculate(
+                        latitude = location.latitude,
+                        longitude = location.longitude,
+                        instant = now,
+                        method = calculationMethod
+                    )
                 lastKnownDate = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
 
                 val hijriDate = toHijriDateString(now)
@@ -174,7 +204,8 @@ class HomeViewModel(val locationRepo: LocationRepository) : ViewModel() {
             initializer {
                 val application = (this[APPLICATION_KEY] as MyApp)
                 val locationRepo = application.appContainer.locationRepository
-                HomeViewModel(locationRepo = locationRepo)
+                val settingsRepo = application.appContainer.settingsRepository
+                HomeViewModel(locationRepo = locationRepo , settingsRepository = settingsRepo)
             }
         }
     }
