@@ -58,7 +58,7 @@ A clean, modern Islamic companion app for Android built with Kotlin and Jetpack 
 | Date & Time        | kotlinx.datetime             |
 | Serialization      | kotlinx.serialization        |
 | Image Loading      | Coil                         |
-| Minimum SDK        | 26 (Android 8.0)             |
+| Minimum SDK        | 28 (Android 8.0)             |
 
 ---
 
@@ -77,7 +77,7 @@ The app follows a unidirectional data flow pattern with a clear separation of co
 
 ## Screenshots
 
-| <img src="screenshots/main_screen.png" width="250"/> | <img src="screenshots/azkar_screen.png" width="250"/> | <img src="screenshots/azkar_list_screen.png" width="250"/> | <img src="screenshots/onboarding1.png" width="250"/> | <img src="screenshots/onboarding2.png" width="250"/> | <img src="screenshots/onboarding3.png" width="250"/>
+  <img src="screenshots/main_screen.png" width="250"/> | <img src="screenshots/azkar_screen.png" width="250"/> | <img src="screenshots/azkar_list_screen.png" width="250"/> | <img src="screenshots/onboarding1.png" width="250"/> | <img src="screenshots/onboarding2.png" width="250"/> | <img src="screenshots/onboarding3.png" width="250"/> | <img src="screenshots/setting_screen.png" width="250"/> | <img src="screenshots/quran_list_screen.png" width="250"/> | <img src="screenshots/quran_reader_screen.png" width="250"/>
 
 ---
 
