@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.location.LocationManager
 import android.os.Looper
+import androidx.core.location.LocationManagerCompat.isLocationEnabled
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -32,6 +33,13 @@ class CurrentLocationFetcher(val context: Context) {
 
     companion object{
         private const val TIMEOUT_MS = 15_000L
+        fun isLocationEnabled(context: Context): Boolean {
+            val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+            return lm.isProviderEnabled(LocationManager.GPS_PROVIDER) || lm.isProviderEnabled(
+                LocationManager.NETWORK_PROVIDER
+            )
+        }
+
     }
 
     /**
@@ -92,10 +100,4 @@ class CurrentLocationFetcher(val context: Context) {
     }
 
 
-    fun isLocationEnabled(context: Context): Boolean {
-        val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        return lm.isProviderEnabled(LocationManager.GPS_PROVIDER) || lm.isProviderEnabled(
-            LocationManager.NETWORK_PROVIDER
-        )
-    }
 }

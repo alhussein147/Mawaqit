@@ -7,6 +7,7 @@ import com.hussein.mawaqit.data.infrastructure.alarm_manager.PrayerAlarmManager
 import com.hussein.mawaqit.data.infrastructure.location.CurrentLocationFetcher
 import com.hussein.mawaqit.data.infrastructure.location.LocationRepository
 import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
+import com.hussein.mawaqit.data.quran.QuranRepository
 
 class AppContainer(private val context: Context) {
 
@@ -16,6 +17,7 @@ class AppContainer(private val context: Context) {
     val settingsRepository by lazy { SettingsRepository(context) }
     val alarmManager by lazy { PrayerAlarmManager(context) }
     val locationFetcher by lazy { CurrentLocationFetcher(context) }
+    val quranRepository by lazy { QuranRepository(context) }
 
 
     // azakr repo should be viewmodel scoped

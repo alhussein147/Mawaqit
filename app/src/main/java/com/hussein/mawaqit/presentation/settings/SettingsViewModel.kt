@@ -5,6 +5,7 @@ import android.R.attr.theme
 import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewModelScope
@@ -35,6 +36,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     val TAG = "SettingsViewModel"
     private val repo = SettingsRepository(application)
     private val locationRepo = LocationRepository(application)
+    private val currentLocationFetcher = CurrentLocationFetcher(application)
+
 
 
     private val _locationState = MutableStateFlow<LocationUpdateState>(LocationUpdateState.Idle)
@@ -105,7 +108,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             _locationState.update { LocationUpdateState.Fetching }
             try {
-                val latLng = CurrentLocationFetcher.fetch(getApplication())
+                val latLng = currentLocationFetcher.fetch()
                 if (latLng != null) {
                     val saved = locationRepo.saveLocation(latLng.first, latLng.second)
                     // Reschedule prayer alarms for the new location

@@ -166,7 +166,7 @@ fun SettingsScreen(
                     TextButton(onClick = {
                         pendingAction = LocationAction.None
                         context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
-                    }) { Text("Open com.hussein.islamic.presentation.Settings") }
+                    }) { Text("Open Settings") }
                 },
                 dismissButton = {
                     TextButton(onClick = { pendingAction = LocationAction.None }) {

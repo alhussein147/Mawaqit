@@ -50,10 +50,6 @@ class HomeViewModel(
     }
 
     init {
-        // Re-calculate prayers whenever the saved location changes.
-        // This means navigating back from com.hussein.islamic.presentation.Settings after a location update
-        // automatically shows the correct prayer times — no manual refresh needed.
-
 
         viewModelScope.launch {
             // Combine all sources: location, settings, and manual/daily reloads
@@ -68,22 +64,6 @@ class HomeViewModel(
                 loadPrayers(location, method)
             }
         }
-//        viewModelScope.launch {
-//            combine(
-//                locationRepo.locationFlow,
-//                settingsRepository.settingsFlow,
-//                reloadTrigger
-//            ){
-//                location to settings.calculationMethod
-//            }.collectLatest {
-//
-//            }
-//            locationRepo.locationFlow.collectLatest { location ->
-//                reloadTrigger.collect {
-//                    loadPrayers(location)
-//                }
-//            }
-//        }
     }
 
     @OptIn(ExperimentalTime::class)
@@ -179,9 +159,7 @@ class HomeViewModel(
         }
     }
 
-    // ---------------------------------------------------------------------------
-    // Countdown
-    // ---------------------------------------------------------------------------
+
 
     @OptIn(ExperimentalTime::class)
     private fun buildCountdown(target: Instant, now: Instant): CountdownTime {
