@@ -29,15 +29,6 @@ import com.hussein.mawaqit.R
  *  - User presses any media/volume button (via MediaButton broadcast)
  *  - Audio focus is lost (call received, another app takes focus)
  *
- * Manifest entries required:
- *
- *   <service
- *       android:name=".prayer.AzanPlayerService"
- *       android:foregroundServiceType="mediaPlayback"
- *       android:exported="false" />
- *
- *   <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
- *   <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
  */
 class AzanPlayerService : Service() {
 
@@ -110,9 +101,7 @@ class AzanPlayerService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    // ---------------------------------------------------------------------------
-    // Audio focus
-    // ---------------------------------------------------------------------------
+
 
     private fun requestAudioFocus(): Boolean {
         val attributes = AudioAttributes.Builder()
@@ -164,9 +153,7 @@ class AzanPlayerService : Service() {
         }
         mediaPlayer = null
     }
-    // ---------------------------------------------------------------------------
-    // Notification
-    // ---------------------------------------------------------------------------
+
 
     private fun buildNotification(prayerName: String) =
         NotificationCompat.Builder(this, AZAN_CHANNEL_ID)
