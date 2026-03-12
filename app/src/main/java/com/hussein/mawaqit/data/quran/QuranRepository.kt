@@ -47,31 +47,17 @@ class QuranRepository(private val context: Context) {
             }
 
         // Build ayah→juz map from the juz array
-        val juzArray = root["juz"]!!.let {
-            json.parseToJsonElement(it.toString())
-                .let { el -> el.jsonObject["juz"] ?: it }
-        }
-
         val juzMap = mutableMapOf<Int, Int>()
-        root["juz"]?.let { juzEl ->
-            val arr = juzEl.toString()
-            // Parse juz entries manually via JsonArray
-            json.parseToJsonElement(arr).let { el ->
-                // el is a JsonArray of {index, verse:{start, end}}
-                try {
-                    val jsonArr = el as? kotlinx.serialization.json.JsonArray
-                        ?: return@let
-                    for (entry in jsonArr) {
-                        val obj = entry.jsonObject
-                        val juzNum = obj["index"]!!.jsonPrimitive.content.toInt()
-                        val startKey = obj["verse"]!!.jsonObject["start"]!!.jsonPrimitive.content
-                        val endKey = obj["verse"]!!.jsonObject["end"]!!.jsonPrimitive.content
-                        val startAyah = startKey.removePrefix("verse_").toInt()
-                        val endAyah = endKey.removePrefix("verse_").toInt()
-                        for (n in startAyah..endAyah) juzMap[n] = juzNum
-                    }
-                } catch (_: Exception) { /* malformed juz data — skip */
-                }
+        (root["juz"] as? kotlinx.serialization.json.JsonArray)?.forEach { entry ->
+            try {
+                val obj = entry.jsonObject
+                val juzNum = obj["index"]!!.jsonPrimitive.content.toInt()
+                val startKey = obj["verse"]!!.jsonObject["start"]!!.jsonPrimitive.content
+                val endKey = obj["verse"]!!.jsonObject["end"]!!.jsonPrimitive.content
+                val startAyah = startKey.removePrefix("verse_").toInt()
+                val endAyah = endKey.removePrefix("verse_").toInt()
+                for (n in startAyah..endAyah) juzMap[n] = juzNum
+            } catch (_: Exception) { /* malformed entry — skip */
             }
         }
 

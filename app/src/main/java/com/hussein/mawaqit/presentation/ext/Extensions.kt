@@ -57,3 +57,14 @@ fun Context.hasLocationPermission(): Boolean =
             PackageManager.PERMISSION_GRANTED ||
             ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) ==
             PackageManager.PERMISSION_GRANTED
+
+fun Int.toArabicDigits(): String {
+    val englishNumbers = listOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
+    val arabicNumbers = listOf("٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩")
+
+    var numString = this.toString()
+    for (i in 0..9) {
+        numString = numString.replace(englishNumbers[i], arabicNumbers[i])
+    }
+    return numString
+}

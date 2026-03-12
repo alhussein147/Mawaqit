@@ -2,18 +2,17 @@ package com.hussein.mawaqit.presentation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
-import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
-import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
 import com.hussein.mawaqit.presentation.azkar.AzkarCategoryScreen
 import com.hussein.mawaqit.presentation.azkar.AzkarListScreen
 import com.hussein.mawaqit.presentation.home.HomeScreen
 import com.hussein.mawaqit.presentation.onboarding.OnboardingScreen
+import com.hussein.mawaqit.presentation.quran.QuranReaderScreen
+import com.hussein.mawaqit.presentation.quran.SurahListScreen
 import com.hussein.mawaqit.presentation.settings.SettingsScreen
 import com.hussein.mawaqit.presentation.shared.LoadingContent
 import kotlinx.serialization.Serializable
@@ -36,8 +35,13 @@ data object Initializing : Screen
 data object AzkarCategories : Screen
 
 @Serializable
-data class  AzkarList(val categoryIndex: Int) : Screen
+data class AzkarList(val categoryIndex: Int) : Screen
 
+@Serializable
+data object QuranSurahList : Screen
+
+@Serializable
+data class QuranReader(val surahIndex: Int) : Screen
 
 @Composable
 fun AppNavigation(settingsRepository: SettingsRepository) {
@@ -76,11 +80,12 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
 
             entry<Home> {
                 HomeScreen(
-                    onNavigateToSettings = { backStack.add(Settings) } , onNavigateToAzkar = {
+                    onNavigateToSettings = { backStack.add(Settings) },
+                    onNavigateToAzkar = {
                         backStack.add(
                             AzkarCategories
                         )
-                    }
+                    } , onNavigateToQuran = { backStack.add(QuranSurahList) }
                 )
             }
 
@@ -94,6 +99,20 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
             entry<AzkarList> { key ->
                 AzkarListScreen(
                     categoryIndex = key.categoryIndex,
+                    onBack = { backStack.removeLastOrNull() }
+                )
+            }
+
+            entry<QuranSurahList> {
+                SurahListScreen(
+                    onSurahSelected = { index -> backStack.add(QuranReader(index)) },
+                    onBack = { backStack.removeLastOrNull() }
+                )
+            }
+
+            entry<QuranReader> { key ->
+                QuranReaderScreen(
+                    surahIndex = key.surahIndex,
                     onBack = { backStack.removeLastOrNull() }
                 )
             }

@@ -7,7 +7,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -27,7 +26,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -65,6 +63,7 @@ import kotlin.time.ExperimentalTime
 fun HomeScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToAzkar: () -> Unit = {},
+    onNavigateToQuran: () -> Unit ={},
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory)
 ) {
     // Collect the main state. This doesn't change every second.
@@ -89,7 +88,8 @@ fun HomeScreen(
                 state = state,
                 countdownFlow = viewModel.countdown,
                 modifier = Modifier.padding(innerPadding),
-                onNavigateToAzkar = onNavigateToAzkar
+                onNavigateToAzkar = onNavigateToAzkar ,
+                onNavigateToQuran = onNavigateToQuran
             )
         }
     }
@@ -101,7 +101,8 @@ private fun PrayerContent(
     modifier: Modifier = Modifier,
     state: HomeUiState,
     countdownFlow: StateFlow<CountdownTime?>,
-    onNavigateToAzkar: () -> Unit = {}
+    onNavigateToAzkar: () -> Unit = {},
+    onNavigateToQuran: () -> Unit = {}
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(), contentPadding = PaddingValues(horizontal = 16.dp)
@@ -132,6 +133,8 @@ private fun PrayerContent(
         items(items = state.prayers, key = { prayer -> prayer.name }) { prayer ->
             HomePrayerListItem(prayer)
         }
+
+        item { QuranSection(onNavigateToQuran = onNavigateToQuran) }
 
         item { AzkarSection(onNavigateToAzkar = onNavigateToAzkar) }
 
@@ -297,10 +300,7 @@ private fun HomeTopAppBar(
 private fun HomePrayerListItem(prayer: PrayerUiModel) {
     val isCurrent = prayer.status == PrayerStatus.CURRENT
     val isPassed = prayer.status == PrayerStatus.PASSED
-//    val border = if (isCurrent) BorderStroke(
-//        1.dp,
-//        MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-//    ) else null
+
 
     val dotColor by animateColorAsState(
         targetValue = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
@@ -352,4 +352,39 @@ private fun HeaderSectionPrev() {
             prayers = emptyList()
         ), countdownFlow = MutableStateFlow(CountdownTime(0, 50))
     )
+}
+
+@Composable
+private fun QuranSection(onNavigateToQuran: () -> Unit) {
+    Card(
+        onClick = onNavigateToQuran,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "القرآن الكريم",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+            Text(
+                text = "١١٤ سورة",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+            )
+        }
+    }
 }
