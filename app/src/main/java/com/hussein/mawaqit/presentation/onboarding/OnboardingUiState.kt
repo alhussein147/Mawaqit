@@ -1,6 +1,6 @@
 package com.hussein.mawaqit.presentation.onboarding
 
-import com.hussein.mawaqit.data.infrastructure.location.SavedLocation
+import com.hussein.mawaqit.core.data.models.SavedLocation
 
 data class OnboardingUiState(
     val page: OnboardingPage = OnboardingPage.WELCOME,

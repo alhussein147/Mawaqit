@@ -1,16 +1,15 @@
 package com.hussein.mawaqit.presentation.onboarding
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
-import androidx.lifecycle.application
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.hussein.mawaqit.MyApp
-import com.hussein.mawaqit.data.infrastructure.location.CurrentLocationFetcher
-import com.hussein.mawaqit.data.infrastructure.location.LocationRepository
+import com.hussein.mawaqit.core.data.location.CurrentLocationFetcher
+import com.hussein.mawaqit.core.data.location.LocationRepository
+
 import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

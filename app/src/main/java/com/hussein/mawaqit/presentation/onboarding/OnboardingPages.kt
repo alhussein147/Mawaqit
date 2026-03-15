@@ -41,7 +41,7 @@ enum class OnboardingPage { WELCOME, LOCATION, FETCHING_LOCATION, NOTIFICATION, 
  fun WelcomePage() {
     PageContent(
         iconRes = R.drawable.ic_placeholder,
-        title = "Welcome to\nPrayer Times",
+        title = "Welcome to\nMawaqit!",
         subtitle = "Stay connected to your daily prayers. " +
                 "We'll need a couple of quick permissions to get you set up."
     )
