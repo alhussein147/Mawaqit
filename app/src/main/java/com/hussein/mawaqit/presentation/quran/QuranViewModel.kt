@@ -23,7 +23,12 @@ private val Context.quranDataStore by preferencesDataStore("quran_prefs")
 enum class QuranFontSize(val sp: Int, val label: String) {
     SMALL(18, "S"),
     MEDIUM(22, "M"),
-    LARGE(26, "L")
+    LARGE(26, "L"),
+    XLARGE(30, "XL")
+}
+
+enum class QuranTextAlignment(val displayName: String) {
+    Start("Start"), Center("Center"), End("End")
 }
 
 @Serializable
@@ -46,6 +51,7 @@ class QuranViewModel(application: Application) : AndroidViewModel(application) {
 
     companion object {
         private val KEY_FONT_SIZE = stringPreferencesKey("quran_font_size")
+        private val KEY_TEXT_ALIGNMENT = stringPreferencesKey("quran_text_alignment")
         private val KEY_BM_SURAH = intPreferencesKey("quran_bm_surah")
         private val KEY_BM_AYAH = intPreferencesKey("quran_bm_ayah")
     }
@@ -65,6 +71,21 @@ class QuranViewModel(application: Application) : AndroidViewModel(application) {
             } catch (e: Exception) {
                 QuranReaderState.Error("Failed to load surah: ${e.message}")
             }
+        }
+    }
+
+    val quranTextAlignment: StateFlow<QuranTextAlignment> = MutableStateFlow(QuranTextAlignment.Center).also { flow ->
+        viewModelScope.launch {
+            ds.data.map { prefs ->
+                prefs[KEY_TEXT_ALIGNMENT]?.let { runCatching { QuranTextAlignment.valueOf(it) }.getOrNull() }
+                    ?: QuranTextAlignment.Center
+            }.collect { flow.value = it }
+        }
+    }
+
+    fun setTextAlignment(alignment: QuranTextAlignment) {
+        viewModelScope.launch {
+            ds.edit { it[KEY_TEXT_ALIGNMENT] = alignment.name }
         }
     }
 

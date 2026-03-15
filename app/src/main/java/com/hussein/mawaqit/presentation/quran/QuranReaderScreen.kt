@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.ClickableText
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -27,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -45,8 +45,8 @@ import com.hussein.mawaqit.data.quran.QuranData
 import com.hussein.mawaqit.data.quran.Surah
 import com.hussein.mawaqit.presentation.shared.ErrorContent
 import com.hussein.mawaqit.presentation.shared.LoadingContent
+import com.hussein.mawaqit.ui.theme.quranFontFamily
 
-private const val BISMILLAH = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ"
 
 // Al-Fatihah (1) already contains Bismillah; At-Tawbah (9) has none
 private fun showBismillah(surahIndex: Int) = surahIndex != 1 && surahIndex != 9
@@ -60,6 +60,7 @@ fun QuranReaderScreen(
 ) {
     val readerState by viewModel.readerState.collectAsStateWithLifecycle()
     val fontSize by viewModel.fontSize.collectAsStateWithLifecycle()
+    val quranTextAlignment by viewModel.quranTextAlignment.collectAsStateWithLifecycle()
     val bookmark by viewModel.bookmark.collectAsStateWithLifecycle()
 
     LaunchedEffect(surahIndex) { viewModel.loadSurah(surahIndex) }
@@ -88,7 +89,8 @@ fun QuranReaderScreen(
                             when (fontSize) {
                                 QuranFontSize.SMALL -> QuranFontSize.MEDIUM
                                 QuranFontSize.MEDIUM -> QuranFontSize.LARGE
-                                QuranFontSize.LARGE -> QuranFontSize.SMALL
+                                QuranFontSize.LARGE -> QuranFontSize.XLARGE
+                                QuranFontSize.XLARGE -> QuranFontSize.SMALL
                             }
                         )
                     }) {
@@ -96,6 +98,26 @@ fun QuranReaderScreen(
                             text = fontSize.label,
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    IconButton(onClick = {
+                        viewModel.setTextAlignment(
+                            when (quranTextAlignment) {
+                                QuranTextAlignment.Start -> QuranTextAlignment.Center
+                                QuranTextAlignment.Center -> QuranTextAlignment.End
+                                QuranTextAlignment.End -> QuranTextAlignment.Start
+                            }
+                        )
+                    }) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(
+                                when (quranTextAlignment) {
+                                    QuranTextAlignment.Start -> R.drawable.ic_align_end
+                                    QuranTextAlignment.Center -> R.drawable.ic_align_center
+                                    QuranTextAlignment.End -> R.drawable.ic_align_start
+                                }
+                            ), contentDescription = null
                         )
                     }
                 }
@@ -118,13 +140,11 @@ fun QuranReaderScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding),
-                    contentPadding = PaddingValues(bottom = 32.dp)
+                    contentPadding = PaddingValues(bottom = 32.dp, start = 16.dp, end = 16.dp)
                 ) {
-                    // Surah header
                     item {
                         SurahHeader(
                             surah = QuranData.surahs[surahIndex - 1],
-                            showBismillah = showBismillah(surahIndex)
                         )
                     }
 
@@ -138,6 +158,7 @@ fun QuranReaderScreen(
                             FlowingAyahBlock(
                                 ayahs = ayahs,
                                 fontSize = fontSize,
+                                quranTextAlignment = quranTextAlignment,
                                 bookmark = bookmark,
                                 surahIndex = surahIndex,
                                 onBookmark = { ayahNumber ->
@@ -156,14 +177,14 @@ fun QuranReaderScreen(
 }
 
 @Composable
-private fun SurahHeader(surah: Surah, showBismillah: Boolean) {
+private fun SurahHeader(surah: Surah) {
     Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 24.dp, horizontal = 20.dp),
+            .fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
+            fontFamily = quranFontFamily,
             text = surah.nameArabic,
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
@@ -174,17 +195,6 @@ private fun SurahHeader(surah: Surah, showBismillah: Boolean) {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        if (showBismillah) {
-            Spacer(Modifier.height(16.dp))
-            Text(
-                text = BISMILLAH,
-                style = MaterialTheme.typography.titleLarge.copy(
-                    textDirection = TextDirection.Rtl
-                ),
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
         Spacer(Modifier.height(8.dp))
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     }
@@ -192,22 +202,27 @@ private fun SurahHeader(surah: Surah, showBismillah: Boolean) {
 
 @Composable
 private fun JuzDivider(juzNumber: Int) {
-    Surface(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 4.dp),
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        shape = MaterialTheme.shapes.medium
+            .padding(4.dp),
+        contentAlignment = Alignment.CenterEnd
     ) {
-        Text(
-            text = "الجزء $juzNumber",
+        Surface(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 6.dp),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSecondaryContainer,
-            textAlign = TextAlign.End
-        )
+                .padding(vertical = 4.dp),
+            color = MaterialTheme.colorScheme.secondaryContainer,
+            shape = MaterialTheme.shapes.large
+        ) {
+            Text(
+                text = stringResource(R.string.juz, juzNumber),
+                modifier = Modifier
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                textAlign = TextAlign.End
+            )
+        }
     }
 }
 
@@ -242,6 +257,7 @@ private fun ayahMarker(number: Int): String {
 private fun FlowingAyahBlock(
     ayahs: List<Ayah>,
     fontSize: QuranFontSize,
+    quranTextAlignment: QuranTextAlignment,
     bookmark: QuranBookmark?,
     surahIndex: Int,
     onBookmark: (Int) -> Unit
@@ -285,12 +301,16 @@ private fun FlowingAyahBlock(
         text = annotated,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+            .padding(),
         style = TextStyle(
             fontSize = fontSize.sp.sp,
             lineHeight = (fontSize.sp * 2.0).sp,
-            textAlign = TextAlign.Center,
-            textDirection = TextDirection.Rtl
+            textAlign = when (quranTextAlignment) {
+                QuranTextAlignment.Start -> TextAlign.Start
+                QuranTextAlignment.Center -> TextAlign.Center
+                QuranTextAlignment.End -> TextAlign.End
+            },
+            textDirection = TextDirection.Rtl, fontFamily = quranFontFamily
         ),
         onClick = { offset ->
             annotated.getStringAnnotations(tag, offset, offset)
