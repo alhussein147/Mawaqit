@@ -55,9 +55,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
-    implementation(libs.batoul.prayerTimes)
-    implementation(libs.gms.location)
-
     // presentation
     implementation(libs.compose.viewmodel)
     implementation(libs.androidx.core.splashscreen)
@@ -77,4 +74,14 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.compose.material3e)
     implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.batoul.prayerTimes)
+
+    // ktor-client
+    implementation(libs.ktor.client.android)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.client.serialization)
+
+    implementation(project(":core"))
+    implementation(project(":widget"))
+
 }

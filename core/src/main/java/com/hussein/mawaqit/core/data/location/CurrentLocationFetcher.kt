@@ -1,18 +1,17 @@
-package com.hussein.mawaqit.data.infrastructure.location
+package com.hussein.mawaqit.core.data.location
 
 
 import android.annotation.SuppressLint
 import android.content.Context
 import android.location.LocationManager
 import android.os.Looper
-import androidx.core.location.LocationManagerCompat.isLocationEnabled
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
-import com.hussein.mawaqit.data.infrastructure.location.CurrentLocationFetcher.Companion.TIMEOUT_MS
+import com.hussein.mawaqit.core.data.location.CurrentLocationFetcher.Companion.TIMEOUT_MS
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.coroutines.resume
