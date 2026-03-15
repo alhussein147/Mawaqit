@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -39,7 +40,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.hussein.mawaqit.R
 import com.hussein.mawaqit.data.azkar.Zikr
+import com.hussein.mawaqit.ui.theme.quranFontFamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -211,6 +214,7 @@ private fun ZikrItem(index: Int, zikr: Zikr) {
 
         // Arabic zikr text — RTL
         Text(
+            fontFamily = quranFontFamily,
             text = zikr.zekr,
             style = MaterialTheme.typography.bodyLarge.copy(
                 lineHeight = 32.sp,
@@ -225,7 +229,7 @@ private fun ZikrItem(index: Int, zikr: Zikr) {
         if (zikr.repeat > 1) {
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "تكرار: ${zikr.repeat}",
+                text = stringResource(R.string.zikr_repeat, zikr.repeat),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.fillMaxWidth(),
@@ -237,6 +241,7 @@ private fun ZikrItem(index: Int, zikr: Zikr) {
         if (zikr.bless.isNotBlank() && zikr.bless != "placeholder") {
             Spacer(Modifier.height(8.dp))
             Text(
+                fontFamily = quranFontFamily,
                 text = zikr.bless,
                 style = MaterialTheme.typography.bodySmall.copy(
                     textDirection = TextDirection.Rtl,

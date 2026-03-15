@@ -26,14 +26,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.hussein.mawaqit.R
 import com.hussein.mawaqit.data.quran.QuranData
 import com.hussein.mawaqit.data.quran.Surah
+import com.hussein.mawaqit.ui.theme.quranFontFamily
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,11 +50,11 @@ fun SurahListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("القرآن الكريم") },
+                title = { Text(stringResource(R.string.quran)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
-                            imageVector = ImageVector.vectorResource(com.hussein.mawaqit.R.drawable.ic_arrow_back),
+                            imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_back),
                             contentDescription = null
                         )
                     }
@@ -127,6 +130,7 @@ private fun SurahRow(
 
             // Arabic name
             Text(
+                fontFamily = quranFontFamily,
                 text = surah.nameArabic,
                 style = MaterialTheme.typography.titleMedium,
                 textAlign = TextAlign.End,
