@@ -7,14 +7,18 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -26,7 +30,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -43,6 +46,7 @@ import com.hussein.mawaqit.R
 import com.hussein.mawaqit.data.quran.Ayah
 import com.hussein.mawaqit.data.quran.QuranData
 import com.hussein.mawaqit.data.quran.Surah
+import com.hussein.mawaqit.presentation.quran.tafsir.TafsirState
 import com.hussein.mawaqit.presentation.shared.ErrorContent
 import com.hussein.mawaqit.presentation.shared.LoadingContent
 import com.hussein.mawaqit.ui.theme.quranFontFamily
@@ -62,6 +66,28 @@ fun QuranReaderScreen(
     val fontSize by viewModel.fontSize.collectAsStateWithLifecycle()
     val quranTextAlignment by viewModel.quranTextAlignment.collectAsStateWithLifecycle()
     val bookmark by viewModel.bookmark.collectAsStateWithLifecycle()
+
+    val selectedAyah by viewModel.selectedAyah.collectAsStateWithLifecycle()
+    val tafsirState by viewModel.tafsirState.collectAsStateWithLifecycle()
+    val isNetworkAvail by viewModel.networkAvailable.collectAsStateWithLifecycle()
+
+    LaunchedEffect(surahIndex) { viewModel.loadSurah(surahIndex) }
+
+    // Fetch tafsir when an ayah is selected
+    LaunchedEffect(selectedAyah) {
+        selectedAyah?.let { viewModel.fetchTafsir(surahIndex, it) }
+    }
+
+    // Bottom sheet
+    if (selectedAyah != null) {
+        ModalBottomSheet(onDismissRequest = { viewModel.dismissTafsir() }) {
+            TafsirBottomSheet(
+                ayah = selectedAyah!!,
+                tafsirState = tafsirState,
+                isNetwork = isNetworkAvail
+            )
+        }
+    }
 
     LaunchedEffect(surahIndex) { viewModel.loadSurah(surahIndex) }
 
@@ -166,6 +192,8 @@ fun QuranReaderScreen(
                                             bookmark?.ayahNumber == ayahNumber
                                     if (isBookmarked) viewModel.clearBookmark()
                                     else viewModel.setBookmark(surahIndex, ayahNumber)
+                                }, onTap = {
+                                    ayah -> viewModel.fetchTafsir(surahIndex, ayah)
                                 }
                             )
                         }
@@ -215,7 +243,7 @@ private fun JuzDivider(juzNumber: Int) {
             shape = MaterialTheme.shapes.large
         ) {
             Text(
-                text = stringResource(R.string.juz, juzNumber),
+                text = "Juz $juzNumber",
                 modifier = Modifier
                     .padding(horizontal = 16.dp, vertical = 6.dp),
                 style = MaterialTheme.typography.labelLarge,
@@ -260,8 +288,10 @@ private fun FlowingAyahBlock(
     quranTextAlignment: QuranTextAlignment,
     bookmark: QuranBookmark?,
     surahIndex: Int,
-    onBookmark: (Int) -> Unit
-) {
+    onBookmark: (Int) -> Unit,
+    onTap: (Ayah) -> Unit,
+
+    ) {
     val primary = MaterialTheme.colorScheme.primary
     val onSurface = MaterialTheme.colorScheme.onSurface
     val bookmarkColor = MaterialTheme.colorScheme.tertiary
@@ -314,7 +344,175 @@ private fun FlowingAyahBlock(
         ),
         onClick = { offset ->
             annotated.getStringAnnotations(tag, offset, offset)
-                .firstOrNull()?.let { ann -> onBookmark(ann.item.toInt()) }
+                .firstOrNull()?.let { ann ->
+                    val ayah = ayahs.find { it.number == ann.item.toInt() }
+                    ayah?.let { onTap(it) }
+                }
         }
     )
+}
+// ---------------------------------------------------------------------------
+// Tafsir bottom sheet
+// ---------------------------------------------------------------------------
+
+
+@Composable
+private fun TafsirBottomSheet(
+    ayah: Ayah,
+    tafsirState: TafsirState,
+    isNetwork: Boolean
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 16.dp)
+            .navigationBarsPadding()
+    ) {
+        // Ayah number header
+        Text(
+            text = "تفسير الآية ${ayah.number}",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.End
+        )
+
+        Spacer(Modifier.height(8.dp))
+        HorizontalDivider()
+        Spacer(Modifier.height(12.dp))
+
+        when (tafsirState) {
+            TafsirState.Idle,
+            TafsirState.Loading -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp),
+                    contentAlignment = Alignment.Center
+                ) { CircularProgressIndicator() }
+            }
+
+            TafsirState.NoNetwork -> {
+                Text(
+                    text = "لا يوجد اتصال بالإنترنت",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            is TafsirState.Error -> {
+                Text(
+                    text = tafsirState.message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+            }
+
+            is TafsirState.Success -> {
+                Text(
+                    text = tafsirState.text,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        lineHeight = 32.sp,
+                        textDirection = TextDirection.Rtl
+                    ),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TafsirBottomSheet(
+    ayah: Ayah?,
+    tafsirState: TafsirState,
+    onDismiss: () -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        dragHandle = { BottomSheetDefaults.DragHandle() }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 32.dp),
+            horizontalAlignment = Alignment.End
+        ) {
+            // Ayah number header
+            ayah?.let {
+                Text(
+                    text = "الآية ${it.number}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = it.text,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        textDirection = TextDirection.Rtl,
+                        lineHeight = 28.sp
+                    ),
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(16.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Spacer(Modifier.height(16.dp))
+            }
+
+            // Tafsir content
+            when (tafsirState) {
+                TafsirState.Loading -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(80.dp),
+                        contentAlignment = Alignment.Center
+                    ) { CircularProgressIndicator() }
+                }
+
+                TafsirState.NoNetwork -> {
+                    Text(
+                        text = "لا يوجد اتصال بالإنترنت",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                is TafsirState.Error -> {
+                    Text(
+                        text = tafsirState.message,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                is TafsirState.Success -> {
+                    Text(
+                        text = tafsirState.text,
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            textDirection = TextDirection.Rtl,
+                            lineHeight = 32.sp
+                        ),
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                TafsirState.Idle -> Unit
+            }
+        }
+    }
 }

@@ -8,12 +8,18 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.hussein.mawaqit.presentation.quran.tafsir.TafsirRepository
+import com.hussein.mawaqit.presentation.quran.tafsir.TafsirState
+import com.hussein.mawaqit.data.network.networkAvailableFlow
+import com.hussein.mawaqit.data.quran.Ayah
 import com.hussein.mawaqit.data.quran.QuranRepository
 import com.hussein.mawaqit.data.quran.SurahDetail
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
@@ -46,9 +52,6 @@ sealed interface QuranReaderState {
 
 class QuranViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repo = QuranRepository(application)
-    private val ds = application.quranDataStore
-
     companion object {
         private val KEY_FONT_SIZE = stringPreferencesKey("quran_font_size")
         private val KEY_TEXT_ALIGNMENT = stringPreferencesKey("quran_text_alignment")
@@ -56,9 +59,22 @@ class QuranViewModel(application: Application) : AndroidViewModel(application) {
         private val KEY_BM_AYAH = intPreferencesKey("quran_bm_ayah")
     }
 
+
+    private val repo = QuranRepository(application)
+    private val ds = application.quranDataStore
+    private val tafsirRepo: TafsirRepository = TafsirRepository()
+
+
+
     // ── Reader state ──────────────────────────────────────────────────────────
+
     private val _readerState = MutableStateFlow<QuranReaderState>(QuranReaderState.Idle)
     val readerState: StateFlow<QuranReaderState> = _readerState.asStateFlow()
+
+    // ── Network state ─────────────────────────────────────────────────────────
+
+    val networkAvailable: StateFlow<Boolean> = networkAvailableFlow(context = application)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
     private var loadedSurahIndex = -1
 
@@ -74,14 +90,15 @@ class QuranViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    val quranTextAlignment: StateFlow<QuranTextAlignment> = MutableStateFlow(QuranTextAlignment.Center).also { flow ->
-        viewModelScope.launch {
-            ds.data.map { prefs ->
-                prefs[KEY_TEXT_ALIGNMENT]?.let { runCatching { QuranTextAlignment.valueOf(it) }.getOrNull() }
-                    ?: QuranTextAlignment.Center
-            }.collect { flow.value = it }
+    val quranTextAlignment: StateFlow<QuranTextAlignment> =
+        MutableStateFlow(QuranTextAlignment.Center).also { flow ->
+            viewModelScope.launch {
+                ds.data.map { prefs ->
+                    prefs[KEY_TEXT_ALIGNMENT]?.let { runCatching { QuranTextAlignment.valueOf(it) }.getOrNull() }
+                        ?: QuranTextAlignment.Center
+                }.collect { flow.value = it }
+            }
         }
-    }
 
     fun setTextAlignment(alignment: QuranTextAlignment) {
         viewModelScope.launch {
@@ -133,4 +150,39 @@ class QuranViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
+
+    // ── Tafsir ────────────────────────────────────────────────────────────────
+
+    private val _tafsirState  = MutableStateFlow<TafsirState>(TafsirState.Idle)
+    val tafsirState: StateFlow<TafsirState> = _tafsirState.asStateFlow()
+
+    private val _selectedAyah = MutableStateFlow<Ayah?>(null)
+    val selectedAyah: StateFlow<Ayah?> = _selectedAyah.asStateFlow()
+
+    fun fetchTafsir(surahIndex: Int, ayah: Ayah) {
+        _selectedAyah.value = ayah
+        if (!networkAvailable.value) {
+            _tafsirState.value = TafsirState.NoNetwork
+            return
+        }
+        viewModelScope.launch {
+            _tafsirState.value = TafsirState.Loading
+            _tafsirState.value = try {
+                TafsirState.Success(tafsirRepo.fetchTafsir(surahIndex, ayah.number))
+            } catch (e: Exception) {
+                TafsirState.Error("Error loading tafisr")
+            }
+        }
+    }
+
+    fun dismissTafsir() {
+        _tafsirState.value  = TafsirState.Idle
+        _selectedAyah.value = null
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        tafsirRepo.close()
+    }
+
 }
