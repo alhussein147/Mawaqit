@@ -57,9 +57,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.batoulapps.adhan2.CalculationMethod
+import com.hussein.core.models.SavedLocation
 import com.hussein.mawaqit.R
-import com.hussein.mawaqit.data.infrastructure.location.CurrentLocationFetcher
-import com.hussein.mawaqit.data.infrastructure.location.SavedLocation
+
 import com.hussein.mawaqit.data.infrastructure.settings.AppColorScheme
 import com.hussein.mawaqit.data.infrastructure.settings.AppSettings
 import com.hussein.mawaqit.data.infrastructure.settings.AppTheme

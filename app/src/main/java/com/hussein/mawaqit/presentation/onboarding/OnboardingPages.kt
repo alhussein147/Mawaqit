@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -36,30 +37,28 @@ import com.hussein.mawaqit.R
 enum class OnboardingPage { WELCOME, LOCATION, FETCHING_LOCATION, NOTIFICATION, EXACT_ALARM, BATTERY_OPTIMIZATION, DONE }
 
 
-
 @Composable
- fun WelcomePage() {
+fun WelcomePage() {
     PageContent(
         iconRes = R.drawable.ic_placeholder,
-        title = "Welcome to\nMawaqit!",
+        title = stringResource(R.string.onboarding_welcome_title),
         subtitle = "Stay connected to your daily prayers. " +
                 "We'll need a couple of quick permissions to get you set up."
     )
 }
 
 @Composable
- fun LocationPage(errorMessage: String?) {
+fun LocationPage(errorMessage: String?) {
     PageContent(
         iconRes = R.drawable.ic_location,
-        title = "Your Location",
-        subtitle = "Prayer times change daily based on your coordinates. " +
-                "Your location is stored only on your device — never shared.",
+        title = stringResource(R.string.onboarding_location_title),
+        subtitle = stringResource(R.string.onboarding_location_description),
         errorMessage = errorMessage
     )
 }
 
 @Composable
- fun FetchingLocationPage() {
+fun FetchingLocationPage() {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -78,20 +77,20 @@ enum class OnboardingPage { WELCOME, LOCATION, FETCHING_LOCATION, NOTIFICATION, 
 }
 
 @Composable
- fun NotificationPage(cityName: String?) {
+fun NotificationPage(cityName: String?) {
     PageContent(
         iconRes = R.drawable.ic_notification,
-        title = "Prayer Reminders",
-        subtitle = "Get notified at each of the 5 prayer times so you never miss one.",
+        title = stringResource(R.string.onboarding_notification_title),
+        subtitle = stringResource(R.string.onboarding_notification_description),
         badge = cityName?.let { "📍 $it" }
     )
 }
 
 @Composable
- fun ExactAlarmPage() {
+fun ExactAlarmPage() {
     PageContent(
         iconRes = R.drawable.ic_alarm,
-        title = "Precise Prayer Alarms",
+        title = stringResource(R.string.onboarding_exact_alarm_title),
         subtitle = "To ensure prayer alarms fire at the exact right time — " +
                 "even when your phone is in deep sleep — we need permission " +
                 "to schedule exact alarms."
@@ -99,10 +98,10 @@ enum class OnboardingPage { WELCOME, LOCATION, FETCHING_LOCATION, NOTIFICATION, 
 }
 
 @Composable
- fun BatteryOptimizationPage() {
+fun BatteryOptimizationPage() {
     PageContent(
         iconRes = R.drawable.ic_battery,
-        title = "Reliable Notifications",
+        title = stringResource(R.string.onboarding_battery_optimization_title),
         subtitle = "Android's battery optimization can delay or block prayer " +
                 "notifications. Exempting this app ensures you never miss " +
                 "a prayer time."
@@ -110,7 +109,7 @@ enum class OnboardingPage { WELCOME, LOCATION, FETCHING_LOCATION, NOTIFICATION, 
 }
 
 @Composable
- fun PageContent(
+fun PageContent(
     iconRes: Int,
     title: String,
     subtitle: String,
@@ -191,19 +190,21 @@ enum class OnboardingPage { WELCOME, LOCATION, FETCHING_LOCATION, NOTIFICATION, 
 }
 
 @Composable
- fun OnboardingActions(
+fun OnboardingActions(
     page: OnboardingPage,
     onPrimaryClick: () -> Unit,
     onSkipClick: () -> Unit
 ) {
     val primaryLabel = when (page) {
-        OnboardingPage.WELCOME -> "Get Started"
-        OnboardingPage.LOCATION -> "Allow Location"
+        OnboardingPage.WELCOME -> stringResource(R.string.get_started)
+        OnboardingPage.LOCATION -> stringResource(R.string.allow_location)
         OnboardingPage.NOTIFICATION -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
-            "Allow Notifications" else "Continue"
+            stringResource(R.string.allow_notifications) else stringResource(R.string.continue_)
+
         OnboardingPage.EXACT_ALARM -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
-            "Allow Exact Alarms" else "Continue"
-        OnboardingPage.BATTERY_OPTIMIZATION -> "Disable Optimization"
+            stringResource(R.string.allow_exact_alarms) else stringResource(R.string.continue_)
+
+        OnboardingPage.BATTERY_OPTIMIZATION -> stringResource(R.string.disable_optimization)
         else -> null
     }
     val showSkip = page in listOf(
@@ -233,14 +234,14 @@ enum class OnboardingPage { WELCOME, LOCATION, FETCHING_LOCATION, NOTIFICATION, 
         if (showSkip) {
             Spacer(Modifier.height(8.dp))
             TextButton(onClick = onSkipClick) {
-                Text("Skip for now", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.skip_for_now), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
 }
 
 @Composable
- fun StepIndicator(currentPage: OnboardingPage) {
+fun StepIndicator(currentPage: OnboardingPage) {
     val visiblePages = listOf(
         OnboardingPage.WELCOME,
         OnboardingPage.LOCATION,

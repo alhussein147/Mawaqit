@@ -1,6 +1,7 @@
 package com.hussein.mawaqit.presentation.settings
 
 
+import CurrentLocationFetcher
 import android.R.attr.theme
 import android.app.Application
 import android.util.Log
@@ -12,10 +13,10 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.batoulapps.adhan2.CalculationMethod
+import com.hussein.core.LocationRepository
+import com.hussein.core.models.SavedLocation
 import com.hussein.mawaqit.MyApp
-import com.hussein.mawaqit.data.infrastructure.location.CurrentLocationFetcher
-import com.hussein.mawaqit.data.infrastructure.location.LocationRepository
-import com.hussein.mawaqit.data.infrastructure.location.SavedLocation
+
 import com.hussein.mawaqit.data.infrastructure.settings.AppColorScheme
 import com.hussein.mawaqit.data.infrastructure.settings.AppSettings
 import com.hussein.mawaqit.data.infrastructure.settings.AppTheme

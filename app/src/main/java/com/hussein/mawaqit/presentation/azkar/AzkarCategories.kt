@@ -229,7 +229,7 @@ private fun ZikrItem(index: Int, zikr: Zikr) {
         if (zikr.repeat > 1) {
             Spacer(Modifier.height(8.dp))
             Text(
-                text = stringResource(R.string.zikr_repeat, zikr.repeat),
+                text = "Repeat ${zikr.repeat}",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.fillMaxWidth(),

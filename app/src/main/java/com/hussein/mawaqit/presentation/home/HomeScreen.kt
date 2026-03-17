@@ -7,7 +7,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,10 +15,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -36,12 +35,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDirection
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -53,9 +51,7 @@ import com.hussein.mawaqit.presentation.home.components.PrayerArchStepper
 import com.hussein.mawaqit.presentation.shared.ErrorContent
 import com.hussein.mawaqit.presentation.shared.LoadingContent
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -63,7 +59,7 @@ import kotlin.time.ExperimentalTime
 fun HomeScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToAzkar: () -> Unit = {},
-    onNavigateToQuran: () -> Unit ={},
+    onNavigateToQuran: () -> Unit = {},
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory)
 ) {
     // Collect the main state. This doesn't change every second.
@@ -88,7 +84,7 @@ fun HomeScreen(
                 state = state,
                 countdownFlow = viewModel.countdown,
                 modifier = Modifier.padding(innerPadding),
-                onNavigateToAzkar = onNavigateToAzkar ,
+                onNavigateToAzkar = onNavigateToAzkar,
                 onNavigateToQuran = onNavigateToQuran
             )
         }
@@ -104,39 +100,35 @@ private fun PrayerContent(
     onNavigateToAzkar: () -> Unit = {},
     onNavigateToQuran: () -> Unit = {}
 ) {
-    LazyColumn(
-        modifier = modifier.fillMaxSize(), contentPadding = PaddingValues(horizontal = 16.dp)
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(start = 16.dp, end = 16.dp, bottom = 32.dp)
+            .then(modifier),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        item { HeaderSection(state, countdownFlow = countdownFlow) }
-
-        item {
-            Surface(
-                Modifier.padding(vertical = 12.dp),
-                shape = RoundedCornerShape(50.dp),
-                color = MaterialTheme.colorScheme.surfaceContainer,
-                border = BorderStroke(
-                    1.dp,
-                    color = MaterialTheme.colorScheme.primary.copy(0.6f)
-                )
-            ) {
-                Text(
-                    text = "Today's Prayers",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(50))
-                        .padding(vertical = 8.dp, horizontal = 16.dp)
-                )
-            }
-
+        HeaderSection(state, countdownFlow = countdownFlow)
+        QuranAndAzkarSection(
+            onNavigateToQuran = onNavigateToQuran,
+            onNavigateToAzkar = onNavigateToAzkar
+        )
+        Surface(
+            shape = RoundedCornerShape(50.dp),
+            color = MaterialTheme.colorScheme.surfaceContainer,
+        ) {
+            Text(
+                text = "Today's Prayers",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(16.dp)
+            )
         }
-        items(items = state.prayers, key = { prayer -> prayer.name }) { prayer ->
+
+        state.prayers.forEach { prayer ->
             HomePrayerListItem(prayer)
         }
-
-        item { QuranSection(onNavigateToQuran = onNavigateToQuran) }
-
-        item { AzkarSection(onNavigateToAzkar = onNavigateToAzkar) }
 
     }
 }
@@ -202,41 +194,6 @@ private fun HeaderSection(state: HomeUiState, countdownFlow: StateFlow<Countdown
     }
 }
 
-@Composable
-private fun AzkarSection(onNavigateToAzkar: () -> Unit) {
-    // TODO: user string resources for titles
-    Card(
-        onClick = onNavigateToAzkar,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "الأذكار",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
-            )
-            Text(
-                text = "أذكار الصباح والمساء وبعد الصلاة",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
-            )
-        }
-    }
-}
 
 @Composable
 private fun CountdownDisplay(countdownFlow: StateFlow<CountdownTime?>) {
@@ -311,8 +268,7 @@ private fun HomePrayerListItem(prayer: PrayerUiModel) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainer,
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
+            .fillMaxWidth(),
         shape = RoundedCornerShape(24.dp)
     ) {
         Row(
@@ -342,16 +298,44 @@ private fun HomePrayerListItem(prayer: PrayerUiModel) {
     }
 }
 
-@OptIn(ExperimentalTime::class)
-@Preview
+
 @Composable
-private fun HeaderSectionPrev() {
-    HeaderSection(
-        state = HomeUiState(
-            nextPrayer = PrayerUiModel("Asr", Clock.System.now(), PrayerStatus.UPCOMING),
-            prayers = emptyList()
-        ), countdownFlow = MutableStateFlow(CountdownTime(0, 50))
-    )
+fun QuranAndAzkarSection(onNavigateToQuran: () -> Unit, onNavigateToAzkar: () -> Unit) {
+
+    @Composable
+    fun Section(modifier: Modifier = Modifier, onClick: () -> Unit, title: String) {
+        Surface(
+            color = MaterialTheme.colorScheme.primaryContainer,
+            modifier = Modifier.height(65.dp).then(modifier),
+            shape = RoundedCornerShape(50),
+            onClick = onClick
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Text(title)
+            }
+        }
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        Section(
+            modifier = Modifier
+                .weight(1f),
+            onClick = onNavigateToQuran,
+            title = stringResource(R.string.quran)
+        )
+        Section(
+            modifier = Modifier
+                .weight(1f),
+            onClick = onNavigateToAzkar,
+            title = stringResource(R.string.azakr)
+        )
+    }
+
 }
 
 @Composable
@@ -375,7 +359,7 @@ private fun QuranSection(onNavigateToQuran: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "القرآن الكريم",
+                text = "Quran",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSecondaryContainer

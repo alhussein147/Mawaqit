@@ -4,9 +4,9 @@ import android.content.Context
 import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.example.islamicapp.prayer.PrayerTimeCalculator
+import com.hussein.core.LocationRepository
+import com.hussein.core.PrayerTimeCalculator
 import com.hussein.mawaqit.data.infrastructure.alarm_manager.PrayerAlarmManager
-import com.hussein.mawaqit.data.infrastructure.location.LocationRepository
 import com.hussein.mawaqit.data.infrastructure.notification.NotificationUtils
 import com.hussein.mawaqit.data.infrastructure.settings.NotificationSound
 import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository

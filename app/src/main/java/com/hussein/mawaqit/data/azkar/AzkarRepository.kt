@@ -2,6 +2,7 @@ package com.hussein.mawaqit.data.azkar
 
 
 import android.content.Context
+import com.hussein.mawaqit.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -30,7 +31,7 @@ class AzkarRepository(private val context: Context) {
     )
 
     // Category titles for the picker screen — no file I/O needed
-    val categoryTitles = listOf("أذكار الصباح", "أذكار المساء", "أذكار بعد الصلاة")
+    val categoryTitles = context.resources.getStringArray(R.array.azkar_titles).toList()
 
 
     private val json = Json { ignoreUnknownKeys = true }

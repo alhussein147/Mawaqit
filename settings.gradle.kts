@@ -19,5 +19,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Islamic"
+rootProject.name = "Mawaqit"
 include(":app")
+include(":core")
+//include(":widget")

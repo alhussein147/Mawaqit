@@ -29,8 +29,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.core.net.toUri
+import com.hussein.mawaqit.data.prayer.PrayerSchedulerManager
 
-import com.hussein.mawaqit.data.infrastructure.prayer.PrayerSchedulerManager
 
 /**
  * Single onboarding screen.

@@ -1,3 +1,28 @@
 <resources>
     <string name="app_name">Mawaqit</string>
+    <string name="onboarding_welcome_title">Welcome to \n Mawaqit!</string>
+    <string name="onboarding_location_title">Your Location</string>
+    <string name="onboarding_location_description">Prayer times change daily based on your coordinates. \n Your location is stored only on your device — never shared.</string>
+    <string name="onboarding_notification_title">Prayer Reminders</string>
+    <string name="onboarding_notification_description">Get notified at each of the 5 prayer times so you never miss one.</string>
+    <string name="onboarding_exact_alarm_title">Precise Prayer Alarms</string>
+    <string name="onboarding_battery_optimization_title">Reliable Notifications</string>
+    <string name="get_started">Get Started</string>
+    <string name="allow_location">Allow Location</string>
+    <string name="allow_notifications">Allow Notifications</string>
+    <string name="continue_">Continue</string>
+    <string name="allow_exact_alarms">Allow Exact Alarms</string>
+    <string name="disable_optimization">Disable Optimization</string>
+    <string name="skip_for_now">Skip for now</string>
+    <string name="quran">Quran</string>
+    <string name="azakr">Azakr</string>
+    <string name="no_internet_connection">No internet connection</string>
+    <string name="bookmark">Bookmark</string>
+    <string name="remove_bookmark">Remove Bookmark</string>
+    <string name="tafsir">Tafsir</string>
+    <string-array name="azkar_titles">
+        <item>Morning Azkar</item>
+        <item>Night Azkar</item>
+        <item>Post-Prayer Azkar</item>
+    </string-array>
 </resources>

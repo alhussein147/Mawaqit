@@ -9,19 +9,14 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.hussein.mawaqit.AppContainer
 import com.hussein.mawaqit.MyApp
 import com.hussein.mawaqit.data.azkar.AzkarCategory
+import com.hussein.mawaqit.data.azkar.AzkarRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class AzkarViewModel(private val appContainer: AppContainer) : ViewModel() {
+class AzkarViewModel(private val azkarRepository: AzkarRepository) : ViewModel() {
 
-    val azkarRepository = appContainer.createAzkarRepo()
-
-    override fun onCleared() {
-        super.onCleared()
-        appContainer.destroyAzkarRepo()
-    }
 
     // Static — no I/O needed
     val categoryTitles: List<String> = azkarRepository.categoryTitles
@@ -45,7 +40,7 @@ class AzkarViewModel(private val appContainer: AppContainer) : ViewModel() {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val application = (this[APPLICATION_KEY] as MyApp)
-                AzkarViewModel(appContainer = application.appContainer)
+                AzkarViewModel(azkarRepository = AzkarRepository(application))
             }
         }
     }

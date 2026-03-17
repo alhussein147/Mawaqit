@@ -7,10 +7,10 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.batoulapps.adhan2.CalculationMethod
-import com.example.islamicapp.prayer.PrayerTimeCalculator
+import com.hussein.core.LocationRepository
+import com.hussein.core.PrayerTimeCalculator
+import com.hussein.core.models.SavedLocation
 import com.hussein.mawaqit.MyApp
-import com.hussein.mawaqit.data.infrastructure.location.LocationRepository
-import com.hussein.mawaqit.data.infrastructure.location.SavedLocation
 import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -29,7 +29,7 @@ import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
-import com.example.islamicapp.prayer.Prayer as AppPrayer
+import com.hussein.core.models.Prayer as AppPrayer
 
 class HomeViewModel(
     val locationRepo: LocationRepository,

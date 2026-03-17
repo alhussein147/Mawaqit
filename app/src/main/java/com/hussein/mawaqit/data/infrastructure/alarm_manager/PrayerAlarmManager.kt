@@ -1,6 +1,5 @@
 package com.hussein.mawaqit.data.infrastructure.alarm_manager
 
-import com.example.islamicapp.prayer.PrayerSchedule
 import kotlin.jvm.java
 
 import android.app.AlarmManager
@@ -9,7 +8,8 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
-import com.example.islamicapp.prayer.Prayer
+import com.hussein.core.models.Prayer
+import com.hussein.core.models.PrayerSchedule
 import com.hussein.mawaqit.data.infrastructure.receivers.PrayerAlarmReceiver
 import kotlin.time.ExperimentalTime
 

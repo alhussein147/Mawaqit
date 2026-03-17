@@ -71,17 +71,28 @@ dependencies {
     implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.work.coroutines)
 
+    // gms location services
+    implementation(libs.gms.location)
+
+    // datastore
     implementation(libs.androidx.datastore.preferences)
+
+    // material 3e
     implementation(libs.compose.material3e)
     implementation(libs.androidx.media3.exoplayer)
+
+    // prayer times
     implementation(libs.batoul.prayerTimes)
 
     // ktor-client
     implementation(libs.ktor.client.android)
     implementation(libs.ktor.client.content.negotiation)
-    implementation(libs.ktor.client.serialization)
+    implementation(libs.ktor.serialization.kotlinx.json)
+
+    implementation("androidx.media3:media3-exoplayer:1.9.2")
+    implementation("androidx.media3:media3-session:1.9.2")
 
     implementation(project(":core"))
-    implementation(project(":widget"))
+
 
 }

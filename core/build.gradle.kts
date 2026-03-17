@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.android.library)
-//    alias(libs.plugins.jetbrains.kotlin.android)
 }
 
 android {
@@ -9,7 +8,6 @@ android {
 
     defaultConfig {
         minSdk = 29
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     compileOptions {
@@ -20,11 +18,10 @@ android {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.datastore.preferences)
     implementation(libs.batoul.prayerTimes)
     implementation(libs.gms.location)
-    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.kotlinx.datetime)
     implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.work.coroutines)
-    implementation(libs.kotlinx.serialization.json)
-
 }
