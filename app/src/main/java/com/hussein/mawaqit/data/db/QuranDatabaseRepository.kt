@@ -1,18 +1,13 @@
 package com.hussein.mawaqit.data.db
 
 import android.content.Context
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
 import com.hussein.Mawaqit.quran.db.AyahDao
 import com.hussein.Mawaqit.quran.db.BookmarkDao
 import com.hussein.Mawaqit.quran.db.SurahDao
 import com.hussein.mawaqit.data.db.models.Ayah
 import com.hussein.mawaqit.data.db.models.SurahDetail
 import com.hussein.mawaqit.data.quran.QuranData
-import com.hussein.mawaqit.presentation.quran.reader.QuranFontSize
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import kotlin.time.ExperimentalTime

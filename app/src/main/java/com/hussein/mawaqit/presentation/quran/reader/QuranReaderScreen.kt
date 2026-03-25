@@ -61,15 +61,17 @@ import com.hussein.mawaqit.R
 import com.hussein.mawaqit.data.db.models.Ayah
 import com.hussein.mawaqit.data.db.BookmarkEntity
 import com.hussein.mawaqit.data.quran.QuranData
+import com.hussein.mawaqit.data.quran.QuranFontSize
+import com.hussein.mawaqit.data.quran.QuranTextAlignment
 import com.hussein.mawaqit.data.quran.Surah
 import com.hussein.mawaqit.data.recitation.Reciter
-import com.hussein.mawaqit.presentation.quran.recitation.AyahReciterPickerSheetContent
-import com.hussein.mawaqit.presentation.quran.tafsir.TafsirState
+import com.hussein.mawaqit.presentation.quran.components.AyahReciterPickerSheetContent
 import com.hussein.mawaqit.presentation.shared.ErrorContent
 import com.hussein.mawaqit.presentation.shared.LoadingContent
 import com.hussein.mawaqit.ui.theme.quranFontFamily
 import org.koin.androidx.compose.koinViewModel
 import kotlin.collections.find
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -341,6 +343,38 @@ private fun FlowingAyahBlock(
     )
 }
 
+
+@Composable
+private fun SurahHeader(surah: Surah) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            fontFamily = quranFontFamily,
+            text = surah.nameArabic,
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Text(
+            text = surah.nameTransliterated,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(8.dp))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+    }
+}
+
+private fun ayahMarker(number: Int): String {
+    val arabicNumber = number.toString().map { ch ->
+        if (ch.isDigit()) '٠' + (ch - '0') else ch
+    }.joinToString("")
+    return " ﴿$arabicNumber﴾ "
+}
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun AyahBottomSheet(
@@ -497,35 +531,4 @@ private fun AyahBottomSheet(
             }
         }
     }
-}
-
-@Composable
-private fun SurahHeader(surah: Surah) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            fontFamily = quranFontFamily,
-            text = surah.nameArabic,
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Text(
-            text = surah.nameTransliterated,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(Modifier.height(8.dp))
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-    }
-}
-
-private fun ayahMarker(number: Int): String {
-    val arabicNumber = number.toString().map { ch ->
-        if (ch.isDigit()) '٠' + (ch - '0') else ch
-    }.joinToString("")
-    return " ﴿$arabicNumber﴾ "
 }

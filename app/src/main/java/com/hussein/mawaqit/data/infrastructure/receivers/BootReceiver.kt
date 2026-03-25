@@ -7,6 +7,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import androidx.work.WorkManager
+import org.koin.java.KoinJavaComponent.inject
 
 /**
  * Listens for device boot completion and reschedules all prayer alarms.
@@ -33,13 +35,14 @@ class BootReceiver : BroadcastReceiver() {
     companion object {
         private const val TAG = "BootReceiver"
     }
+    val prayerSchedulerManager by inject<PrayerSchedulerManager>(PrayerSchedulerManager::class.java)
 
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
             Intent.ACTION_BOOT_COMPLETED,
             Intent.ACTION_MY_PACKAGE_REPLACED -> {
                 Log.d(TAG, "Boot/update detected — rescheduling prayer alarms")
-                PrayerSchedulerManager.enqueueImmediate(context)
+                prayerSchedulerManager.enqueueImmediate()
             }
         }
     }

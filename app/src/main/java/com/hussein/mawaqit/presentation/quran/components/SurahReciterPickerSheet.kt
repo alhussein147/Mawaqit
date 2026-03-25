@@ -1,4 +1,4 @@
-package com.hussein.mawaqit.presentation.quran.recitation
+package com.hussein.mawaqit.presentation.quran.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,7 +21,6 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import com.hussein.mawaqit.R
 import com.hussein.mawaqit.data.recitation.FullSurahReciter
-import com.hussein.mawaqit.data.recitation.Reciter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

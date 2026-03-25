@@ -16,21 +16,20 @@ import java.util.concurrent.TimeUnit
  * Uses one-time work (not periodic) so we can target exactly 1 minute past midnight
  * each day, avoiding drift that PeriodicWorkRequest's inexact timing can introduce.
  */
-object PrayerSchedulerManager {
+class PrayerSchedulerManager(val workManager: WorkManager) {
 
-    private const val TAG = "PrayerSchedulerManager"
+    private  val TAG = "PrayerSchedulerManager"
 
     /**
      * Call this on app launch and after BOOT_COMPLETED.
      * Runs the worker immediately if no work is pending,
      * which handles first-run and post-reboot cases.
      */
-    fun enqueueImmediate(context: Context) {
+    fun enqueueImmediate() {
         val request = OneTimeWorkRequestBuilder<DailyPrayerWorker>()
             .build()
 
-        WorkManager.getInstance(context)
-            .enqueueUniqueWork(
+        workManager.enqueueUniqueWork(
                 DailyPrayerWorker.WORK_NAME,
                 ExistingWorkPolicy.REPLACE,   // Don't replace if already scheduled
                 request
@@ -43,7 +42,7 @@ object PrayerSchedulerManager {
      * Schedules the worker to fire at 00:01 tomorrow (1 minute past midnight).
      * Called at the end of each [DailyPrayerWorker] run to keep the daily chain going.
      */
-    fun enqueueTomorrow(context: Context) {
+    fun enqueueTomorrow() {
         val delayMillis = millisUntilTomorrow()
         Log.d(TAG, "Next DailyPrayerWorker in ${delayMillis / 1000 / 60} minutes")
 
@@ -51,7 +50,7 @@ object PrayerSchedulerManager {
             .setInitialDelay(delayMillis, TimeUnit.MILLISECONDS)
             .build()
 
-        WorkManager.getInstance(context)
+        workManager
             .enqueueUniqueWork(
                 DailyPrayerWorker.WORK_NAME,
                 ExistingWorkPolicy.REPLACE,  // Replace any previous pending run

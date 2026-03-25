@@ -5,12 +5,16 @@ import CurrentLocationFetcher
 import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.hussein.core.LocationRepository
 import com.hussein.core.models.SavedLocation
 import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
 import com.hussein.mawaqit.data.infrastructure.workers.QuranPopulationWorker
+import com.hussein.mawaqit.data.infrastructure.workers.QuranPopulationWorker.Companion.WORK_NAME
+import com.hussein.mawaqit.data.prayer.PrayerSchedulerManager
 import com.hussein.mawaqit.presentation.onboarding.components.OnboardingPage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -35,18 +39,13 @@ class OnboardingViewModel(
     private val locationRepo: LocationRepository,
     private val settingsRepository: SettingsRepository,
     private val locationFetcher: CurrentLocationFetcher,
-    val application: Application
+    private val workerManager: WorkManager,
+    private val prayerSchedulerManager: PrayerSchedulerManager
 ) : ViewModel() {
 
 
     private val _uiState = MutableStateFlow(OnboardingUiState())
     val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
-    val onboardingDone =
-        settingsRepository.isOnboardingDone.stateIn(viewModelScope, SharingStarted.Eagerly, false)
-
-    // ---------------------------------------------------------------------------
-    // Events
-    // ---------------------------------------------------------------------------
 
     fun onGetStarted() {
         _uiState.update { it.copy(page = OnboardingPage.LOCATION) }
@@ -102,6 +101,7 @@ class OnboardingViewModel(
     }
 
     fun onOnboardingComplete() {
+        prayerSchedulerManager.enqueueImmediate()
         viewModelScope.launch {
             settingsRepository.setOnboardingDone()
         }
@@ -151,10 +151,15 @@ class OnboardingViewModel(
 // TODO : HANDLE WHEN USER HAVE ALREADY GIVEN SOME PERMISSIONS BUT DIDN'T FINISH ONBOARDING
 
     fun startQuranPopulation() {
-        QuranPopulationWorker.enqueueIfNeeded(application)
+
+        workerManager.enqueueUniqueWork(
+            WORK_NAME,
+            ExistingWorkPolicy.KEEP,
+            OneTimeWorkRequestBuilder<QuranPopulationWorker>().build()
+        )
+
         viewModelScope.launch {
-            WorkManager.getInstance(application)
-                .getWorkInfosForUniqueWorkFlow(QuranPopulationWorker.WORK_NAME)
+                workerManager.getWorkInfosForUniqueWorkFlow(QuranPopulationWorker.WORK_NAME)
                 .collect { infos ->
                     val info = infos.firstOrNull() ?: return@collect
                     when (info.state) {

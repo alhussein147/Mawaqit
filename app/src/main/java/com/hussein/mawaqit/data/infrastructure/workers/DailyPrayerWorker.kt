@@ -12,6 +12,8 @@ import com.hussein.mawaqit.data.infrastructure.settings.NotificationSound
 import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
 import com.hussein.mawaqit.data.prayer.PrayerSchedulerManager
 import kotlinx.coroutines.flow.first
+import org.koin.java.KoinJavaComponent.inject
+import kotlin.getValue
 import kotlin.time.ExperimentalTime
 
 /**
@@ -31,6 +33,8 @@ class DailyPrayerWorker(
         private const val TAG = "DailyPrayerWorker"
         const val WORK_NAME = "daily_prayer_scheduler"
     }
+
+    val prayerSchedulerManager by inject<PrayerSchedulerManager>(PrayerSchedulerManager::class.java)
 
     @OptIn(ExperimentalTime::class)
     override suspend fun doWork(): Result {
@@ -84,7 +88,7 @@ class DailyPrayerWorker(
             Log.d(TAG, "Scheduled ${filteredSchedule.prayers.size} / 5 prayers")
 
             // scheduling a work for scheduling prayer alarms tomorrow
-            PrayerSchedulerManager.enqueueTomorrow(applicationContext)
+            prayerSchedulerManager.enqueueTomorrow()
 
             Result.success()
         } catch (e: Exception) {

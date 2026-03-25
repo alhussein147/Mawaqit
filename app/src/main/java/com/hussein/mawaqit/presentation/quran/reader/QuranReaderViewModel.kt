@@ -5,18 +5,43 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hussein.mawaqit.data.db.QuranDatabaseRepository
 import com.hussein.mawaqit.data.db.models.Ayah
-import com.hussein.mawaqit.data.network.NetworkObserver
+import com.hussein.mawaqit.data.db.models.SurahDetail
+import com.hussein.mawaqit.data.infrastructure.media.AyahPlayer
+import com.hussein.mawaqit.data.infrastructure.network.NetworkObserver
 import com.hussein.mawaqit.data.quran.QuranDisplayPreferences
+import com.hussein.mawaqit.data.quran.QuranFontSize
+import com.hussein.mawaqit.data.quran.QuranTextAlignment
 import com.hussein.mawaqit.data.recitation.RecitationRepository
 import com.hussein.mawaqit.data.recitation.Reciter
 import com.hussein.mawaqit.presentation.quran.tafsir.TafsirRepository
-import com.hussein.mawaqit.presentation.quran.tafsir.TafsirState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+sealed interface AyahRecitationState {
+    data object Idle : AyahRecitationState
+    data object Buffering : AyahRecitationState
+    data object Playing : AyahRecitationState
+}
+
+
+sealed interface TafsirState {
+    data object Idle : TafsirState
+    data object Loading : TafsirState
+    data class Success(val text: String) : TafsirState
+    data class Error(val message: String) : TafsirState
+    data object NoNetwork : TafsirState
+}
+
+sealed interface QuranReaderUiState {
+    data object Idle : QuranReaderUiState
+    data object Loading : QuranReaderUiState
+    data class Success(val surah: SurahDetail) : QuranReaderUiState
+    data class Error(val message: String) : QuranReaderUiState
+}
 
 class QuranViewModel(
     private val recitationRepository: RecitationRepository,

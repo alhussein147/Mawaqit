@@ -1,6 +1,5 @@
-package com.hussein.mawaqit.presentation.azkar
+package com.hussein.mawaqit.presentation.azkar.categories
 
-import android.R.attr.category
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,21 +23,19 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.google.common.collect.Multimaps.index
+import com.hussein.mawaqit.R
 import com.hussein.mawaqit.data.azkar.Zikr
+import com.hussein.mawaqit.presentation.azkar.AzkarViewModel
 import com.hussein.mawaqit.presentation.shared.LoadingContent
 import com.hussein.mawaqit.ui.theme.quranFontFamily
 import org.koin.androidx.compose.koinViewModel
@@ -61,7 +58,7 @@ fun AzkarCategoryScreen(
                     navigationIcon = {
                         IconButton(onClick = onBack) {
                             Icon(
-                                imageVector = ImageVector.vectorResource(com.hussein.mawaqit.R.drawable.ic_arrow_back),
+                                imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_back),
                                 contentDescription = null
                             )
                         }

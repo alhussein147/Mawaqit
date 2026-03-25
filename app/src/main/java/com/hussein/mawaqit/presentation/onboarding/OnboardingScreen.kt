@@ -187,7 +187,7 @@ fun OnboardingScreen(
                 },
                 primaryButtonEnabled = when {
                     state.page == OnboardingPage.FETCHING_LOCATION -> false
-                    state.quranCurrentSurah > 0 -> false
+                    state.quranCurrentSurah > 0 && state.page == OnboardingPage.QURAN_SETUP -> false
                     else -> true
                 }
             )

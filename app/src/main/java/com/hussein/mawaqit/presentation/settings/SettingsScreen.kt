@@ -1,5 +1,6 @@
 package com.hussein.mawaqit.presentation.settings
 
+import CurrentLocationFetcher
 import android.Manifest
 import android.content.Intent
 import android.provider.Settings
@@ -58,17 +59,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.batoulapps.adhan2.CalculationMethod
 import com.hussein.core.models.SavedLocation
 import com.hussein.mawaqit.R
-
 import com.hussein.mawaqit.data.infrastructure.settings.AppColorScheme
 import com.hussein.mawaqit.data.infrastructure.settings.AppSettings
 import com.hussein.mawaqit.data.infrastructure.settings.AppTheme
 import com.hussein.mawaqit.data.infrastructure.settings.NotificationSound
 import com.hussein.mawaqit.data.infrastructure.settings.PrayerNotificationSettings
+import com.hussein.mawaqit.presentation.shared.LoadingContent
 import com.hussein.mawaqit.presentation.util.getPrayersDisplayNames
 import com.hussein.mawaqit.presentation.util.hasLocationPermission
 import com.hussein.mawaqit.presentation.util.isLocationPermanentlyDenied
 import com.hussein.mawaqit.presentation.util.openAppSettings
-import com.hussein.mawaqit.presentation.shared.LoadingContent
 import com.hussein.mawaqit.ui.listShapes
 import org.koin.androidx.compose.koinViewModel
 
@@ -287,7 +287,8 @@ private fun SettingsContent(
             PickerRow(
                 label = "Method",
                 currentValue = settings.calculationMethod.displayName(),
-                options = CalculationMethod.entries.map { it.displayName() },
+                options = CalculationMethod.entries.filter { it != CalculationMethod.OTHER }
+                    .map { it.displayName() },
                 onOptionSelected = { name ->
                     val method = CalculationMethod.entries.first { it.displayName() == name }
                     onMethodChanged(method)
@@ -578,5 +579,5 @@ private fun CalculationMethod.displayName(): String = when (this) {
     CalculationMethod.QATAR -> "Qatar"
     CalculationMethod.SINGAPORE -> "Singapore"
     CalculationMethod.TURKEY -> "Turkey"
-    else -> name.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() }
+    CalculationMethod.OTHER -> ""
 }

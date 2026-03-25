@@ -38,7 +38,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.mawaqit.R
 import com.hussein.mawaqit.data.quran.QuranData
 import com.hussein.mawaqit.data.quran.Surah
-import com.hussein.mawaqit.presentation.quran.recitation.SurahReciterPickerSheet
+import com.hussein.mawaqit.presentation.quran.components.SurahReciterPickerSheet
 import org.koin.androidx.compose.koinViewModel
 import java.util.UUID
 
@@ -49,15 +49,15 @@ fun SurahListScreen(
     onBack: () -> Unit,
     surahListViewModel: SurahListViewModel = koinViewModel()
 ) {
-//    val bookmark by surahListViewModel.book.collectAsStateWithLifecycle()
 
     val surahStates by surahListViewModel.surahStates.collectAsStateWithLifecycle()
     val selectedReciter by surahListViewModel.selectedReciter.collectAsStateWithLifecycle()
     val playingSurah by surahListViewModel.playingSurah.collectAsStateWithLifecycle()
+    val bookmarks by surahListViewModel.bookmarks.collectAsStateWithLifecycle()
     var showReciterPicker by remember { mutableStateOf(false) }
-
-
     var surahToDownload by remember { mutableStateOf<Int?>(null) }
+
+    var showBookmarksDialog by remember { mutableStateOf(false) }
 
     if (showReciterPicker) {
         SurahReciterPickerSheet(
@@ -76,6 +76,17 @@ fun SurahListScreen(
             })
     }
 
+    if (showBookmarksDialog) {
+        BookmarksDialog(
+            bookmarks = bookmarks,
+            onNavigate = { surahNumber, ayahNumber -> onSurahSelected(surahNumber, ayahNumber) },
+            onDelete = { surahNumber, ayahNumber ->
+                surahListViewModel.deleteBookmark(surahNumber, ayahNumber)
+            },
+            onDismiss = { showBookmarksDialog = false }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(title = { Text("Quran") }, navigationIcon = {
@@ -85,19 +96,7 @@ fun SurahListScreen(
                         contentDescription = null
                     )
                 }
-            }, actions = {
-//                if (bookmark != null) {
-//                    IconButton(onClick = {
-//                        onSurahSelected(bookmark!!.surahIndex, bookmark!!.ayahNumber)
-//                    }) {
-//                        Icon(
-//                            imageVector = ImageVector.vectorResource(R.drawable.ic_bookmark_filled),
-//                            contentDescription = null
-//                        )
-//
-//                    }
-//                }
-            })
+            }, actions = {})
         }) { padding ->
         LazyColumn(
             modifier = Modifier
@@ -105,12 +104,9 @@ fun SurahListScreen(
                 .padding(padding)
         ) {
             itemsIndexed(QuranData.surahs, key = { _, surah -> surah.number }) { _, surah ->
-//                val isBookmarked = bookmark?.surahIndex == surah.number
                 val itemState = surahStates[surah.number] ?: SurahItemState.NotDownloaded
-
                 SurahRow(
                     surah = surah,
-                    isBookmarked = false,
                     onClick = { onSurahSelected(surah.number, null) },
                     onPlayPause = {
                         if (playingSurah == surah.number) {
@@ -139,7 +135,6 @@ fun SurahListScreen(
 private fun SurahRow(
     surah: Surah,
     itemState: SurahItemState,
-    isBookmarked: Boolean,
     onClick: () -> Unit,
     onDownload: () -> Unit,
     onCancel: (UUID) -> Unit,
@@ -192,19 +187,9 @@ private fun SurahRow(
                     textAlign = TextAlign.End,
                     color = MaterialTheme.colorScheme.primary
                 )
-                if (isBookmarked) {
-                    Icon(
-                        imageVector = ImageVector.vectorResource(R.drawable.ic_bookmark_filled),
-                        contentDescription = "Bookmarked",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(14.dp)
-                    )
-                }
             }
 
             Spacer(Modifier.width(8.dp))
-
-            // Action button — changes based on download state
             when (itemState) {
                 SurahItemState.NotDownloaded -> {
                     IconButton(onClick = onDownload) {

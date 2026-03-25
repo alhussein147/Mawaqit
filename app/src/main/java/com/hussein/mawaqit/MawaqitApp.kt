@@ -10,6 +10,7 @@ import com.hussein.mawaqit.data.infrastructure.services.AzanPlayerService.Compan
 import com.hussein.mawaqit.data.infrastructure.services.AzanPlayerService.Companion.AZAN_CHANNEL_NAME
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
+import org.koin.androidx.workmanager.koin.workManagerFactory
 import org.koin.core.context.startKoin
 
 class MawaqitApp : Application() {
@@ -18,9 +19,10 @@ class MawaqitApp : Application() {
         startKoin {
             androidLogger()
             androidContext(this@MawaqitApp)
+            workManagerFactory()
             modules(
                 settingsModule, homeModule, azkarModule, quranModule, recitationModule,
-                coreModule, onboardingModule
+                coreModule, onboardingModule, workersModule
             )
         }
         createPrayerNotificationChannel()

@@ -8,10 +8,6 @@ data class Surah(
     val startPage: Int
 )
 
-/**
- * Static Quran metadata based on the Madinah Mushaf (Hafs 'an 'Asim).
- * 604 pages total.
- */
 object QuranData {
 
     val surahs = listOf(
@@ -131,9 +127,6 @@ object QuranData {
         Surah(114, "الناس", "An-Nas", 604)
     )
 
-    /** Returns the surah that contains the given page. */
-    fun surahForPage(page: Int): Surah =
-        surahs.lastOrNull { it.startPage <= page } ?: surahs.first()
 
     /** Last page of a surah — next surah's startPage minus 1, or 604 for An-Nas. */
     fun endPageOf(surah: Surah): Int =

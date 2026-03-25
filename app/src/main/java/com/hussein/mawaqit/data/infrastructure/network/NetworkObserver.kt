@@ -1,4 +1,4 @@
-package com.hussein.mawaqit.data.network
+package com.hussein.mawaqit.data.infrastructure.network
 
 import android.content.Context
 import android.net.ConnectivityManager

@@ -1,10 +1,9 @@
 package com.hussein.mawaqit.presentation.quran.list_screen
 
-import android.app.Application
 import android.content.ComponentName
 import android.content.Context
 import android.util.Log
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
@@ -15,28 +14,48 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.google.common.util.concurrent.MoreExecutors
+import com.hussein.Mawaqit.quran.db.BookmarkDao
 import com.hussein.mawaqit.data.infrastructure.services.SurahPlayerService
 import com.hussein.mawaqit.data.infrastructure.workers.SurahDownloadWorker
 import com.hussein.mawaqit.data.recitation.FullSurahReciter
 import com.hussein.mawaqit.data.recitation.RecitationRepository
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.UUID
 
-// Per-surah state shown in the list
+
+sealed interface SurahItemState {
+    data object NotDownloaded : SurahItemState
+    data class Downloading(val progress: Float, val workId: UUID) : SurahItemState
+    data object Downloaded : SurahItemState
+    data object Playing : SurahItemState
+    data object Paused : SurahItemState
+}
+
+class SurahListViewModel(
+    private val recitationRepository: RecitationRepository,
+    private val bookmarkDao: BookmarkDao,
+    application: Context
+) : ViewModel() {
 
 
-
-class SurahListViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val recitationRepository = RecitationRepository(application)
     private val workManager = WorkManager.getInstance(application)
+
 
     // Session-only reciter selection
     private val _selectedReciter = MutableStateFlow(FullSurahReciter.Husr)
     val selectedReciter: StateFlow<FullSurahReciter> = _selectedReciter.asStateFlow()
+
+    // Session-only reciter selection
+    val bookmarks = bookmarkDao.getAllBookmarks().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        emptyList()
+    )
 
     // Map of surahNumber → state
     private val _surahStates = MutableStateFlow<Map<Int, SurahItemState>>(emptyMap())
@@ -51,6 +70,12 @@ class SurahListViewModel(application: Application) : AndroidViewModel(applicatio
     init {
         initMediaController(application)
         refreshDownloadStates()
+    }
+
+    fun deleteBookmark(surahNumber: Int, ayahNumber: Int) {
+        viewModelScope.launch {
+            bookmarkDao.delete(surahNumber, ayahNumber)
+        }
     }
 
     // ── MediaController ───────────────────────────────────────────────────────
@@ -81,7 +106,11 @@ class SurahListViewModel(application: Application) : AndroidViewModel(applicatio
     private fun refreshDownloadStates() {
         viewModelScope.launch {
             val states = (1..114).associate { surahNumber ->
-                surahNumber to if (recitationRepository.isSurahCached(_selectedReciter.value, surahNumber))
+                surahNumber to if (recitationRepository.isSurahCached(
+                        _selectedReciter.value,
+                        surahNumber
+                    )
+                )
                     SurahItemState.Downloaded
                 else
                     SurahItemState.NotDownloaded
@@ -184,6 +213,7 @@ class SurahListViewModel(application: Application) : AndroidViewModel(applicatio
             if (isPlaying) SurahItemState.Playing else SurahItemState.Paused
         )
     }
+
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 

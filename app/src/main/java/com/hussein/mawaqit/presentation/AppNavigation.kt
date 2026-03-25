@@ -15,7 +15,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
 import com.hussein.mawaqit.data.prayer.PrayerSchedulerManager
-import com.hussein.mawaqit.presentation.azkar.AzkarCategoryScreen
+import com.hussein.mawaqit.presentation.azkar.categories.AzkarCategoryScreen
 import com.hussein.mawaqit.presentation.azkar.AzkarListScreen
 import com.hussein.mawaqit.presentation.home.HomeScreen
 import com.hussein.mawaqit.presentation.onboarding.OnboardingScreen
@@ -101,7 +101,6 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
             entry<Onboarding> {
                 OnboardingScreen(
                     onFinished = {
-                        PrayerSchedulerManager.enqueueImmediate(context)
                         backStack.clear()
                         backStack.add(Home)
                     }

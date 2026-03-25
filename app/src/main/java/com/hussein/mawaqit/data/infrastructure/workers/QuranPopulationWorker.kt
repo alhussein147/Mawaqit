@@ -34,14 +34,16 @@ class QuranPopulationWorker(
         const val KEY_CURRENT_SURAH = "current_surah"
         private const val TAG = "QuranPopulation"
 
-        fun enqueueIfNeeded(context: Context) {
-            WorkManager.getInstance(context).enqueueUniqueWork(
-                WORK_NAME,
-                ExistingWorkPolicy.KEEP,
-                OneTimeWorkRequestBuilder<QuranPopulationWorker>().build()
-            )
-        }
     }
+
+    fun enqueueIfNeeded(context: Context) {
+        WorkManager.getInstance(context).enqueueUniqueWork(
+            WORK_NAME,
+            ExistingWorkPolicy.KEEP,
+            OneTimeWorkRequestBuilder<QuranPopulationWorker>().build()
+        )
+    }
+
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {

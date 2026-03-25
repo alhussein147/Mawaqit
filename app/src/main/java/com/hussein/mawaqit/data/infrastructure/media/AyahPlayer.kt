@@ -1,9 +1,10 @@
-package com.hussein.mawaqit.presentation.quran.reader
+package com.hussein.mawaqit.data.infrastructure.media
 
 import android.content.Context
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import com.hussein.mawaqit.presentation.quran.reader.AyahRecitationState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

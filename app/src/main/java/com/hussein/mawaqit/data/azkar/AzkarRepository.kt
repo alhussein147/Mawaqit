@@ -33,11 +33,6 @@ data class AzkarMeta(
 
 class AzkarRepository(private val context: Context) {
 
-    private val files = listOf(
-        "azkar_morning.json",
-        "azkar_evening.json",
-        "azkar_after_prayer.json"
-    )
 
     private val json = Json { ignoreUnknownKeys = true }
 

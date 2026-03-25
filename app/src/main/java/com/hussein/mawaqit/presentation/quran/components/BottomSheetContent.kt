@@ -1,4 +1,4 @@
-package com.hussein.mawaqit.presentation.quran.recitation
+package com.hussein.mawaqit.presentation.quran.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -7,10 +7,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,21 +20,6 @@ import androidx.compose.ui.unit.dp
 import com.hussein.mawaqit.R
 import com.hussein.mawaqit.data.recitation.Reciter
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AyahReciterPickerSheet(
-    current: Reciter,
-    onSelect: (Reciter) -> Unit,
-    onDismiss: () -> Unit
-) {
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        AyahReciterPickerSheetContent(
-            selectedReciter = current,
-            onDismiss = onDismiss,
-            onSelect = onSelect
-        )
-    }
-}
 
 @Composable
 fun AyahReciterPickerSheetContent(

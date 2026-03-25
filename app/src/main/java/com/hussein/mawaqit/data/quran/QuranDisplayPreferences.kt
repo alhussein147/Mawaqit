@@ -4,13 +4,20 @@ import android.content.Context
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.hussein.mawaqit.presentation.quran.reader.QuranFontSize
-import com.hussein.mawaqit.presentation.quran.reader.QuranTextAlignment
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 
+enum class QuranFontSize(val sp: Int, val label: String) {
+    SMALL(18, "S"),
+    MEDIUM(22, "M"),
+    LARGE(26, "L"),
+    XLARGE(30, "XL")
+}
 
+enum class QuranTextAlignment(val displayName: String) {
+    Start("Start"), Center("Center"), End("End")
+}
 
 val Context.quranDataStore by preferencesDataStore("quran_prefs")
 
