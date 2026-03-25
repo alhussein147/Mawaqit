@@ -1,0 +1,51 @@
+package com.hussein.mawaqit.data.quran
+
+import android.content.Context
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import com.hussein.mawaqit.presentation.quran.reader.QuranFontSize
+import com.hussein.mawaqit.presentation.quran.reader.QuranTextAlignment
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+
+
+
+
+val Context.quranDataStore by preferencesDataStore("quran_prefs")
+
+class QuranReaderPreferences(private val context: Context) {
+
+
+    companion object {
+        private val KEY_FONT_SIZE = stringPreferencesKey("quran_font_size")
+        private val KEY_TEXT_ALIGNMENT = stringPreferencesKey("quran_text_alignment")
+        private val KEY_BM_SURAH = intPreferencesKey("quran_bm_surah")
+        private val KEY_BM_AYAH = intPreferencesKey("quran_bm_ayah")
+    }
+
+    private val ds = context.quranDataStore
+
+    val quranTextAlignment: Flow<QuranTextAlignment> = ds.data.map { prefs ->
+        prefs[KEY_TEXT_ALIGNMENT]
+            ?.let { runCatching { QuranTextAlignment.valueOf(it) }.getOrNull() }
+            ?: QuranTextAlignment.End
+    }
+
+    val fontSizeFlow: Flow<QuranFontSize> = ds.data.map { prefs ->
+        prefs[KEY_FONT_SIZE]
+            ?.let { runCatching { QuranFontSize.valueOf(it) }.getOrNull() }
+            ?: QuranFontSize.MEDIUM
+    }
+
+
+    suspend fun setTextAlignmentSize(alignment: QuranTextAlignment) {
+        ds.edit { it[KEY_TEXT_ALIGNMENT] = alignment.name }
+    }
+    suspend fun setFontSize(size: QuranFontSize) {
+        ds.edit { it[KEY_FONT_SIZE] = size.name }
+    }
+
+
+}
