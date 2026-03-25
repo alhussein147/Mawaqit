@@ -1,7 +1,7 @@
 package com.hussein.mawaqit.presentation.azkar
 
+import android.R.attr.category
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,9 +15,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -26,22 +24,22 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.hussein.mawaqit.R
+import com.google.common.collect.Multimaps.index
 import com.hussein.mawaqit.data.azkar.Zikr
+import com.hussein.mawaqit.presentation.shared.LoadingContent
 import com.hussein.mawaqit.ui.theme.quranFontFamily
 import org.koin.androidx.compose.koinViewModel
 
@@ -52,111 +50,44 @@ fun AzkarCategoryScreen(
     onBack: () -> Unit,
     viewModel: AzkarViewModel = koinViewModel()
 ) {
-    val categories = viewModel.categoryTitles
-    val isLoading = false
+    val categories by viewModel.categoryTitles.collectAsStateWithLifecycle()
+    val isLoading = categories.isEmpty()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Azkar") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(com.hussein.mawaqit.R.drawable.ic_arrow_back),
-                            contentDescription = "Back"
-                        )
+
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Azkar") },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(com.hussein.mawaqit.R.drawable.ic_arrow_back),
+                                contentDescription = null
+                            )
+                        }
                     }
-                }
-            )
-        }
-    ) { padding ->
-        if (isLoading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                )
             }
-        } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                categories.forEachIndexed { index, title ->
-                    CategoryCard(
-                        title = title,
-                        onClick = { onCategorySelected(index); /*viewModel.selectCategory(index)*/ }
-                    )
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AzkarListScreen(
-    categoryIndex: Int,
-    onBack: () -> Unit,
-    viewModel: AzkarViewModel = org.koin.compose.viewmodel.koinViewModel()
-) {
-    val listState by viewModel.listState.collectAsStateWithLifecycle()
-
-    LaunchedEffect(categoryIndex) {
-        viewModel.selectCategory(categoryIndex)
-    }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(if (listState is AzkarListState.Success) (listState as AzkarListState.Success).category.title else "") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(com.hussein.mawaqit.R.drawable.ic_arrow_back),
-                            contentDescription = "Back"
-                        )
-                    }
-                }
-            )
-        }
-    ) { padding ->
-        when (val s = listState) {
-            AzkarListState.Loading -> {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-            }
-
-            is AzkarListState.Error -> {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(s.message, color = MaterialTheme.colorScheme.error)
-                }
-            }
-
-            is AzkarListState.Success -> {
+        ) { padding ->
+            if (isLoading) {
+                LoadingContent()
+            } else {
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding)
                 ) {
-                    itemsIndexed(s.category.content) { index, zikr ->
-                        ZikrItem(index = index + 1, zikr = zikr)
-                        if (index < s.category.content.lastIndex) {
-                            HorizontalDivider(
-                                modifier = Modifier.padding(horizontal = 20.dp),
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                            )
-                        }
+                    itemsIndexed(categories) { index, category ->
+                        CategoryCard(
+                            title = category,
+                            onClick = { onCategorySelected(index) }
+                        )
                     }
-                    item { Spacer(Modifier.height(32.dp)) }
                 }
             }
-
-            else -> {}
         }
     }
-}
+
 
 
 @Composable
@@ -192,7 +123,7 @@ private fun CategoryCard(title: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun ZikrItem(index: Int, zikr: Zikr) {
+fun ZikrItem(index: Int, zikr: Zikr) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -216,7 +147,7 @@ private fun ZikrItem(index: Int, zikr: Zikr) {
         // Arabic zikr text — RTL
         Text(
             fontFamily = quranFontFamily,
-            text = zikr.zekr,
+            text = zikr.text,
             style = MaterialTheme.typography.bodyLarge.copy(
                 lineHeight = 32.sp,
                 fontSize = 18.sp
@@ -227,30 +158,14 @@ private fun ZikrItem(index: Int, zikr: Zikr) {
         )
 
         // Repeat count — only show if > 1
-        if (zikr.repeat > 1) {
+        if (zikr.count > 1) {
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "Repeat ${zikr.repeat}",
+                text = "Repeat ${zikr.count}",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.End
-            )
-        }
-
-        // Bless text
-        if (zikr.bless.isNotBlank() && zikr.bless != "placeholder") {
-            Spacer(Modifier.height(8.dp))
-            Text(
-                fontFamily = quranFontFamily,
-                text = zikr.bless,
-                style = MaterialTheme.typography.bodySmall.copy(
-                    textDirection = TextDirection.Rtl,
-                    lineHeight = 20.sp
-                ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.End,
-                modifier = Modifier.fillMaxWidth()
             )
         }
     }

@@ -10,7 +10,8 @@ import com.batoulapps.adhan2.CalculationMethod
 import com.hussein.core.LocationRepository
 import com.hussein.core.PrayerTimeCalculator
 import com.hussein.core.models.SavedLocation
-import com.hussein.mawaqit.MyApp
+import com.hussein.core.utils.HijriDateCalculator
+import com.hussein.mawaqit.MawaqitApp
 import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -30,6 +31,34 @@ import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 import com.hussein.core.models.Prayer as AppPrayer
+
+data class HomeUiState(
+    val isLoading: Boolean = true,
+    val error: String? = null,
+    val cityName: String = "",
+    val rawPrayers: List<AppPrayer> = emptyList(),
+    val prayers: List<PrayerUiModel> = emptyList(),
+    val nextPrayer: PrayerUiModel? = null,
+    val hijriDate: String = ""
+
+)
+
+data class PrayerUiModel @OptIn(ExperimentalTime::class) constructor(
+    val name: String,
+    val time: Instant,
+    val status: PrayerStatus
+)
+
+data class CountdownTime(val hours: Long, val minutes: Long) {
+    override fun toString(): String =
+        if (hours > 0) "%d H %02d Min".format(hours, minutes)
+        else "%d Min".format(minutes)
+}
+
+
+enum class PrayerStatus { PASSED, CURRENT, UPCOMING }
+
+
 
 class HomeViewModel(
     val locationRepo: LocationRepository,
@@ -87,7 +116,7 @@ class HomeViewModel(
                     )
                 lastKnownDate = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
 
-                val hijriDate = toHijriDateString(now)
+                val hijriDate = HijriDateCalculator.toHijriDateString(now)
 
                 _uiState.update {
                     it.copy(
@@ -137,12 +166,6 @@ class HomeViewModel(
             ?.let { buildCountdown(it.time, now) }
     }
 
-
-    /**
-     * PASSED   — prayer time has elapsed and it is not the current window
-     * CURRENT  — the most recent prayer whose time has passed (active window)
-     * UPCOMING — prayer time has not been reached yet
-     */
     @OptIn(ExperimentalTime::class)
     private fun classifyPrayers(
         prayers: List<AppPrayer>,
@@ -159,8 +182,6 @@ class HomeViewModel(
         }
     }
 
-
-
     @OptIn(ExperimentalTime::class)
     private fun buildCountdown(target: Instant, now: Instant): CountdownTime {
         val diff = (target - now).coerceAtLeast(Duration.ZERO)
@@ -176,78 +197,5 @@ class HomeViewModel(
         super.onCleared()
         tickerJob?.cancel()
     }
-
-    companion object {
-        val Factory: ViewModelProvider.Factory = viewModelFactory {
-            initializer {
-                val application = (this[APPLICATION_KEY] as MyApp)
-                val locationRepo = application.appContainer.locationRepository
-                val settingsRepo = application.appContainer.settingsRepository
-                HomeViewModel(locationRepo = locationRepo , settingsRepository = settingsRepo)
-            }
-        }
-    }
 }
 
-// ---------------------------------------------------------------------------
-// State & models
-// ---------------------------------------------------------------------------
-
-data class HomeUiState(
-    val isLoading: Boolean = true,
-    val error: String? = null,
-    val cityName: String = "",
-    val rawPrayers: List<AppPrayer> = emptyList(),
-    val prayers: List<PrayerUiModel> = emptyList(),
-    val nextPrayer: PrayerUiModel? = null,
-    val hijriDate: String = ""
-
-)
-
-data class PrayerUiModel @OptIn(ExperimentalTime::class) constructor(
-    val name: String,
-    val time: Instant,
-    val status: PrayerStatus
-)
-
-data class CountdownTime(val hours: Long, val minutes: Long) {
-    override fun toString(): String =
-        if (hours > 0) "%d H %02d Min".format(hours, minutes)
-        else "%d Min".format(minutes)
-}
-
-@OptIn(ExperimentalTime::class)
-private fun toHijriDateString(instant: Instant): String {
-    val ld = instant.toLocalDateTime(TimeZone.currentSystemDefault()).date
-    val y = ld.year
-    val m = ld.month.number
-    val d = ld.day
-
-    // Julian Day Number from Gregorian
-    val jdn = (1461 * (y + 4800 + (m - 14) / 12)) / 4 +
-            (367 * (m - 2 - 12 * ((m - 14) / 12))) / 12 -
-            (3 * ((y + 4900 + (m - 14) / 12) / 100)) / 4 + d - 32075
-
-    // Hijri from JDN
-    var l = jdn - 1948440 + 10632
-
-    val n = (l - 1) / 10631
-    l = l - 10631 * n + 354
-    val j = ((10985 - l) / 5316) * ((50 * l) / 17719) +
-            (l / 5670) * ((43 * l) / 15238)
-    l = l - ((30 - j) / 15) * ((17719 * j) / 50) -
-            (j / 16) * ((15238 * j) / 43) + 29
-    val hYear = 30 * n + j - 30
-    val hMonth = (24 * l) / 709
-    val hDay = l - (709 * hMonth) / 24
-
-    val monthNames = listOf(
-        "محرم", "صفر", "ربيع الأول", "ربيع الثاني",
-        "جمادى الأولى", "جمادى الثانية", "رجب", "شعبان",
-        "رمضان", "شوال", "ذو القعدة", "ذو الحجة"
-    )
-    val monthName = monthNames.getOrElse(hMonth - 1) { "" }
-    return "$hDay $monthName $hYear"
-}
-
-enum class PrayerStatus { PASSED, CURRENT, UPCOMING }

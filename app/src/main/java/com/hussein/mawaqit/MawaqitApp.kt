@@ -3,18 +3,26 @@ package com.hussein.mawaqit
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.Context
+import com.hussein.coreModule
 import com.hussein.mawaqit.data.infrastructure.receivers.PrayerAlarmReceiver.Companion.PRAYERS_NOTIFICATION_CHANNEL_NAME
 import com.hussein.mawaqit.data.infrastructure.receivers.PrayerAlarmReceiver.Companion.PRAYER_NOTIFICATION_CHANNEL_ID
 import com.hussein.mawaqit.data.infrastructure.services.AzanPlayerService.Companion.AZAN_CHANNEL_ID
 import com.hussein.mawaqit.data.infrastructure.services.AzanPlayerService.Companion.AZAN_CHANNEL_NAME
+import org.koin.android.ext.koin.androidContext
+import org.koin.android.ext.koin.androidLogger
+import org.koin.core.context.startKoin
 
-class MyApp: Application() {
-
-    lateinit var appContainer: AppContainer
+class MawaqitApp : Application() {
     override fun onCreate() {
         super.onCreate()
-        appContainer = AppContainer(this)
+        startKoin {
+            androidLogger()
+            androidContext(this@MawaqitApp)
+            modules(
+                settingsModule, homeModule, azkarModule, quranModule, recitationModule,
+                coreModule, onboardingModule
+            )
+        }
         createPrayerNotificationChannel()
         createAzanNotificationChannel()
     }

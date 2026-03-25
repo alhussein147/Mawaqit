@@ -35,26 +35,27 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hussein.mawaqit.R
 import com.hussein.mawaqit.data.quran.QuranData
 import com.hussein.mawaqit.data.quran.Surah
 import com.hussein.mawaqit.presentation.quran.recitation.SurahReciterPickerSheet
+import org.koin.androidx.compose.koinViewModel
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SurahListScreen(
-    onSurahSelected: (surahIndex: Int) -> Unit,
+    onSurahSelected: (surahIndex: Int, scrollToAyah: Int?) -> Unit,
     onBack: () -> Unit,
-    surahListViewModel: SurahListViewModel = viewModel()
+    surahListViewModel: SurahListViewModel = koinViewModel()
 ) {
-    val bookmark by surahListViewModel.bookmark.collectAsStateWithLifecycle()
+//    val bookmark by surahListViewModel.book.collectAsStateWithLifecycle()
 
     val surahStates by surahListViewModel.surahStates.collectAsStateWithLifecycle()
     val selectedReciter by surahListViewModel.selectedReciter.collectAsStateWithLifecycle()
     val playingSurah by surahListViewModel.playingSurah.collectAsStateWithLifecycle()
     var showReciterPicker by remember { mutableStateOf(false) }
+
 
     var surahToDownload by remember { mutableStateOf<Int?>(null) }
 
@@ -84,6 +85,18 @@ fun SurahListScreen(
                         contentDescription = null
                     )
                 }
+            }, actions = {
+//                if (bookmark != null) {
+//                    IconButton(onClick = {
+//                        onSurahSelected(bookmark!!.surahIndex, bookmark!!.ayahNumber)
+//                    }) {
+//                        Icon(
+//                            imageVector = ImageVector.vectorResource(R.drawable.ic_bookmark_filled),
+//                            contentDescription = null
+//                        )
+//
+//                    }
+//                }
             })
         }) { padding ->
         LazyColumn(
@@ -92,13 +105,13 @@ fun SurahListScreen(
                 .padding(padding)
         ) {
             itemsIndexed(QuranData.surahs, key = { _, surah -> surah.number }) { _, surah ->
-                val isBookmarked = bookmark?.surahIndex == surah.number
+//                val isBookmarked = bookmark?.surahIndex == surah.number
                 val itemState = surahStates[surah.number] ?: SurahItemState.NotDownloaded
 
                 SurahRow(
                     surah = surah,
-                    isBookmarked = isBookmarked,
-                    onClick = { onSurahSelected(surah.number) },
+                    isBookmarked = false,
+                    onClick = { onSurahSelected(surah.number, null) },
                     onPlayPause = {
                         if (playingSurah == surah.number) {
                             surahListViewModel.togglePlayPause()

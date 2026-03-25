@@ -6,8 +6,7 @@ import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.AP
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.hussein.mawaqit.AppContainer
-import com.hussein.mawaqit.MyApp
+import com.hussein.mawaqit.MawaqitApp
 import com.hussein.mawaqit.data.azkar.AzkarCategory
 import com.hussein.mawaqit.data.azkar.AzkarRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,29 +17,33 @@ import kotlinx.coroutines.launch
 class AzkarViewModel(private val azkarRepository: AzkarRepository) : ViewModel() {
 
 
-    // Static — no I/O needed
-    val categoryTitles: List<String> = azkarRepository.categoryTitles
+    // Titles loaded once from files
+    private val _categoryTitles = MutableStateFlow<List<String>>(emptyList())
+    val categoryTitles: StateFlow<List<String>> = _categoryTitles.asStateFlow()
 
     // Holds the currently loaded category (Idle until user picks one)
     private val _listState = MutableStateFlow<AzkarListState>(AzkarListState.Idle)
     val listState: StateFlow<AzkarListState> = _listState.asStateFlow()
 
-    fun selectCategory(index: Int) {
+    private var loadedIndex = -1
+
+
+    init {
         viewModelScope.launch {
-            _listState.value = AzkarListState.Loading
-            _listState.value = try {
-                AzkarListState.Success(azkarRepository.loadCategory(index))
-            } catch (e: Exception) {
-                AzkarListState.Error("Failed to load azkar: ${e.message}")
-            }
+            _categoryTitles.value = runCatching {
+                azkarRepository.loadMetadata().map { it.title }
+            }.getOrDefault(emptyList())
         }
     }
 
-    companion object {
-        val Factory: ViewModelProvider.Factory = viewModelFactory {
-            initializer {
-                val application = (this[APPLICATION_KEY] as MyApp)
-                AzkarViewModel(azkarRepository = AzkarRepository(application))
+    fun selectCategory(index: Int) {
+        if (loadedIndex == index && _listState.value is AzkarListState.Success) return
+        viewModelScope.launch {
+            _listState.value = AzkarListState.Loading
+            _listState.value = try {
+                AzkarListState.Success(azkarRepository.loadCategory(index)).also { loadedIndex = index }
+            } catch (e: Exception) {
+                AzkarListState.Error("Failed to load azkar: ${e.message}")
             }
         }
     }

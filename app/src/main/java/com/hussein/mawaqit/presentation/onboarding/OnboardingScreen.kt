@@ -20,16 +20,23 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.core.net.toUri
-import com.hussein.mawaqit.data.prayer.PrayerSchedulerManager
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.hussein.mawaqit.presentation.onboarding.components.BatteryOptimizationPage
+import com.hussein.mawaqit.presentation.onboarding.components.ExactAlarmPage
+import com.hussein.mawaqit.presentation.onboarding.components.FetchingLocationPage
+import com.hussein.mawaqit.presentation.onboarding.components.LocationPage
+import com.hussein.mawaqit.presentation.onboarding.components.NotificationPage
+import com.hussein.mawaqit.presentation.onboarding.components.OnboardingActions
+import com.hussein.mawaqit.presentation.onboarding.components.OnboardingPage
+import com.hussein.mawaqit.presentation.onboarding.components.QuranSetupPage
+import com.hussein.mawaqit.presentation.onboarding.components.StepIndicator
+import com.hussein.mawaqit.presentation.onboarding.components.WelcomePage
+import org.koin.compose.viewmodel.koinViewModel
 
 
 /**
@@ -45,19 +52,9 @@ import com.hussein.mawaqit.data.prayer.PrayerSchedulerManager
 @Composable
 fun OnboardingScreen(
     onFinished: () -> Unit,
-    viewModel: OnboardingViewModel = viewModel(factory = OnboardingViewModel.Factory)
+    viewModel: OnboardingViewModel = koinViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val context = LocalContext.current
-
-
-    LaunchedEffect(state.page) {
-        if (state.page == OnboardingPage.DONE) {
-            // this should be the viewmodel responsibility
-            PrayerSchedulerManager.enqueueImmediate(context)
-            onFinished()
-        }
-    }
 
     val locationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -117,6 +114,12 @@ fun OnboardingScreen(
                     OnboardingPage.DONE -> Unit
                     OnboardingPage.EXACT_ALARM -> ExactAlarmPage()
                     OnboardingPage.BATTERY_OPTIMIZATION -> BatteryOptimizationPage()
+                    OnboardingPage.QURAN_SETUP -> QuranSetupPage(
+                        progress = state.quranProgress,
+                        currentSurah = state.quranCurrentSurah,
+                        failed = state.quranPopulationFailed,
+                        onRetry = { viewModel.retryQuranPopulation() }
+                    )
                 }
             }
             OnboardingActions(
@@ -159,6 +162,15 @@ fun OnboardingScreen(
                             )
                         }
 
+                        OnboardingPage.QURAN_SETUP -> {
+                            viewModel.startQuranPopulation()
+                        }
+
+                        OnboardingPage.DONE -> {
+                            viewModel.onOnboardingComplete()
+                            onFinished()
+                        }
+
                         else -> Unit
                     }
                 },
@@ -168,9 +180,15 @@ fun OnboardingScreen(
                         OnboardingPage.NOTIFICATION -> viewModel.onSkipNotification()
                         OnboardingPage.EXACT_ALARM -> viewModel.onSkipExactAlarm()
                         OnboardingPage.BATTERY_OPTIMIZATION -> viewModel.onSkipBatteryOptimization()
+                        OnboardingPage.QURAN_SETUP -> viewModel.onSkipQuranSetup()
                         else -> Unit
 
                     }
+                },
+                primaryButtonEnabled = when {
+                    state.page == OnboardingPage.FETCHING_LOCATION -> false
+                    state.quranCurrentSurah > 0 -> false
+                    else -> true
                 }
             )
         }

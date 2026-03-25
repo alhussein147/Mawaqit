@@ -44,14 +44,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hussein.mawaqit.R
-import com.hussein.mawaqit.presentation.ext.formatTime
+import com.hussein.mawaqit.presentation.util.formatTime
 import com.hussein.mawaqit.presentation.home.components.PrayerArchStepper
 import com.hussein.mawaqit.presentation.shared.ErrorContent
 import com.hussein.mawaqit.presentation.shared.LoadingContent
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
+import org.koin.androidx.compose.koinViewModel
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -60,7 +60,7 @@ fun HomeScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToAzkar: () -> Unit = {},
     onNavigateToQuran: () -> Unit = {},
-    viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory)
+    viewModel: HomeViewModel = koinViewModel()
 ) {
     // Collect the main state. This doesn't change every second.
     val state by viewModel.uiState.collectAsStateWithLifecycle()

@@ -19,7 +19,7 @@
 
 
     <application
-        android:name=".MyApp"
+        android:name=".MawaqitApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"

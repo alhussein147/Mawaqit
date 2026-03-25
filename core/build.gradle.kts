@@ -24,4 +24,6 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.work.coroutines)
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.android)
 }

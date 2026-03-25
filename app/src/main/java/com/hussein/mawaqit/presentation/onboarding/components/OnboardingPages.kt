@@ -1,4 +1,4 @@
-package com.hussein.mawaqit.presentation.onboarding
+package com.hussein.mawaqit.presentation.onboarding.components
 
 import android.os.Build
 import androidx.compose.animation.core.animateFloatAsState
@@ -137,7 +137,7 @@ fun QuranSetupPage(
     )
 
     PageContent(
-        iconRes = com.hussein.mawaqit.R.drawable.ic_placeholder,
+        iconRes = R.drawable.ic_placeholder,
         title = "Loading quran data",
         subtitle = "Loaded $currentSurah of 114",
         badge = null,
@@ -231,7 +231,8 @@ fun PageContent(
 fun OnboardingActions(
     page: OnboardingPage,
     onPrimaryClick: () -> Unit,
-    onSkipClick: () -> Unit
+    onSkipClick: () -> Unit,
+    primaryButtonEnabled: Boolean = true
 ) {
     val primaryLabel = when (page) {
         OnboardingPage.WELCOME -> stringResource(R.string.get_started)
@@ -261,7 +262,7 @@ fun OnboardingActions(
         primaryLabel?.let { label ->
             Button(
                 onClick = onPrimaryClick,
-                enabled = page != OnboardingPage.FETCHING_LOCATION,
+                enabled = primaryButtonEnabled,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),

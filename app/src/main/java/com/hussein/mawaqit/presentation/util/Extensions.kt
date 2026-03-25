@@ -1,4 +1,4 @@
-package com.hussein.mawaqit.presentation.ext
+package com.hussein.mawaqit.presentation.util
 
 import android.Manifest
 import android.content.Context

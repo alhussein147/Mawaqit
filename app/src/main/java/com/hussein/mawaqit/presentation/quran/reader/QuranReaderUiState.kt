@@ -1,6 +1,7 @@
 package com.hussein.mawaqit.presentation.quran.reader
 
-import com.hussein.mawaqit.data.quran.SurahDetail
+import com.hussein.mawaqit.data.db.models.SurahDetail
+
 
 sealed interface QuranReaderUiState {
     data object Idle : QuranReaderUiState

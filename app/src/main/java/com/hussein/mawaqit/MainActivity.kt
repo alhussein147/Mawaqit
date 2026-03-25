@@ -10,18 +10,20 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
 import com.hussein.mawaqit.presentation.AppNavigation
 import com.hussein.mawaqit.ui.theme.IslamicTheme
+import org.koin.android.ext.android.inject
+import org.koin.java.KoinJavaComponent.inject
 
 class MainActivity : ComponentActivity() {
 
-    lateinit var settingsRepo: SettingsRepository
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        settingsRepo = (this.application as MyApp).appContainer.settingsRepository
+        val settingsRepository: SettingsRepository by inject<SettingsRepository>()
         setContent {
-            val settings by settingsRepo.settingsFlow
+            val settings by settingsRepository.settingsFlow
                 .collectAsStateWithLifecycle(initialValue = null)
 
             settings?.let { s ->
@@ -30,7 +32,7 @@ class MainActivity : ComponentActivity() {
                     appColorScheme = s.appColorScheme
                 ) {
                     AppNavigation(
-                        settingsRepository = settingsRepo
+                        settingsRepository = settingsRepository
                     )
                 }
             }

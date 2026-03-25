@@ -1,7 +1,7 @@
 package com.hussein.mawaqit.presentation.quran.reader
 
-sealed interface RecitationState {
-    data object Idle : RecitationState
-    data object Buffering : RecitationState
-    data object Playing : RecitationState
+sealed interface AyahRecitationState {
+    data object Idle : AyahRecitationState
+    data object Buffering : AyahRecitationState
+    data object Playing : AyahRecitationState
 }

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
@@ -30,7 +31,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -46,6 +46,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -56,9 +57,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hussein.mawaqit.R
-import com.hussein.mawaqit.data.quran.Ayah
+import com.hussein.mawaqit.data.db.models.Ayah
+import com.hussein.mawaqit.data.db.BookmarkEntity
 import com.hussein.mawaqit.data.quran.QuranData
 import com.hussein.mawaqit.data.quran.Surah
 import com.hussein.mawaqit.data.recitation.Reciter
@@ -67,6 +68,8 @@ import com.hussein.mawaqit.presentation.quran.tafsir.TafsirState
 import com.hussein.mawaqit.presentation.shared.ErrorContent
 import com.hussein.mawaqit.presentation.shared.LoadingContent
 import com.hussein.mawaqit.ui.theme.quranFontFamily
+import org.koin.androidx.compose.koinViewModel
+import kotlin.collections.find
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -74,12 +77,13 @@ import com.hussein.mawaqit.ui.theme.quranFontFamily
 fun QuranReaderScreen(
     surahIndex: Int,
     onBack: () -> Unit,
-    viewModel: QuranViewModel = viewModel(),
+    viewModel: QuranViewModel = koinViewModel(),
+    scrollToAyah: Int? = null,
 ) {
     val readerState by viewModel.readerState.collectAsStateWithLifecycle()
     val fontSize by viewModel.fontSize.collectAsStateWithLifecycle()
     val quranTextAlignment by viewModel.textAlignment.collectAsStateWithLifecycle()
-    val bookmark by viewModel.bookmark.collectAsStateWithLifecycle()
+    val bookmarks by viewModel.bookmarks.collectAsStateWithLifecycle()
 
     val selectedAyah by viewModel.selectedAyah.collectAsStateWithLifecycle()
     val tafsirState by viewModel.tafsirState.collectAsStateWithLifecycle()
@@ -89,6 +93,23 @@ fun QuranReaderScreen(
     val selectedReciter by viewModel.selectedReciter.collectAsStateWithLifecycle()
     val hasNetwork by viewModel.networkAvailable.collectAsStateWithLifecycle()
 
+    // Maps ayahNumber → (lazyItemIndex, TextLayoutResult) for scroll precision
+    val layoutMap = remember { mutableMapOf<Int, Pair<Int, TextLayoutResult>>() }
+    val listState = rememberLazyListState()
+
+    // Scroll to bookmarked ayah once surah is loaded
+    LaunchedEffect(scrollToAyah, readerState) {
+        if (scrollToAyah == null) return@LaunchedEffect
+        if (readerState !is QuranReaderUiState.Success) return@LaunchedEffect
+        val entry = layoutMap[scrollToAyah] ?: return@LaunchedEffect
+        val (itemIndex, layout) = entry
+        val annotation = layout.layoutInput.text
+            .getStringAnnotations("AYAH", 0, layout.layoutInput.text.length)
+            .firstOrNull { it.item == scrollToAyah.toString() }
+            ?: return@LaunchedEffect
+        val yOffset = layout.getBoundingBox(annotation.start).top.toInt()
+        listState.scrollToItem(itemIndex, scrollOffset = yOffset)
+    }
 
     LifecycleResumeEffect(Unit) {
         onPauseOrDispose {
@@ -100,37 +121,39 @@ fun QuranReaderScreen(
 
     LaunchedEffect(surahIndex) { viewModel.loadSurah(surahIndex) }
 
+    // Fetch tafsir when an ayah is selected
+    // Ayah bottom sheet
     selectedAyah?.let { ayah ->
-        val isBookmarked = bookmark?.surahIndex == surahIndex &&
-                bookmark?.ayahNumber == ayah.number
+        val isBookmarked = bookmarks.any {
+            it.surahNumber == surahIndex && it.ayahNumber == ayah.numberInSurah
+        }
         AyahBottomSheet(
             ayah = ayah,
             tafsirState = tafsirState,
             isBookmarked = isBookmarked,
+            isPlaying = playingAyah == ayah.numberInSurah &&
+                    recitationState is AyahRecitationState.Playing,
+            currentReciter = selectedReciter,
             onTafsir = { viewModel.fetchTafsir(surahIndex, ayah) },
-            onBookmark = {
-                if (isBookmarked) viewModel.clearBookmark()
-                else viewModel.setBookmark(surahIndex, ayah.number)
-            },
-            onDismiss = { viewModel.dismissTafsir() },
-            isPlaying = playingAyah == ayah.number &&
-                    recitationState is RecitationState.Playing,
+            onBookmark = { viewModel.toggleBookmark(surahIndex, ayah.numberInSurah) },
             onPlayPause = {
-                if (playingAyah == ayah.number &&
-                    recitationState !is RecitationState.Idle
+                if (playingAyah == ayah.numberInSurah &&
+                    recitationState !is AyahRecitationState.Idle
                 ) {
                     viewModel.stopAyah()
                 } else {
-                    viewModel.playAyah(surahIndex, ayah.number)
+                    viewModel.playAyah(surahIndex, ayah.numberInSurah)
                 }
             },
-            playEnabled = hasNetwork,
-            currentReciter = selectedReciter,
             onReciterSelect = { viewModel.selectReciter(it) },
+            onDismiss = { viewModel.dismissTafsir() },
+            playEnabled = hasNetwork
         )
     }
 
-    BackHandler(enabled = recitationState is RecitationState.Playing) {
+
+
+    BackHandler(enabled = recitationState is AyahRecitationState.Playing) {
         viewModel.stopAyah()
         onBack.invoke()
     }
@@ -146,7 +169,7 @@ fun QuranReaderScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = {
-                        if (recitationState is RecitationState.Playing) {
+                        if (recitationState is AyahRecitationState.Playing) {
                             viewModel.stopAyah()
                         }
                         onBack.invoke()
@@ -216,31 +239,28 @@ fun QuranReaderScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding),
-                    contentPadding = PaddingValues(bottom = 32.dp, start = 16.dp, end = 16.dp)
+                    contentPadding = PaddingValues(bottom = 32.dp, start = 4.dp, end = 4.dp)
                 ) {
                     item {
                         SurahHeader(
                             surah = QuranData.surahs[surahIndex - 1],
                         )
                     }
-
-                    // Group ayahs by juz, insert a divider between juz changes
-                    val groups = surah.ayahs.groupByJuz(surah.juzMap)
-                    groups.forEach { (juzNum, ayahs) ->
-                        if (juzNum != null) {
-                            item(key = "juz_$juzNum") { JuzDivider(juzNum) }
-                        }
-                        item(key = "block_$juzNum") {
-                            FlowingAyahBlock(
-                                ayahs = ayahs,
-                                fontSize = fontSize,
-                                quranTextAlignment = quranTextAlignment,
-                                bookmark = bookmark,
-                                surahIndex = surahIndex, onTap = { ayah ->
-                                    viewModel.selectAyah(ayah)
+                    item {
+                        FlowingAyahBlock(
+                            ayahs = surah.ayahs,
+                            fontSize = fontSize,
+                            quranTextAlignment = quranTextAlignment,
+                            bookmarks = bookmarks,
+                            surahIndex = surahIndex, onTap = { ayah ->
+                                viewModel.selectAyah(ayah)
+                            }, onTextLayout = { layout ->
+                                // Store layout for each ayah in this block
+                                surah.ayahs.forEach { ayah ->
+                                    layoutMap[ayah.numberInSurah] = 1 to layout
                                 }
-                            )
-                        }
+                            }
+                        )
                     }
                 }
             }
@@ -253,9 +273,11 @@ private fun FlowingAyahBlock(
     ayahs: List<Ayah>,
     fontSize: QuranFontSize,
     quranTextAlignment: QuranTextAlignment,
-    bookmark: QuranBookmark?,
+    bookmarks: List<BookmarkEntity>,
     surahIndex: Int,
-    onTap: (Ayah) -> Unit
+    onTap: (Ayah) -> Unit,
+    onTextLayout: (TextLayoutResult) -> Unit = {}
+
 ) {
 
     val primary = MaterialTheme.colorScheme.primary
@@ -266,10 +288,10 @@ private fun FlowingAyahBlock(
 
     val annotated = buildAnnotatedString {
         ayahs.forEach { ayah ->
-            val isBookmarked = bookmark?.surahIndex == surahIndex &&
-                    bookmark.ayahNumber == ayah.number
-            // Ayah text
-            pushStringAnnotation(tag, ayah.number.toString())
+            val isBookmarked = bookmarks.any {
+                it.surahNumber == surahIndex && it.ayahNumber == ayah.numberInSurah
+            }// Ayah text
+            pushStringAnnotation(tag, ayah.numberInSurah.toString())
             withStyle(
                 SpanStyle(
                     color = if (isBookmarked) bookmarkColor else onSurface,
@@ -286,7 +308,7 @@ private fun FlowingAyahBlock(
                     fontWeight = FontWeight.Bold,
                 )
             ) {
-                append(ayahMarker(ayah.number))
+                append(ayahMarker(ayah.numberInSurah))
             }
             pop()
         }
@@ -312,10 +334,10 @@ private fun FlowingAyahBlock(
                 .firstOrNull()?.let { ann ->
                     // skip showing
                     if (ann.item.toInt() == 0) return@ClickableText
-                    val ayah = ayahs.find { it.number == ann.item.toInt() }
+                    val ayah = ayahs.find { it.numberInSurah == ann.item.toInt() }
                     ayah?.let { onTap(it) }
                 }
-        }
+        }, onTextLayout = onTextLayout
     )
 }
 
@@ -370,7 +392,9 @@ private fun AyahBottomSheet(
                                     enabled = playEnabled
                                 ) {
                                     Icon(
-                                        imageVector = if (isPlaying) ImageVector.vectorResource(R.drawable.ic_stop)
+                                        imageVector = if (isPlaying) ImageVector.vectorResource(
+                                            R.drawable.ic_stop
+                                        )
                                         else ImageVector.vectorResource(R.drawable.ic_play),
                                         contentDescription = null,
                                         modifier = Modifier.size(18.dp)
@@ -383,7 +407,10 @@ private fun AyahBottomSheet(
                                     onClick = { showReciterOptions = true },
                                     enabled = playEnabled
                                 ) {
-                                    Text(currentReciter.nameEnglish, modifier = Modifier.basicMarquee())
+                                    Text(
+                                        currentReciter.nameEnglish,
+                                        modifier = Modifier.basicMarquee()
+                                    )
                                 }
                             }
                             Spacer(Modifier.height(8.dp))
@@ -409,6 +436,7 @@ private fun AyahBottomSheet(
                             }
 
                         }
+
                         TafsirState.Loading -> {
                             Box(
                                 modifier = Modifier
@@ -417,6 +445,7 @@ private fun AyahBottomSheet(
                                 contentAlignment = Alignment.Center
                             ) { ContainedLoadingIndicator() }
                         }
+
                         TafsirState.NoNetwork -> {
                             Spacer(Modifier.height(12.dp))
                             Text(
@@ -494,53 +523,6 @@ private fun SurahHeader(surah: Surah) {
     }
 }
 
-@Composable
-private fun JuzDivider(juzNumber: Int) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(4.dp),
-        contentAlignment = Alignment.CenterEnd
-    ) {
-        Surface(
-            modifier = Modifier
-                .padding(vertical = 4.dp),
-            color = MaterialTheme.colorScheme.secondaryContainer,
-            shape = MaterialTheme.shapes.large
-        ) {
-            Text(
-                text = "Juz $juzNumber",
-                modifier = Modifier
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                textAlign = TextAlign.End
-            )
-        }
-    }
-}
-
-
-// Extension to group ayahs by juz changes
-private fun List<Ayah>.groupByJuz(juzMap: Map<Int, Int>): List<Pair<Int?, List<Ayah>>> {
-    val result = mutableListOf<Pair<Int?, List<Ayah>>>()
-    var current = mutableListOf<Ayah>()
-    var lastJuz: Int? = null
-
-    forEach { ayah ->
-        val juz = juzMap[ayah.number]
-        if (juz != lastJuz && current.isNotEmpty()) {
-            result.add(lastJuz to current)
-            current = mutableListOf()
-        }
-        lastJuz = juz
-        current.add(ayah)
-    }
-    if (current.isNotEmpty()) result.add(lastJuz to current)
-    return result
-}
-
-// Unicode circle numbers for ayah markers ١..٦٠٤ encoded as ۝ + arabic number
 private fun ayahMarker(number: Int): String {
     val arabicNumber = number.toString().map { ch ->
         if (ch.isDigit()) '٠' + (ch - '0') else ch

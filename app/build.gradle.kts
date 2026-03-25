@@ -2,13 +2,13 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.jetbrains.kotlin.serialization)
+    id("com.google.devtools.ksp") version "2.3.6"
+
 }
 
 android {
     namespace = "com.hussein.mawaqit"
-    compileSdk {
-        version = release(36)
-    }
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.hussein.mawaqit"
@@ -36,6 +36,10 @@ android {
     buildFeatures {
         compose = true
     }
+}
+
+ksp {
+    arg("room.generateKotlin", "true")
 }
 
 dependencies {
@@ -91,6 +95,16 @@ dependencies {
 
     implementation("androidx.media3:media3-exoplayer:1.9.2")
     implementation("androidx.media3:media3-session:1.9.2")
+
+    implementation(platform(libs.koin.bom))
+    implementation(libs.koin.android)
+    implementation(libs.koin.androidx.compose)
+    implementation(libs.koin.compose.navigation3)
+    implementation(libs.koin.workmanager)
+
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
 
     implementation(project(":core"))
 

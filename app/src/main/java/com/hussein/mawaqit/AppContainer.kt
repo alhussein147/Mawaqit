@@ -5,7 +5,7 @@ import android.content.Context
 import com.hussein.core.LocationRepository
 import com.hussein.mawaqit.data.infrastructure.alarm_manager.PrayerAlarmManager
 import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
-import com.hussein.mawaqit.data.quran.QuranRepository
+import com.hussein.mawaqit.data.quran.QuranDisplayPreferences
 
 class AppContainer(private val context: Context) {
 
@@ -13,5 +13,5 @@ class AppContainer(private val context: Context) {
     val locationRepository by lazy { LocationRepository(context) }
     val settingsRepository by lazy { SettingsRepository(context) }
     val alarmManager by lazy { PrayerAlarmManager(context) }
-    val quranRepository by lazy { QuranRepository(context) }
+    val quranDisplayPreferences by lazy { QuranDisplayPreferences(context) }
 }

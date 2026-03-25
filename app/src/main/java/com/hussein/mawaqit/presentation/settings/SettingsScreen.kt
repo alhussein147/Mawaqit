@@ -55,7 +55,6 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.batoulapps.adhan2.CalculationMethod
 import com.hussein.core.models.SavedLocation
 import com.hussein.mawaqit.R
@@ -65,18 +64,19 @@ import com.hussein.mawaqit.data.infrastructure.settings.AppSettings
 import com.hussein.mawaqit.data.infrastructure.settings.AppTheme
 import com.hussein.mawaqit.data.infrastructure.settings.NotificationSound
 import com.hussein.mawaqit.data.infrastructure.settings.PrayerNotificationSettings
-import com.hussein.mawaqit.presentation.ext.getPrayersDisplayNames
-import com.hussein.mawaqit.presentation.ext.hasLocationPermission
-import com.hussein.mawaqit.presentation.ext.isLocationPermanentlyDenied
-import com.hussein.mawaqit.presentation.ext.openAppSettings
+import com.hussein.mawaqit.presentation.util.getPrayersDisplayNames
+import com.hussein.mawaqit.presentation.util.hasLocationPermission
+import com.hussein.mawaqit.presentation.util.isLocationPermanentlyDenied
+import com.hussein.mawaqit.presentation.util.openAppSettings
 import com.hussein.mawaqit.presentation.shared.LoadingContent
 import com.hussein.mawaqit.ui.listShapes
+import org.koin.androidx.compose.koinViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SettingsScreen(
-    onBack: () -> Unit, viewModel: SettingsViewModel = viewModel()
+    onBack: () -> Unit, viewModel: SettingsViewModel = koinViewModel()
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val locationState by viewModel.locationState.collectAsStateWithLifecycle()
