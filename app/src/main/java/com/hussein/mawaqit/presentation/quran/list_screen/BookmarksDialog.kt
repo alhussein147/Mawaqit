@@ -66,7 +66,7 @@ import com.hussein.mawaqit.data.quran.QuranData
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("إغلاق") }
+            TextButton(onClick = onDismiss) { Text("Close") }
         }
     )
 }

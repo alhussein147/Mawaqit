@@ -21,8 +21,7 @@ class MawaqitApp : Application() {
             androidContext(this@MawaqitApp)
             workManagerFactory()
             modules(
-                settingsModule, homeModule, azkarModule, quranModule, recitationModule,
-                coreModule, onboardingModule, workersModule
+                appModule, coreModule
             )
         }
         createPrayerNotificationChannel()

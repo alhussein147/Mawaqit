@@ -36,26 +36,10 @@ sealed interface SurahItemState {
     data object Paused : SurahItemState
 }
 
-class SurahListViewModel(
-    private val recitationRepository: RecitationRepository,
-    private val bookmarkDao: BookmarkDao,
-    application: Context
-) : ViewModel() {
+class SurahPlayer(val context: Context, val recitationRepository: RecitationRepository) {
 
-
-    private val workManager = WorkManager.getInstance(application)
-
-
-    // Session-only reciter selection
     private val _selectedReciter = MutableStateFlow(FullSurahReciter.Husr)
     val selectedReciter: StateFlow<FullSurahReciter> = _selectedReciter.asStateFlow()
-
-    // Session-only reciter selection
-    val bookmarks = bookmarkDao.getAllBookmarks().stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        emptyList()
-    )
 
     // Map of surahNumber → state
     private val _surahStates = MutableStateFlow<Map<Int, SurahItemState>>(emptyMap())
@@ -65,22 +49,7 @@ class SurahListViewModel(
     private val _playingSurah = MutableStateFlow<Int?>(null)
     val playingSurah: StateFlow<Int?> = _playingSurah.asStateFlow()
 
-    private var mediaController: MediaController? = null
-
-    init {
-        initMediaController(application)
-        refreshDownloadStates()
-    }
-
-    fun deleteBookmark(surahNumber: Int, ayahNumber: Int) {
-        viewModelScope.launch {
-            bookmarkDao.delete(surahNumber, ayahNumber)
-        }
-    }
-
-    // ── MediaController ───────────────────────────────────────────────────────
-
-    private fun initMediaController(context: Context) {
+    fun initMediaController() {
         val sessionToken = SessionToken(
             context,
             ComponentName(context, SurahPlayerService::class.java)
@@ -101,65 +70,21 @@ class SurahListViewModel(
         }, MoreExecutors.directExecutor())
     }
 
-    // ── Download state ────────────────────────────────────────────────────────
+    private var mediaController: MediaController? = null
 
-    private fun refreshDownloadStates() {
-        viewModelScope.launch {
-            val states = (1..114).associate { surahNumber ->
-                surahNumber to if (recitationRepository.isSurahCached(
-                        _selectedReciter.value,
-                        surahNumber
-                    )
+    suspend fun refreshDownloadStates() {
+        val states = (1..114).associate { surahNumber ->
+            surahNumber to if (recitationRepository.isSurahCached(
+                    _selectedReciter.value,
+                    surahNumber
                 )
-                    SurahItemState.Downloaded
-                else
-                    SurahItemState.NotDownloaded
-            }
-            _surahStates.value = states
+            )
+                SurahItemState.Downloaded
+            else
+                SurahItemState.NotDownloaded
         }
+        _surahStates.value = states
     }
-
-    fun downloadSurah(surahNumber: Int) {
-        val workName = workName(surahNumber)
-        val request = OneTimeWorkRequestBuilder<SurahDownloadWorker>()
-            .setInputData(SurahDownloadWorker.inputData(surahNumber, _selectedReciter.value.id))
-            .build()
-
-        workManager.enqueueUniqueWork(workName, ExistingWorkPolicy.KEEP, request)
-
-        // Observe WorkInfo for this specific request
-        viewModelScope.launch {
-            workManager.getWorkInfoByIdFlow(request.id).collect { info ->
-                when (info?.state) {
-                    WorkInfo.State.RUNNING -> {
-                        val progress = info.progress
-                            .getFloat(SurahDownloadWorker.KEY_PROGRESS, 0f)
-                        updateSurahState(
-                            surahNumber,
-                            SurahItemState.Downloading(progress, request.id)
-                        )
-                    }
-
-                    WorkInfo.State.SUCCEEDED -> {
-                        updateSurahState(surahNumber, SurahItemState.Downloaded)
-                    }
-
-                    WorkInfo.State.FAILED,
-                    WorkInfo.State.CANCELLED -> {
-                        updateSurahState(surahNumber, SurahItemState.NotDownloaded)
-                    }
-
-                    else -> Unit
-                }
-            }
-        }
-    }
-
-    fun cancelDownload(workId: UUID) {
-        workManager.cancelWorkById(workId)
-    }
-
-    // ── Playback ──────────────────────────────────────────────────────────────
 
     fun playSurah(surahNumber: Int) {
         val file = recitationRepository.surahFile(_selectedReciter.value, surahNumber)
@@ -180,33 +105,26 @@ class SurahListViewModel(
         }
     }
 
-    fun stop() {
-        mediaController?.stop()
-        _playingSurah.value = null
-        refreshDownloadStates()
-    }
-
-    // ── Reciter ───────────────────────────────────────────────────────────────
-
-    fun selectReciter(reciter: FullSurahReciter) {
+    suspend fun selectReciter(reciter: FullSurahReciter) {
         if (_selectedReciter.value == reciter) return
         stop()
         _selectedReciter.value = reciter
         refreshDownloadStates()
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    suspend fun stop() {
+        mediaController?.stop()
+        _playingSurah.value = null
+        refreshDownloadStates()
+    }
 
-    private fun workName(surahNumber: Int) =
-        "surah_download_${_selectedReciter.value.id}_$surahNumber"
-
-    private fun updateSurahState(surahNumber: Int, state: SurahItemState) {
+    fun updateSurahState(surahNumber: Int, state: SurahItemState) {
         _surahStates.value = _surahStates.value.toMutableMap().apply {
             put(surahNumber, state)
         }
     }
 
-    private fun updatePlayingState(isPlaying: Boolean) {
+    fun updatePlayingState(isPlaying: Boolean) {
         val surah = _playingSurah.value ?: return
         updateSurahState(
             surah,
@@ -214,13 +132,116 @@ class SurahListViewModel(
         )
     }
 
+    fun release() {
+        mediaController?.release()
+        mediaController = null
+    }
 
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
+}
+
+class SurahListViewModel(
+    private val surahPlayer: SurahPlayer,
+    private val bookmarkDao: BookmarkDao,
+    private val workManager: WorkManager
+) : ViewModel() {
+
+
+    // Session-only reciter selection
+    val selectedReciter = surahPlayer.selectedReciter.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = FullSurahReciter.Basit
+    )
+
+    val playingSurah = surahPlayer.playingSurah.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = null
+    )
+
+    val surahStates = surahPlayer.surahStates.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyMap()
+    )
+
+    // Session-only reciter selection
+    val bookmarks = bookmarkDao.getAllBookmarks().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        emptyList()
+    )
+
+
+    init {
+        surahPlayer.initMediaController()
+        viewModelScope.launch {
+            surahPlayer.refreshDownloadStates()
+        }
+    }
+
+
+    fun togglePlayPause() = surahPlayer.togglePlayPause()
+    fun playSurah(surahNumber: Int) = surahPlayer.playSurah(surahNumber)
+
+    fun selectedReciter(reciter: FullSurahReciter) {
+        viewModelScope.launch {
+            surahPlayer.selectReciter(reciter)
+        }
+    }
+
+    fun deleteBookmark(surahNumber: Int, ayahNumber: Int) {
+        viewModelScope.launch {
+            bookmarkDao.delete(surahNumber, ayahNumber)
+        }
+    }
+
+    private fun workName(surahNumber: Int) =
+        "surah_download_${selectedReciter.value.id}_$surahNumber"
+
+    fun downloadSurah(surahNumber: Int) {
+        val workName = workName(surahNumber)
+        val request = OneTimeWorkRequestBuilder<SurahDownloadWorker>()
+            .setInputData(SurahDownloadWorker.inputData(surahNumber, selectedReciter.value.id))
+            .build()
+
+        workManager.enqueueUniqueWork(workName, ExistingWorkPolicy.KEEP, request)
+
+        // Observe WorkInfo for this specific request
+        viewModelScope.launch {
+            workManager.getWorkInfoByIdFlow(request.id).collect { info ->
+                when (info?.state) {
+                    WorkInfo.State.RUNNING -> {
+                        val progress = info.progress
+                            .getFloat(SurahDownloadWorker.KEY_PROGRESS, 0f)
+                        surahPlayer.updateSurahState(
+                            surahNumber,
+                            SurahItemState.Downloading(progress, request.id)
+                        )
+                    }
+
+                    WorkInfo.State.SUCCEEDED -> {
+                        surahPlayer.updateSurahState(surahNumber, SurahItemState.Downloaded)
+                    }
+
+                    WorkInfo.State.FAILED,
+                    WorkInfo.State.CANCELLED -> {
+                        surahPlayer.updateSurahState(surahNumber, SurahItemState.NotDownloaded)
+                    }
+
+                    else -> Unit
+                }
+            }
+        }
+    }
+
+    fun cancelDownload(workId: UUID) {
+        workManager.cancelWorkById(workId)
+    }
 
     override fun onCleared() {
         super.onCleared()
-        mediaController?.release()
-        mediaController?.stop()
+        surahPlayer.release()
     }
 
 }

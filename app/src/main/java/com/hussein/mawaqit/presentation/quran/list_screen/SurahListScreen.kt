@@ -63,7 +63,7 @@ fun SurahListScreen(
         SurahReciterPickerSheet(
             current = selectedReciter,
             onSelect = { reciter ->
-                surahListViewModel.selectReciter(reciter)
+                surahListViewModel.selectedReciter(reciter)
                 surahToDownload?.let { surahNumber ->
                     surahListViewModel.downloadSurah(surahNumber)
                     surahToDownload = null
@@ -96,7 +96,13 @@ fun SurahListScreen(
                         contentDescription = null
                     )
                 }
-            }, actions = {})
+            }, actions = {
+                IconButton(onClick = { showBookmarksDialog = true }){
+                    Icon(
+                        imageVector = ImageVector.vectorResource(R.drawable.ic_bookmark),
+                        contentDescription = null)
+                }
+            })
         }) { padding ->
         LazyColumn(
             modifier = Modifier

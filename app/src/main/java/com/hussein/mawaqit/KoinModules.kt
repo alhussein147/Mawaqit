@@ -19,6 +19,7 @@ import com.hussein.mawaqit.presentation.azkar.AzkarViewModel
 import com.hussein.mawaqit.presentation.home.HomeViewModel
 import com.hussein.mawaqit.presentation.onboarding.OnboardingViewModel
 import com.hussein.mawaqit.presentation.quran.list_screen.SurahListViewModel
+import com.hussein.mawaqit.presentation.quran.list_screen.SurahPlayer
 import com.hussein.mawaqit.presentation.quran.reader.QuranViewModel
 import com.hussein.mawaqit.presentation.quran.tafsir.TafsirRepository
 import com.hussein.mawaqit.presentation.settings.SettingsViewModel
@@ -27,14 +28,37 @@ import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.workmanager.dsl.worker
 import org.koin.core.annotation.KoinExperimentalAPI
 import org.koin.core.module.dsl.viewModel
-import org.koin.core.scope.get
 import org.koin.dsl.module
 
-val settingsModule = module {
+@OptIn(KoinExperimentalAPI::class)
+val appModule = module {
+    // Infrastructure & Settings
     single { SettingsRepository(androidContext()) }
     single { CurrentLocationFetcher(androidContext()) }
+    single { WorkManager.getInstance(androidContext()) }
     factory { PrayerSchedulerManager(get()) }
     factory { LocationRepository(context = androidContext()) }
+    factory { NetworkObserver(androidContext()) }
+
+    // Repositories & Data
+    factory { AzkarRepository(androidContext()) }
+    single { RecitationRepository(androidContext()) }
+    factory { TafsirRepository() }
+    factory { QuranDisplayPreferences(androidContext()) }
+    factory { AyahPlayer(androidContext()) }
+    factory { SurahPlayer(
+        context = androidContext(),
+        recitationRepository = get()
+    ) }
+
+    // Quran Database
+    single { QuranDatabase.create(androidContext()) }
+    single { get<QuranDatabase>().surahDao() }
+    single { get<QuranDatabase>().ayahDao() }
+    single { get<QuranDatabase>().bookmarkDao() }
+    factory { QuranDatabaseRepository(androidContext(), get(), get(), get()) }
+
+    // ViewModels
     viewModel {
         SettingsViewModel(
             settingsRepository = get(),
@@ -43,32 +67,8 @@ val settingsModule = module {
             prayerSchedulerManager = get()
         )
     }
-}
-
-@OptIn(KoinExperimentalAPI::class)
-val homeModule = module {
-    viewModel { HomeViewModel(
-        locationRepo = get(),
-        settingsRepository = get()
-    ) }
-}
-
-val azkarModule = module {
-    factory { AzkarRepository(androidContext()) }
+    viewModel { HomeViewModel(locationRepo = get(), settingsRepository = get()) }
     viewModel { AzkarViewModel(get()) }
-}
-
-val quranModule = module {
-    worker { SurahDownloadWorker(context = androidContext(), params = get()) }
-    single { QuranDatabase.create(androidContext()) }
-    single { get<QuranDatabase>().surahDao() }
-    single { get<QuranDatabase>().ayahDao() }
-    single { get<QuranDatabase>().bookmarkDao() }
-    factory { QuranDatabaseRepository(androidContext(), get(), get(), get()) }
-    factory { QuranDisplayPreferences(androidContext()) }
-    factory { TafsirRepository() }
-    factory { NetworkObserver(androidContext()) }
-    factory { AyahPlayer(androidContext()) }
     viewModel {
         QuranViewModel(
             recitationRepository = get(),
@@ -82,23 +82,10 @@ val quranModule = module {
     single {
         SurahListViewModel(
             bookmarkDao = get(),
-            recitationRepository = get(),
-            application = androidApplication()
+            surahPlayer = get(),
+            workManager = get()
         )
     }
-}
-
-val recitationModule = module {
-    single { RecitationRepository(androidContext()) }
-}
-val onboardingModule = module {
-    worker {
-        QuranPopulationWorker(
-            context = androidContext(),
-            params = get()
-        )
-    }
-
     viewModel {
         OnboardingViewModel(
             locationRepo = get(),
@@ -108,15 +95,9 @@ val onboardingModule = module {
             prayerSchedulerManager = get()
         )
     }
-}
 
-
-val workersModule = module {
-    single { WorkManager.getInstance(androidContext()) }
-    worker {
-        DailyPrayerWorker(
-            appContext = androidContext(),
-            params = get()
-        )
-    }
+    // Workers
+    worker { SurahDownloadWorker(context = androidContext(), params = get()) }
+    worker { QuranPopulationWorker(context = androidContext(), params = get()) }
+    worker { DailyPrayerWorker(appContext = androidContext(), params = get()) }
 }
