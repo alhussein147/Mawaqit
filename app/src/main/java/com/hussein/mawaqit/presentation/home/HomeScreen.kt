@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -39,16 +40,18 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.mawaqit.R
-import com.hussein.mawaqit.presentation.util.formatTime
+import com.hussein.mawaqit.data.db.models.Ayah
 import com.hussein.mawaqit.presentation.home.components.PrayerArchStepper
 import com.hussein.mawaqit.presentation.shared.ErrorContent
 import com.hussein.mawaqit.presentation.shared.LoadingContent
+import com.hussein.mawaqit.presentation.util.formatTime
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import org.koin.androidx.compose.koinViewModel
@@ -113,6 +116,11 @@ private fun PrayerContent(
         QuranAndAzkarSection(
             onNavigateToQuran = onNavigateToQuran,
             onNavigateToAzkar = onNavigateToAzkar
+        )
+
+        AyahOfTheDayCard(
+            ayah = state.ayahOfTheDay,
+            surahName = "TODO()",
         )
         Surface(
             shape = RoundedCornerShape(50.dp),
@@ -306,8 +314,10 @@ fun QuranAndAzkarSection(onNavigateToQuran: () -> Unit, onNavigateToAzkar: () ->
     fun Section(modifier: Modifier = Modifier, onClick: () -> Unit, title: String) {
         Surface(
             color = MaterialTheme.colorScheme.primaryContainer,
-            modifier = Modifier.height(65.dp).then(modifier),
-            shape = RoundedCornerShape(50),
+            modifier = Modifier
+                .height(65.dp)
+                .then(modifier),
+            shape = RoundedCornerShape(30),
             onClick = onClick
         ) {
             Box(contentAlignment = Alignment.Center) {
@@ -339,36 +349,74 @@ fun QuranAndAzkarSection(onNavigateToQuran: () -> Unit, onNavigateToAzkar: () ->
 }
 
 @Composable
-private fun QuranSection(onNavigateToQuran: () -> Unit) {
+fun AyahOfTheDayCard(
+    ayah: Ayah?,
+    surahName: String,
+    modifier: Modifier = Modifier
+) {
     Card(
-        onClick = onNavigateToQuran,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        shape = RoundedCornerShape(16.dp),
+        modifier = modifier
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.secondaryContainer
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .padding(20.dp),
+            horizontalAlignment = Alignment.End
         ) {
+            // Label
             Text(
-                text = "Quran",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
-            )
-            Text(
-                text = "١١٤ سورة",
-                style = MaterialTheme.typography.bodySmall,
+                text = "آية اليوم",
+                style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
             )
+
+            Spacer(Modifier.height(12.dp))
+
+            when {
+                ayah == null -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(60.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+                }
+
+                else -> {
+                    // Ayah text
+                    Text(
+                        text = ayah.text,
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            textDirection = TextDirection.Rtl,
+                            lineHeight = 32.sp
+                        ),
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(Modifier.height(10.dp))
+
+                    // Surah name + ayah number
+                    Text(
+                        text = "$surahName • آية ${ayah.numberInSurah}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.6f)
+                    )
+                }
+            }
         }
     }
 }

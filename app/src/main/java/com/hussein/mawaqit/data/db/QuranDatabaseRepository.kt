@@ -1,9 +1,6 @@
 package com.hussein.mawaqit.data.db
 
 import android.content.Context
-import com.hussein.Mawaqit.quran.db.AyahDao
-import com.hussein.Mawaqit.quran.db.BookmarkDao
-import com.hussein.Mawaqit.quran.db.SurahDao
 import com.hussein.mawaqit.data.db.models.Ayah
 import com.hussein.mawaqit.data.db.models.SurahDetail
 import com.hussein.mawaqit.data.quran.QuranData
@@ -11,11 +8,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import kotlin.time.ExperimentalTime
-
-// ---------------------------------------------------------------------------
-// DataStore
-// ---------------------------------------------------------------------------
-
 
 class QuranDatabaseRepository(
     private val context: Context,

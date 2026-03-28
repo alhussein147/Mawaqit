@@ -14,7 +14,8 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.google.common.util.concurrent.MoreExecutors
-import com.hussein.Mawaqit.quran.db.BookmarkDao
+import com.hussein.mawaqit.data.db.BookmarkDao
+import com.hussein.mawaqit.data.db.QuranDatabaseRepository
 import com.hussein.mawaqit.data.infrastructure.services.SurahPlayerService
 import com.hussein.mawaqit.data.infrastructure.workers.SurahDownloadWorker
 import com.hussein.mawaqit.data.recitation.FullSurahReciter
@@ -141,7 +142,7 @@ class SurahPlayer(val context: Context, val recitationRepository: RecitationRepo
 
 class SurahListViewModel(
     private val surahPlayer: SurahPlayer,
-    private val bookmarkDao: BookmarkDao,
+    private val quranDatabaseRepository: QuranDatabaseRepository,
     private val workManager: WorkManager
 ) : ViewModel() {
 
@@ -166,7 +167,7 @@ class SurahListViewModel(
     )
 
     // Session-only reciter selection
-    val bookmarks = bookmarkDao.getAllBookmarks().stateIn(
+    val bookmarks = quranDatabaseRepository.getAllBookmarks().stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         emptyList()
@@ -192,7 +193,7 @@ class SurahListViewModel(
 
     fun deleteBookmark(surahNumber: Int, ayahNumber: Int) {
         viewModelScope.launch {
-            bookmarkDao.delete(surahNumber, ayahNumber)
+            quranDatabaseRepository.removeBookmark(surahNumber, ayahNumber)
         }
     }
 

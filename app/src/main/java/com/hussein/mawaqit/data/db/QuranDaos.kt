@@ -1,12 +1,9 @@
-package com.hussein.Mawaqit.quran.db
+package com.hussein.mawaqit.data.db
 
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.hussein.mawaqit.data.db.AyahEntity
-import com.hussein.mawaqit.data.db.BookmarkEntity
-import com.hussein.mawaqit.data.db.SurahEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao

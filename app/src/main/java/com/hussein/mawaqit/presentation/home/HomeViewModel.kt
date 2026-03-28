@@ -1,5 +1,6 @@
 package com.hussein.mawaqit.presentation.home
 
+import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
@@ -12,6 +13,10 @@ import com.hussein.core.PrayerTimeCalculator
 import com.hussein.core.models.SavedLocation
 import com.hussein.core.utils.HijriDateCalculator
 import com.hussein.mawaqit.MawaqitApp
+import com.hussein.mawaqit.data.db.AyahDao
+import com.hussein.mawaqit.data.db.AyahEntity
+import com.hussein.mawaqit.data.db.QuranDatabaseRepository
+import com.hussein.mawaqit.data.db.models.Ayah
 import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -32,6 +37,7 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 import com.hussein.core.models.Prayer as AppPrayer
 
+@Stable
 data class HomeUiState(
     val isLoading: Boolean = true,
     val error: String? = null,
@@ -39,10 +45,11 @@ data class HomeUiState(
     val rawPrayers: List<AppPrayer> = emptyList(),
     val prayers: List<PrayerUiModel> = emptyList(),
     val nextPrayer: PrayerUiModel? = null,
-    val hijriDate: String = ""
+    val hijriDate: String = "",
+    val ayahOfTheDay: Ayah? = null
 
 )
-
+@Stable
 data class PrayerUiModel @OptIn(ExperimentalTime::class) constructor(
     val name: String,
     val time: Instant,
@@ -60,9 +67,11 @@ enum class PrayerStatus { PASSED, CURRENT, UPCOMING }
 
 
 
+@OptIn(ExperimentalTime::class)
 class HomeViewModel(
     val locationRepo: LocationRepository,
-    val settingsRepository: SettingsRepository
+    val settingsRepository: SettingsRepository,
+    val quranDatabaseRepository: QuranDatabaseRepository
 ) : ViewModel() {
 
 
@@ -70,7 +79,6 @@ class HomeViewModel(
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
     val _countdown = MutableStateFlow<CountdownTime?>(null)
     val countdown: StateFlow<CountdownTime?> = _countdown.asStateFlow()
-
     private var tickerJob: Job? = null
     private var lastKnownDate: LocalDate? = null
 
@@ -79,7 +87,6 @@ class HomeViewModel(
     }
 
     init {
-
         viewModelScope.launch {
             // Combine all sources: location, settings, and manual/daily reloads
             combine(
@@ -91,6 +98,11 @@ class HomeViewModel(
                 location to settings.calculationMethod
             }.collectLatest { (location, method) ->
                 loadPrayers(location, method)
+            }
+        }
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(ayahOfTheDay = quranDatabaseRepository.getAyahOfTheDay())
             }
         }
     }

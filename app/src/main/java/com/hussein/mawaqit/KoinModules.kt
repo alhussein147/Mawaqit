@@ -4,6 +4,7 @@ import CurrentLocationFetcher
 import androidx.work.WorkManager
 import com.hussein.core.LocationRepository
 import com.hussein.mawaqit.data.azkar.AzkarRepository
+import com.hussein.mawaqit.data.db.BookmarkDao
 import com.hussein.mawaqit.data.db.QuranDatabase
 import com.hussein.mawaqit.data.db.QuranDatabaseRepository
 import com.hussein.mawaqit.data.infrastructure.media.AyahPlayer
@@ -23,11 +24,11 @@ import com.hussein.mawaqit.presentation.quran.list_screen.SurahPlayer
 import com.hussein.mawaqit.presentation.quran.reader.QuranViewModel
 import com.hussein.mawaqit.presentation.quran.tafsir.TafsirRepository
 import com.hussein.mawaqit.presentation.settings.SettingsViewModel
-import org.koin.android.ext.koin.androidApplication
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.workmanager.dsl.worker
 import org.koin.core.annotation.KoinExperimentalAPI
 import org.koin.core.module.dsl.viewModel
+import org.koin.core.scope.get
 import org.koin.dsl.module
 
 @OptIn(KoinExperimentalAPI::class)
@@ -46,10 +47,12 @@ val appModule = module {
     factory { TafsirRepository() }
     factory { QuranDisplayPreferences(androidContext()) }
     factory { AyahPlayer(androidContext()) }
-    factory { SurahPlayer(
-        context = androidContext(),
-        recitationRepository = get()
-    ) }
+    factory {
+        SurahPlayer(
+            context = androidContext(),
+            recitationRepository = get()
+        )
+    }
 
     // Quran Database
     single { QuranDatabase.create(androidContext()) }
@@ -67,7 +70,13 @@ val appModule = module {
             prayerSchedulerManager = get()
         )
     }
-    viewModel { HomeViewModel(locationRepo = get(), settingsRepository = get()) }
+    viewModel {
+        HomeViewModel(
+            locationRepo = get(),
+            settingsRepository = get(),
+            quranDatabaseRepository = get(),
+        )
+    }
     viewModel { AzkarViewModel(get()) }
     viewModel {
         QuranViewModel(
@@ -81,8 +90,8 @@ val appModule = module {
     }
     single {
         SurahListViewModel(
-            bookmarkDao = get(),
             surahPlayer = get(),
+            quranDatabaseRepository = get(),
             workManager = get()
         )
     }
