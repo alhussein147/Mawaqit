@@ -32,7 +32,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -58,8 +57,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.mawaqit.R
-import com.hussein.mawaqit.data.db.models.Ayah
 import com.hussein.mawaqit.data.db.BookmarkEntity
+import com.hussein.mawaqit.data.db.models.Ayah
 import com.hussein.mawaqit.data.quran.QuranData
 import com.hussein.mawaqit.data.quran.QuranFontSize
 import com.hussein.mawaqit.data.quran.QuranTextAlignment
@@ -70,8 +69,6 @@ import com.hussein.mawaqit.presentation.shared.ErrorContent
 import com.hussein.mawaqit.presentation.shared.LoadingContent
 import com.hussein.mawaqit.ui.theme.quranFontFamily
 import org.koin.androidx.compose.koinViewModel
-import kotlin.collections.find
-
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -94,6 +91,8 @@ fun QuranReaderScreen(
     val playingAyah by viewModel.playingAyah.collectAsStateWithLifecycle()
     val selectedReciter by viewModel.selectedReciter.collectAsStateWithLifecycle()
     val hasNetwork by viewModel.networkAvailable.collectAsStateWithLifecycle()
+
+    var showReaderOptionsDialog by remember { mutableStateOf(false) }
 
     // Maps ayahNumber → (lazyItemIndex, TextLayoutResult) for scroll precision
     val layoutMap = remember { mutableMapOf<Int, Pair<Int, TextLayoutResult>>() }
@@ -153,8 +152,6 @@ fun QuranReaderScreen(
         )
     }
 
-
-
     BackHandler(enabled = recitationState is AyahRecitationState.Playing) {
         viewModel.stopAyah()
         onBack.invoke()
@@ -184,41 +181,14 @@ fun QuranReaderScreen(
                 },
                 actions = {
                     // Font size toggle
-                    TextButton(onClick = {
-                        viewModel.setFontSize(
-                            when (fontSize) {
-                                QuranFontSize.SMALL -> QuranFontSize.MEDIUM
-                                QuranFontSize.MEDIUM -> QuranFontSize.LARGE
-                                QuranFontSize.LARGE -> QuranFontSize.XLARGE
-                                QuranFontSize.XLARGE -> QuranFontSize.SMALL
-                            }
-                        )
-                    }) {
-                        Text(
-                            text = fontSize.label,
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
 
                     IconButton(onClick = {
-                        viewModel.setTextAlignment(
-                            when (quranTextAlignment) {
-                                QuranTextAlignment.Start -> QuranTextAlignment.Center
-                                QuranTextAlignment.Center -> QuranTextAlignment.End
-                                QuranTextAlignment.End -> QuranTextAlignment.Start
-                            }
-                        )
+                        showReaderOptionsDialog = true
                     }) {
                         Icon(
                             modifier = Modifier.size(18.dp),
-                            imageVector = ImageVector.vectorResource(
-                                when (quranTextAlignment) {
-                                    QuranTextAlignment.Start -> R.drawable.ic_align_end
-                                    QuranTextAlignment.Center -> R.drawable.ic_align_center
-                                    QuranTextAlignment.End -> R.drawable.ic_align_start
-                                }
-                            ), contentDescription = null
+                            imageVector = ImageVector.vectorResource(com.hussein.mawaqit.R.drawable.ic_settings),
+                            contentDescription = null
                         )
                     }
                 }
@@ -236,6 +206,21 @@ fun QuranReaderScreen(
             }
 
             is QuranReaderUiState.Success -> {
+                if (showReaderOptionsDialog) {
+                    QuranReaderOptionsDialog(
+                        selectedFontSize = fontSize,
+                        selectedTextAlignment = quranTextAlignment,
+                        onSelectedFontSize = {
+                            viewModel.setFontSize(it)
+                        },
+                        onSelectedTextAlignment = {
+                            viewModel.setTextAlignment(it)
+                        },
+                        onDismiss = {
+                            showReaderOptionsDialog = false
+                        }
+                    )
+                }
                 val surah = state.surah
                 LazyColumn(
                     modifier = Modifier
