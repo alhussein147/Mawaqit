@@ -1,10 +1,7 @@
-package com.hussein.mawaqit.data.recitation
+package com.hussein.mawaqit.data.quran.recitation
 
 import android.content.Context
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.io.File
-import java.net.URL
 
 class RecitationRepository(private val context: Context) {
 

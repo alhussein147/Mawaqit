@@ -20,7 +20,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import com.hussein.mawaqit.R
-import com.hussein.mawaqit.data.recitation.FullSurahReciter
+import com.hussein.mawaqit.data.quran.recitation.FullSurahReciter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

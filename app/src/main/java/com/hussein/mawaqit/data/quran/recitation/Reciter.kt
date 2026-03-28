@@ -1,4 +1,4 @@
-package com.hussein.mawaqit.data.recitation
+package com.hussein.mawaqit.data.quran.recitation
 
 
 enum class Reciter(

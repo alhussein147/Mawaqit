@@ -1,4 +1,4 @@
-package com.hussein.mawaqit.presentation.quran.tafsir
+package com.hussein.mawaqit.data.quran.tafsir
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body

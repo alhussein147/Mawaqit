@@ -7,9 +7,8 @@ import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import com.hussein.mawaqit.data.recitation.FullSurahReciter
-import com.hussein.mawaqit.data.recitation.RecitationRepository
-import com.hussein.mawaqit.data.recitation.Reciter
+import com.hussein.mawaqit.data.quran.recitation.FullSurahReciter
+import com.hussein.mawaqit.data.quran.recitation.RecitationRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
