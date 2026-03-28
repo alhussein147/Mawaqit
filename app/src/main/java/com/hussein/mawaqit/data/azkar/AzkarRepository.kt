@@ -7,6 +7,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlin.collections.getOrNull
 
 @Serializable
 data class AzkarCategory(
@@ -29,8 +30,6 @@ data class AzkarMeta(
     val file: String,
     val title: String
 )
-
-
 class AzkarRepository(private val context: Context) {
 
 

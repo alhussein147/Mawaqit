@@ -36,15 +36,6 @@ class QuranPopulationWorker(
 
     }
 
-    fun enqueueIfNeeded(context: Context) {
-        WorkManager.getInstance(context).enqueueUniqueWork(
-            WORK_NAME,
-            ExistingWorkPolicy.KEEP,
-            OneTimeWorkRequestBuilder<QuranPopulationWorker>().build()
-        )
-    }
-
-
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {
             if (db.ayahDao().count() > 0) {
@@ -84,7 +75,8 @@ class QuranPopulationWorker(
                         AyahEntity(
                             surahNumber = surahNumber,
                             numberInSurah = obj["id"]!!.jsonPrimitive.content.toInt(),
-                            text = obj["text"]!!.jsonPrimitive.content
+                            text = obj["text"]!!.jsonPrimitive.content,
+                            normalizedText = obj["normalized"]!!.jsonPrimitive.content
                         )
                     )
                 }

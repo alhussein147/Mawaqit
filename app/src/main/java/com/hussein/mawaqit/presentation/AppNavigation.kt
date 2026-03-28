@@ -14,13 +14,13 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
-import com.hussein.mawaqit.data.prayer.PrayerSchedulerManager
-import com.hussein.mawaqit.presentation.azkar.categories.AzkarCategoryScreen
 import com.hussein.mawaqit.presentation.azkar.AzkarListScreen
+import com.hussein.mawaqit.presentation.azkar.categories.AzkarCategoryScreen
 import com.hussein.mawaqit.presentation.home.HomeScreen
 import com.hussein.mawaqit.presentation.onboarding.OnboardingScreen
 import com.hussein.mawaqit.presentation.quran.list_screen.SurahListScreen
 import com.hussein.mawaqit.presentation.quran.reader.QuranReaderScreen
+import com.hussein.mawaqit.presentation.quran.search.QuranSearchScreen
 import com.hussein.mawaqit.presentation.settings.SettingsScreen
 import com.hussein.mawaqit.presentation.shared.LoadingContent
 import kotlinx.serialization.Serializable
@@ -50,7 +50,7 @@ data class AzkarList(val categoryIndex: Int) : Screen
 data object QuranSurahList : Screen
 
 @Serializable
-data object QuranSetup : Screen
+data object QuranSearch : Screen
 
 @Serializable
 data class QuranReader(val surahIndex: Int, val scrollToAyah: Int? = null) : Screen
@@ -138,6 +138,9 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
                         backStack.add(QuranReader(index, scrollToAyah))
                     },
                     onBack = { backStack.removeLastOrNull() },
+                    onNavigateToSearch = {
+                        backStack.add(QuranSearch)
+                    },
                 )
             }
 
@@ -146,6 +149,18 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
                     surahIndex = key.surahIndex,
                     onBack = { backStack.removeLastOrNull() },
                 )
+            }
+            entry<QuranSearch> {
+                QuranSearchScreen(
+                    onSurahSelected = { surahIndex ->
+                        backStack.add(QuranReader(surahIndex))
+                    },
+                    onAyahSelected = { surahIndex, ayahNumber ->
+                        backStack.add(QuranReader(surahIndex, ayahNumber))
+                    },
+                    onBack = { backStack.removeLastOrNull() },
+
+                    )
             }
 
             entry<Settings> {

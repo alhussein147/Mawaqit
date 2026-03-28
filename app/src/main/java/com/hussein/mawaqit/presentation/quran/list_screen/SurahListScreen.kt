@@ -46,6 +46,7 @@ import java.util.UUID
 @Composable
 fun SurahListScreen(
     onSurahSelected: (surahIndex: Int, scrollToAyah: Int?) -> Unit,
+    onNavigateToSearch: () -> Unit,
     onBack: () -> Unit,
     surahListViewModel: SurahListViewModel = koinViewModel()
 ) {
@@ -97,10 +98,20 @@ fun SurahListScreen(
                     )
                 }
             }, actions = {
-                IconButton(onClick = { showBookmarksDialog = true }){
+
+                IconButton(onClick = { showBookmarksDialog = true }) {
                     Icon(
                         imageVector = ImageVector.vectorResource(R.drawable.ic_bookmark),
-                        contentDescription = null)
+                        contentDescription = null
+                    )
+                }
+
+
+                IconButton(onClick = onNavigateToSearch) {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(R.drawable.ic_search),
+                        contentDescription = null
+                    )
                 }
             })
         }) { padding ->

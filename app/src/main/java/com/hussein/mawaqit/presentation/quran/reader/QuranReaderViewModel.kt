@@ -11,9 +11,9 @@ import com.hussein.mawaqit.data.infrastructure.network.NetworkObserver
 import com.hussein.mawaqit.data.quran.QuranDisplayPreferences
 import com.hussein.mawaqit.data.quran.QuranFontSize
 import com.hussein.mawaqit.data.quran.QuranTextAlignment
-import com.hussein.mawaqit.data.recitation.RecitationRepository
-import com.hussein.mawaqit.data.recitation.Reciter
-import com.hussein.mawaqit.presentation.quran.tafsir.TafsirRepository
+import com.hussein.mawaqit.data.quran.recitation.RecitationRepository
+import com.hussein.mawaqit.data.quran.recitation.Reciter
+import com.hussein.mawaqit.data.quran.tafsir.TafsirRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow

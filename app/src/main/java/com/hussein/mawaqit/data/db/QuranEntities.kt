@@ -27,7 +27,8 @@ data class SurahEntity(
 data class AyahEntity(
     val surahNumber: Int,
     val numberInSurah: Int,
-    val text: String
+    val text: String,
+    val normalizedText: String
 )
 
 @Entity(

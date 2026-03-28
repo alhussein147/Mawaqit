@@ -14,12 +14,11 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.google.common.util.concurrent.MoreExecutors
-import com.hussein.mawaqit.data.db.BookmarkDao
 import com.hussein.mawaqit.data.db.QuranDatabaseRepository
 import com.hussein.mawaqit.data.infrastructure.services.SurahPlayerService
 import com.hussein.mawaqit.data.infrastructure.workers.SurahDownloadWorker
-import com.hussein.mawaqit.data.recitation.FullSurahReciter
-import com.hussein.mawaqit.data.recitation.RecitationRepository
+import com.hussein.mawaqit.data.quran.recitation.FullSurahReciter
+import com.hussein.mawaqit.data.quran.recitation.RecitationRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow

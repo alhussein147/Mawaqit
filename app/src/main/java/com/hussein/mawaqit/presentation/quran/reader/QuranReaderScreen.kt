@@ -63,7 +63,7 @@ import com.hussein.mawaqit.data.quran.QuranData
 import com.hussein.mawaqit.data.quran.QuranFontSize
 import com.hussein.mawaqit.data.quran.QuranTextAlignment
 import com.hussein.mawaqit.data.quran.Surah
-import com.hussein.mawaqit.data.recitation.Reciter
+import com.hussein.mawaqit.data.quran.recitation.Reciter
 import com.hussein.mawaqit.presentation.quran.components.AyahReciterPickerSheetContent
 import com.hussein.mawaqit.presentation.shared.ErrorContent
 import com.hussein.mawaqit.presentation.shared.LoadingContent

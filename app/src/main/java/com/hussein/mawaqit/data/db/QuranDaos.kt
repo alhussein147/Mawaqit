@@ -34,7 +34,7 @@ interface AyahDao {
     @Query("SELECT * FROM ayahs WHERE surahNumber = :surahNumber ORDER BY numberInSurah")
     suspend fun getAyahsForSurah(surahNumber: Int): List<AyahEntity>
 
-    @Query("SELECT * FROM ayahs WHERE text LIKE '%' || :query || '%'")
+    @Query("SELECT * FROM ayahs WHERE normalizedText LIKE '%' || :query || '%'")
     fun searchAyahs(query: String): Flow<List<AyahEntity>>
 
     // Deterministic random for today using date as seed
