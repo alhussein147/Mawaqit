@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.mawaqit.presentation.onboarding.components.BatteryOptimizationPage
+import com.hussein.mawaqit.presentation.onboarding.components.DonePage
 import com.hussein.mawaqit.presentation.onboarding.components.ExactAlarmPage
 import com.hussein.mawaqit.presentation.onboarding.components.FetchingLocationPage
 import com.hussein.mawaqit.presentation.onboarding.components.LocationPage
@@ -111,7 +112,7 @@ fun OnboardingScreen(
                         cityName = state.savedLocation?.cityName
                     )
 
-                    OnboardingPage.DONE -> Unit
+                    OnboardingPage.DONE -> DonePage()
                     OnboardingPage.EXACT_ALARM -> ExactAlarmPage()
                     OnboardingPage.BATTERY_OPTIMIZATION -> BatteryOptimizationPage()
                     OnboardingPage.QURAN_SETUP -> QuranSetupPage(

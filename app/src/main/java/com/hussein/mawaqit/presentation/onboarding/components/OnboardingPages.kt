@@ -21,7 +21,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -73,7 +75,7 @@ fun FetchingLocationPage() {
         Text("Finding your location…", style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(8.dp))
         Text(
-            "This only takes a moment",
+            text = "This only takes a moment",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -141,7 +143,8 @@ fun QuranSetupPage(
         title = "Loading quran data",
         subtitle = "Loaded $currentSurah of 114",
         badge = null,
-        errorMessage = if (failed) "Error happed while loading data" else ""
+        errorMessage = if (failed) "Error happed while loading data" else "",
+        progress = animatedProgress
     )
 
 }
@@ -152,7 +155,8 @@ fun PageContent(
     title: String,
     subtitle: String,
     badge: String? = null,
-    errorMessage: String? = null
+    errorMessage: String? = null,
+    progress: Float? = null,
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -193,6 +197,19 @@ fun PageContent(
             lineHeight = 24.sp
         )
 
+        progress?.let {
+            if (it > 0f) {
+                Spacer(Modifier.height(16.dp))
+                LinearProgressIndicator(
+                    progress = { it },
+                    modifier = Modifier,
+                    color = ProgressIndicatorDefaults.linearColor,
+                    trackColor = ProgressIndicatorDefaults.linearTrackColor,
+                    strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
+                )
+            }
+        }
+
         badge?.let {
             Spacer(Modifier.height(20.dp))
             Surface(
@@ -210,6 +227,7 @@ fun PageContent(
         }
 
         errorMessage?.let { msg ->
+            msg.ifBlank { return@let }
             Spacer(Modifier.height(20.dp))
             Surface(
                 shape = RoundedCornerShape(12.dp),
