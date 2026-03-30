@@ -7,7 +7,6 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntOffset
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -61,7 +60,6 @@ data class QuranReader(val surahIndex: Int, val scrollToAyah: Int? = null) : Scr
 fun AppNavigation(settingsRepository: SettingsRepository) {
 
     val slideSpec = tween<IntOffset>(durationMillis = 300, easing = FastOutLinearInEasing)
-    val context = LocalContext.current
     val backStack = rememberNavBackStack(Initializing)
 
     LaunchedEffect(Unit) {
@@ -73,7 +71,6 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
             backStack.add(Onboarding)
         }
     }
-
     NavDisplay(
         transitionSpec = {
             // Slide in from right when navigating forward
@@ -140,12 +137,13 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
                     onBack = { backStack.removeLastOrNull() },
                     onNavigateToSearch = {
                         backStack.add(QuranSearch)
-                    },
+                    }
                 )
             }
 
             entry<QuranReader> { key ->
                 QuranReaderScreen(
+                    scrollToAyah = key.scrollToAyah,
                     surahIndex = key.surahIndex,
                     onBack = { backStack.removeLastOrNull() },
                 )
