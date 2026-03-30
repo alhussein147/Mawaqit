@@ -15,15 +15,16 @@ import com.hussein.mawaqit.data.infrastructure.workers.SurahDownloadWorker
 import com.hussein.mawaqit.data.prayer.PrayerSchedulerManager
 import com.hussein.mawaqit.data.quran.QuranDisplayPreferences
 import com.hussein.mawaqit.data.quran.recitation.RecitationRepository
+import com.hussein.mawaqit.data.quran.tafsir.TafsirRepository
 import com.hussein.mawaqit.presentation.azkar.AzkarViewModel
 import com.hussein.mawaqit.presentation.home.HomeViewModel
 import com.hussein.mawaqit.presentation.onboarding.OnboardingViewModel
 import com.hussein.mawaqit.presentation.quran.list_screen.SurahListViewModel
-import com.hussein.mawaqit.presentation.quran.list_screen.SurahPlayer
 import com.hussein.mawaqit.presentation.quran.reader.QuranViewModel
-import com.hussein.mawaqit.data.quran.tafsir.TafsirRepository
 import com.hussein.mawaqit.presentation.quran.search.QuranSearchViewModel
 import com.hussein.mawaqit.presentation.settings.SettingsViewModel
+import com.hussein.mawaqit.presentation.util.GlobalPlayerViewModel
+import org.koin.android.ext.koin.androidApplication
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.workmanager.dsl.worker
 import org.koin.core.annotation.KoinExperimentalAPI
@@ -46,19 +47,13 @@ val appModule = module {
     factory { TafsirRepository() }
     factory { QuranDisplayPreferences(androidContext()) }
     factory { AyahPlayer(androidContext()) }
-    factory {
-        SurahPlayer(
-            context = androidContext(),
-            recitationRepository = get()
-        )
-    }
 
     // Quran Database
     single { QuranDatabase.create(androidContext()) }
     single { get<QuranDatabase>().surahDao() }
     single { get<QuranDatabase>().ayahDao() }
     single { get<QuranDatabase>().bookmarkDao() }
-    factory { QuranDatabaseRepository(androidContext(), get(), get(), get()) }
+    factory { QuranDatabaseRepository(get(), get(), get()) }
 
     // ViewModels
     viewModel {
@@ -87,10 +82,16 @@ val appModule = module {
             quranDatabaseRepository = get()
         )
     }
-    single {
+    viewModel {
         SurahListViewModel(
-            surahPlayer = get(),
             quranDatabaseRepository = get(),
+        )
+    }
+
+    single {
+        GlobalPlayerViewModel(
+            application = androidApplication(),
+            recitationRepository = get(),
             workManager = get()
         )
     }

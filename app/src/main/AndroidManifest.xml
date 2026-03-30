@@ -61,7 +61,7 @@
             android:exported="false" />
 
         <service
-            android:name=".data.infrastructure.services.SurahPlayerService"
+            android:name=".data.infrastructure.services.GlobalPlayerService"
             android:foregroundServiceType="mediaPlayback"
             android:exported="true">
             <intent-filter>

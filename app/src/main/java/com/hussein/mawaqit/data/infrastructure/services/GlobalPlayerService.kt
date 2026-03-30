@@ -1,8 +1,5 @@
 package com.hussein.mawaqit.data.infrastructure.services
 
-import kotlin.jvm.java
-
-
 
 import android.app.PendingIntent
 import android.content.Intent
@@ -13,7 +10,14 @@ import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import com.hussein.mawaqit.MainActivity
 
-class SurahPlayerService : MediaSessionService() {
+sealed interface PlaybackSource {
+    data object None : PlaybackSource
+    data class Surah(val surahNumber: Int) : PlaybackSource
+    data class Radio(val stationUrl: String) : PlaybackSource
+}
+
+
+class GlobalPlayerService : MediaSessionService() {
 
     private var mediaSession: MediaSession? = null
 
@@ -28,19 +32,15 @@ class SurahPlayerService : MediaSessionService() {
                     .build(),
                 /* handleAudioFocus= */ true
             )
-            .setHandleAudioBecomingNoisy(true) // pause on headphone unplug
+            .setHandleAudioBecomingNoisy(true)
             .build()
 
-        // Tapping the notification opens the app
         val pendingIntent = PendingIntent.getActivity(
-            this,
-            0,
-            Intent(this, MainActivity::class.java).apply {
+            this, 0, Intent(this, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
             },
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
-
         mediaSession = MediaSession.Builder(this, player)
             .setSessionActivity(pendingIntent)
             .build()
