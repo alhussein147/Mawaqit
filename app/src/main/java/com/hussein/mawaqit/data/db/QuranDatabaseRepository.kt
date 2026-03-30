@@ -1,42 +1,33 @@
 package com.hussein.mawaqit.data.db
 
-import android.content.Context
 import com.hussein.mawaqit.data.db.models.Ayah
+import com.hussein.mawaqit.data.db.models.AyahOfTheDay
+import com.hussein.mawaqit.data.db.models.AyahWithSurah
 import com.hussein.mawaqit.data.db.models.SurahDetail
-import com.hussein.mawaqit.data.quran.QuranData
+import com.hussein.mawaqit.data.quran.Surah
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import kotlin.time.ExperimentalTime
 
 class QuranDatabaseRepository(
-    private val context: Context,
     private val surahDao: SurahDao,
     private val ayahDao: AyahDao,
     private val bookmarkDao: BookmarkDao
 ) {
 
-    // ── Surah loading ─────────────────────────────────────────────────────────
-
-    private val cache = object : LinkedHashMap<Int, SurahDetail>(3, 0.75f, true) {
-        override fun removeEldestEntry(eldest: Map.Entry<Int, SurahDetail>) = size > 2
-    }
+    fun getAllSurahs(): Flow<List<SurahEntity>> = surahDao.getAllSurahs()
 
     suspend fun loadSurah(surahNumber: Int): SurahDetail {
-        cache[surahNumber]?.let { return it }
-
-        val surahEntity = surahDao.getSurah(surahNumber)
-        val ayahEntities = ayahDao.getAyahsForSurah(surahNumber)
-
+        val result = surahDao.getSurahWithAyahs(surahNumber)
+            ?: return SurahDetail(surahNumber, "", "", emptyList())
         return SurahDetail(
-            number = surahNumber,
-            nameArabic = surahEntity?.nameArabic ?: QuranData.surahs[surahNumber - 1].nameArabic,
-            nameTransliterated = surahEntity?.nameTransliterated
-                ?: QuranData.surahs[surahNumber - 1].nameTransliterated,
-            ayahs = ayahEntities.map { it.toAyah() }
-        ).also { cache[surahNumber] = it }
+            number = result.surah.number,
+            nameArabic = result.surah.nameArabic,
+            nameTransliterated = result.surah.nameTransliterated,
+            ayahs = result.ayahs.map { it.toAyah() }
+        )
     }
-
     // ── Search ────────────────────────────────────────────────────────────────
 
     fun searchAyahs(query: String): Flow<List<AyahEntity>> =
@@ -48,10 +39,10 @@ class QuranDatabaseRepository(
     // ── Ayah of the day ───────────────────────────────────────────────────────
 
     @OptIn(ExperimentalTime::class)
-    suspend fun getAyahOfTheDay(): Ayah {
+    suspend fun getAyahOfTheDay(): AyahOfTheDay? {
         val today = kotlin.time.Clock.System.todayIn(TimeZone.currentSystemDefault())
         val seed = (today.year * 10000L + today.monthNumber * 100 + today.dayOfMonth)
-        return ayahDao.getAyahOfTheDay(seed).toAyah()
+        return ayahDao.getAyahOfTheDay(seed)?.toAyahOfTheDay()
     }
 
     // ── Bookmarks — Room-backed, supports multiple ────────────────────────────
@@ -84,4 +75,15 @@ class QuranDatabaseRepository(
         text = text
     )
 
+
+    private fun AyahWithSurah.toAyahOfTheDay(): AyahOfTheDay {
+        return AyahOfTheDay(
+            numberInSurah = this.numberInSurah,
+            text = this.text,
+            surahNameArabic = this.surahNameArabic,
+            surahTranslit = this.surahTranslit
+        )
+    }
+
 }
+

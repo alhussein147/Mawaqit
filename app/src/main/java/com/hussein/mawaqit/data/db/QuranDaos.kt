@@ -4,6 +4,9 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
+import com.hussein.mawaqit.data.db.models.AyahWithSurah
+import com.hussein.mawaqit.data.db.models.SurahWithAyahs
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -18,12 +21,24 @@ interface SurahDao {
     @Query("SELECT * FROM surahs WHERE number = :number LIMIT 1")
     suspend fun getSurah(number: Int): SurahEntity?
 
+    @Transaction
+    @Query("SELECT * FROM surahs WHERE number = :number LIMIT 1")
+    suspend fun getSurahWithAyahs(number: Int): SurahWithAyahs?
+
     @Query("SELECT * FROM surahs WHERE nameArabic LIKE '%' || :query || '%' OR nameTransliterated LIKE '%' || :query || '%'")
     fun searchSurahs(query: String): Flow<List<SurahEntity>>
 
     @Query("SELECT COUNT(*) FROM surahs")
     suspend fun count(): Int
 }
+
+
+//@Dao
+//interface QuranFtsDao {
+//    @Query("SELECT * FROM ayah_fts WHERE ayah_fts MATCH :query")
+//    fun searchAyahs(query: String): Flow<List<AyahEntity>>
+//}
+
 
 @Dao
 interface AyahDao {
@@ -34,12 +49,18 @@ interface AyahDao {
     @Query("SELECT * FROM ayahs WHERE surahNumber = :surahNumber ORDER BY numberInSurah")
     suspend fun getAyahsForSurah(surahNumber: Int): List<AyahEntity>
 
-    @Query("SELECT * FROM ayahs WHERE normalizedText LIKE '%' || :query || '%'")
+    @Query("SELECT * FROM ayahs WHERE normalizedText LIKE '%' || :query || '%' OR text LIKE '%' || :query || '%'")
     fun searchAyahs(query: String): Flow<List<AyahEntity>>
 
+    // Ayah of the day joined with its surah in a single query
+    @Query("""SELECT ayahs.surahNumber, ayahs.numberInSurah, ayahs.text,
+              surahs.nameArabic AS surahNameArabic, surahs.nameTransliterated AS surahTranslit
+       FROM ayahs
+       JOIN surahs ON ayahs.surahNumber = surahs.number
+       ORDER BY ((ayahs.surahNumber * 1000 + ayahs.numberInSurah) * :seed) % (SELECT COUNT(*) FROM ayahs)
+       LIMIT 1""")
+    suspend fun getAyahOfTheDay(seed: Long): AyahWithSurah?
     // Deterministic random for today using date as seed
-    @Query("SELECT * FROM ayahs ORDER BY ((surahNumber * 1000 + numberInSurah) * :seed) % (SELECT COUNT(*) FROM ayahs) LIMIT 1")
-    suspend fun getAyahOfTheDay(seed: Long): AyahEntity
 
     @Query("SELECT COUNT(*) FROM ayahs")
     suspend fun count(): Int
