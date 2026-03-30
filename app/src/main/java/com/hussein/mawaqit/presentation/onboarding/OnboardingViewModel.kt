@@ -58,8 +58,7 @@ class OnboardingViewModel(
         } else {
             _uiState.update {
                 it.copy(
-                    page = OnboardingPage.NOTIFICATION,
-                    errorMessage = "Location denied. You can update this in com.hussein.islamic.presentation.Settings later."
+                    errorMessage = "Location denied. You can update this in Settings later."
                 )
             }
         }
