@@ -17,6 +17,8 @@ import com.hussein.mawaqit.data.db.AyahDao
 import com.hussein.mawaqit.data.db.AyahEntity
 import com.hussein.mawaqit.data.db.QuranDatabaseRepository
 import com.hussein.mawaqit.data.db.models.Ayah
+import com.hussein.mawaqit.data.db.models.AyahOfTheDay
+import com.hussein.mawaqit.data.db.models.AyahWithSurah
 import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -46,7 +48,7 @@ data class HomeUiState(
     val prayers: List<PrayerUiModel> = emptyList(),
     val nextPrayer: PrayerUiModel? = null,
     val hijriDate: String = "",
-    val ayahOfTheDay: Ayah? = null
+    val ayahOfTheDay: AyahOfTheDay? = null
 
 )
 @Stable

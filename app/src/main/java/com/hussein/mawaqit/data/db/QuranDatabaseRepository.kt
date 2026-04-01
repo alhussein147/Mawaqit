@@ -4,7 +4,6 @@ import com.hussein.mawaqit.data.db.models.Ayah
 import com.hussein.mawaqit.data.db.models.AyahOfTheDay
 import com.hussein.mawaqit.data.db.models.AyahWithSurah
 import com.hussein.mawaqit.data.db.models.SurahDetail
-import com.hussein.mawaqit.data.quran.Surah
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
@@ -18,6 +17,7 @@ class QuranDatabaseRepository(
 
     fun getAllSurahs(): Flow<List<SurahEntity>> = surahDao.getAllSurahs()
 
+
     suspend fun loadSurah(surahNumber: Int): SurahDetail {
         val result = surahDao.getSurahWithAyahs(surahNumber)
             ?: return SurahDetail(surahNumber, "", "", emptyList())
@@ -27,8 +27,7 @@ class QuranDatabaseRepository(
             nameTransliterated = result.surah.nameTransliterated,
             ayahs = result.ayahs.map { it.toAyah() }
         )
-    }
-    // ── Search ────────────────────────────────────────────────────────────────
+    }    // ── Search ────────────────────────────────────────────────────────────────
 
     fun searchAyahs(query: String): Flow<List<AyahEntity>> =
         ayahDao.searchAyahs(query)
@@ -74,8 +73,6 @@ class QuranDatabaseRepository(
         numberInSurah = numberInSurah,
         text = text
     )
-
-
     private fun AyahWithSurah.toAyahOfTheDay(): AyahOfTheDay {
         return AyahOfTheDay(
             numberInSurah = this.numberInSurah,
