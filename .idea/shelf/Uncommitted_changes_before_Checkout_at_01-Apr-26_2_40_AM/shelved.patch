@@ -1,0 +1,1391 @@
+Index: app/src/main/java/com/hussein/mawaqit/data/infrastructure/receivers/PrayerAlarmReceiver.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.hussein.mawaqit.data.infrastructure.receivers\r\n\r\nimport android.app.NotificationChannel\r\nimport android.app.NotificationManager\r\nimport android.app.PendingIntent\r\nimport android.content.BroadcastReceiver\r\nimport android.content.Context\r\nimport android.content.Intent\r\nimport android.os.PowerManager\r\nimport androidx.core.app.NotificationCompat\r\nimport androidx.core.content.ContextCompat\r\nimport com.hussein.mawaqit.AzanActivity\r\nimport com.hussein.mawaqit.R\r\nimport com.hussein.mawaqit.data.infrastructure.settings.NotificationSound\r\nimport com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository\r\nimport kotlinx.coroutines.flow.first\r\nimport kotlinx.coroutines.runBlocking\r\n\r\n\r\nclass PrayerAlarmReceiver : BroadcastReceiver() {\r\n\r\n    companion object {\r\n        const val ACTION_PRAYER_TIME = \"com.hussein.islamic.PRAYER_TIME\"\r\n        const val EXTRA_PRAYER_NAME = \"extra_prayer_name\"\r\n\r\n        const val PRAYER_NOTIFICATION_CHANNEL_ID = \"prayer_notifications\"\r\n        const val PRAYERS_NOTIFICATION_CHANNEL_NAME = \"Prayer Times\"\r\n    }\r\n\r\n    override fun onReceive(context: Context, intent: Intent) {\r\n        if (intent.action != ACTION_PRAYER_TIME) return\r\n\r\n\r\n        val prayerName = intent.getStringExtra(EXTRA_PRAYER_NAME) ?: \"Prayer\"\r\n        val isFajr = prayerName.equals(\"Fajr\", ignoreCase = true)\r\n\r\n        val soundPreference = runBlocking {\r\n            SettingsRepository(context).settingsFlow.first().notificationSound\r\n        }\r\n        when {\r\n\r\n            soundPreference == NotificationSound.ADHAN && !context.isScreenOn() -> {\r\n                showFullScreenNotification(context, prayerName, isFajr)\r\n            }\r\n\r\n            else -> {\r\n                showNotification(context, prayerName)\r\n            }\r\n        }\r\n    }\r\n\r\n    private fun showNotification(context: Context, prayerName: String) {\r\n        val notificationManager =\r\n            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager\r\n\r\n        val notification = NotificationCompat.Builder(context, PRAYER_NOTIFICATION_CHANNEL_ID)\r\n            .setSmallIcon(R.drawable.ic_placeholder)\r\n            .setContentTitle(\"\uD83D\uDD4C $prayerName\")\r\n            .setContentText(\"It's time for $prayerName prayer\")\r\n            .setPriority(NotificationCompat.PRIORITY_HIGH)\r\n            .setCategory(NotificationCompat.CATEGORY_ALARM)\r\n            .setAutoCancel(true)\r\n            .build()\r\n\r\n        // Use a stable ID per prayer so simultaneous prayers don't overwrite each other\r\n        val notificationId = prayerName.hashCode()\r\n        notificationManager.notify(notificationId, notification)\r\n    }\r\n\r\n    private fun showFullScreenNotification(\r\n        context    : Context,\r\n        prayerName : String,\r\n        isFajr     : Boolean\r\n    ) {\r\n        val manager = context.getSystemService(NotificationManager::class.java)\r\n        ensureChannelExists(manager)\r\n\r\n        // Intent that launches AzanActivity full screen\r\n        val fullScreenIntent = Intent(context, AzanActivity::class.java).apply {\r\n            putExtra(AzanActivity.EXTRA_PRAYER_NAME, prayerName)\r\n            putExtra(AzanActivity.EXTRA_IS_FAJR, isFajr)\r\n            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_USER_ACTION\r\n        }\r\n\r\n        val fullScreenPendingIntent = PendingIntent.getActivity(\r\n            context,\r\n            prayerName.hashCode(),\r\n            fullScreenIntent,\r\n            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT\r\n        )\r\n\r\n        val notification = NotificationCompat.Builder(context, PRAYER_NOTIFICATION_CHANNEL_ID)\r\n            .setSmallIcon(R.drawable.ic_placeholder)\r\n            .setContentTitle(prayerName)\r\n            .setContentText(\"It's time for $prayerName prayer\")\r\n            .setPriority(NotificationCompat.PRIORITY_MAX)\r\n            .setCategory(NotificationCompat.CATEGORY_ALARM)\r\n            .setAutoCancel(true)\r\n            .setOngoing(true)\r\n            .setFullScreenIntent(fullScreenPendingIntent, true) // true = high priority\r\n            .build()\r\n\r\n        manager.notify(AzanActivity.NOTIFICATION_ID, notification)\r\n    }\r\n\r\n    private fun ensureChannelExists(manager: NotificationManager) {\r\n        val channel = NotificationChannel(\r\n            PRAYER_NOTIFICATION_CHANNEL_ID,\r\n            PRAYERS_NOTIFICATION_CHANNEL_NAME,\r\n            NotificationManager.IMPORTANCE_HIGH\r\n        ).apply {\r\n            description = \"Notifications for each of the 5 daily prayer times\"\r\n            setSound(null, null)\r\n            enableVibration(true)\r\n        }\r\n        manager.createNotificationChannel(channel)\r\n    }\r\n\r\n    private fun Context.isScreenOn(): Boolean =\r\n        getSystemService(PowerManager::class.java).isInteractive\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/hussein/mawaqit/data/infrastructure/receivers/PrayerAlarmReceiver.kt b/app/src/main/java/com/hussein/mawaqit/data/infrastructure/receivers/PrayerAlarmReceiver.kt
+--- a/app/src/main/java/com/hussein/mawaqit/data/infrastructure/receivers/PrayerAlarmReceiver.kt	(revision 9c6a0d5e67ca13ed5dfd4ff74087cf23e9dc4a99)
++++ b/app/src/main/java/com/hussein/mawaqit/data/infrastructure/receivers/PrayerAlarmReceiver.kt	(date 1775003047487)
+@@ -8,7 +8,6 @@
+ import android.content.Intent
+ import android.os.PowerManager
+ import androidx.core.app.NotificationCompat
+-import androidx.core.content.ContextCompat
+ import com.hussein.mawaqit.AzanActivity
+ import com.hussein.mawaqit.R
+ import com.hussein.mawaqit.data.infrastructure.settings.NotificationSound
+@@ -68,9 +67,9 @@
+     }
+ 
+     private fun showFullScreenNotification(
+-        context    : Context,
+-        prayerName : String,
+-        isFajr     : Boolean
++        context: Context,
++        prayerName: String,
++        isFajr: Boolean
+     ) {
+         val manager = context.getSystemService(NotificationManager::class.java)
+         ensureChannelExists(manager)
+Index: app/src/main/java/com/hussein/mawaqit/presentation/quran/list_screen/SurahListScreen.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.hussein.mawaqit.presentation.quran.list_screen\r\n\r\nimport androidx.compose.foundation.layout.Arrangement\r\nimport androidx.compose.foundation.layout.Box\r\nimport androidx.compose.foundation.layout.Column\r\nimport androidx.compose.foundation.layout.Row\r\nimport androidx.compose.foundation.layout.Spacer\r\nimport androidx.compose.foundation.layout.fillMaxSize\r\nimport androidx.compose.foundation.layout.fillMaxWidth\r\nimport androidx.compose.foundation.layout.padding\r\nimport androidx.compose.foundation.layout.size\r\nimport androidx.compose.foundation.layout.width\r\nimport androidx.compose.foundation.lazy.LazyColumn\r\nimport androidx.compose.foundation.lazy.itemsIndexed\r\nimport androidx.compose.material3.ButtonShapes\r\nimport androidx.compose.material3.CircularProgressIndicator\r\nimport androidx.compose.material3.ExperimentalMaterial3Api\r\nimport androidx.compose.material3.ExperimentalMaterial3ExpressiveApi\r\nimport androidx.compose.material3.FilledTonalButton\r\nimport androidx.compose.material3.HorizontalDivider\r\nimport androidx.compose.material3.Icon\r\nimport androidx.compose.material3.IconButton\r\nimport androidx.compose.material3.IconButtonDefaults\r\nimport androidx.compose.material3.LargeTopAppBar\r\nimport androidx.compose.material3.MaterialTheme\r\nimport androidx.compose.material3.Scaffold\r\nimport androidx.compose.material3.Surface\r\nimport androidx.compose.material3.Text\r\nimport androidx.compose.material3.TopAppBarDefaults\r\nimport androidx.compose.runtime.Composable\r\nimport androidx.compose.runtime.getValue\r\nimport androidx.compose.runtime.mutableStateOf\r\nimport androidx.compose.runtime.remember\r\nimport androidx.compose.runtime.setValue\r\nimport androidx.compose.ui.Alignment\r\nimport androidx.compose.ui.Modifier\r\nimport androidx.compose.ui.graphics.vector.ImageVector\r\nimport androidx.compose.ui.input.nestedscroll.nestedScroll\r\nimport androidx.compose.ui.res.vectorResource\r\nimport androidx.compose.ui.text.font.FontWeight\r\nimport androidx.compose.ui.text.style.TextAlign\r\nimport androidx.compose.ui.unit.dp\r\nimport androidx.lifecycle.compose.collectAsStateWithLifecycle\r\nimport com.hussein.mawaqit.R\r\nimport com.hussein.mawaqit.data.quran.QuranData\r\nimport com.hussein.mawaqit.data.quran.Surah\r\nimport com.hussein.mawaqit.presentation.quran.components.SurahReciterPickerSheet\r\nimport com.hussein.mawaqit.presentation.util.GlobalPlayerViewModel\r\nimport com.hussein.mawaqit.presentation.util.SurahItemState\r\nimport org.koin.androidx.compose.koinViewModel\r\nimport java.util.UUID\r\n\r\n@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)\r\n@Composable\r\nfun SurahListScreen(\r\n    onSurahSelected: (surahIndex: Int, scrollToAyah: Int?) -> Unit,\r\n    onNavigateToSearch: () -> Unit,\r\n    onBack: () -> Unit,\r\n    surahListViewModel: SurahListViewModel = koinViewModel(),\r\n    globalPlayerViewModel: GlobalPlayerViewModel = koinViewModel()\r\n\r\n) {\r\n\r\n    val allSurahs by surahListViewModel.allSurahs.collectAsStateWithLifecycle()\r\n\r\n    val surahStates by globalPlayerViewModel.surahStates.collectAsStateWithLifecycle()\r\n    val selectedReciter by globalPlayerViewModel.selectedReciter.collectAsStateWithLifecycle()\r\n    val bookmarks by surahListViewModel.bookmarks.collectAsStateWithLifecycle()\r\n    var showReciterPicker by remember { mutableStateOf(false) }\r\n    var surahToDownload by remember { mutableStateOf<Int?>(null) }\r\n\r\n    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()\r\n\r\n    var showBookmarksDialog by remember { mutableStateOf(false) }\r\n\r\n    if (showReciterPicker) {\r\n        SurahReciterPickerSheet(\r\n            current = selectedReciter,\r\n            onSelect = { reciter ->\r\n                globalPlayerViewModel.selectReciter(reciter)\r\n                surahToDownload?.let { surahNumber ->\r\n                    globalPlayerViewModel.downloadSurah(surahNumber)\r\n                    surahToDownload = null\r\n                }\r\n                showReciterPicker = false\r\n            },\r\n            onDismiss = {\r\n                showReciterPicker = false\r\n                surahToDownload = null\r\n            })\r\n    }\r\n\r\n    if (showBookmarksDialog) {\r\n        BookmarksDialog(\r\n            bookmarks = bookmarks,\r\n            onNavigate = { surahNumber, ayahNumber -> onSurahSelected(surahNumber, ayahNumber) },\r\n            onDelete = { surahNumber, ayahNumber ->\r\n                surahListViewModel.deleteBookmark(surahNumber, ayahNumber)\r\n            },\r\n            onDismiss = { showBookmarksDialog = false }\r\n        )\r\n    }\r\n\r\n    Scaffold(\r\n        topBar = {\r\n            LargeTopAppBar(\r\n                scrollBehavior = scrollBehavior,\r\n                title = { Text(\"Quran\") },\r\n                navigationIcon = {\r\n                    FilledTonalButton(\r\n                        onClick = onBack, shapes = ButtonShapes(\r\n                            shape = IconButtonDefaults.shapes().shape,\r\n                            pressedShape = IconButtonDefaults.shapes().pressedShape\r\n                        )\r\n                    ) {\r\n                        Icon(\r\n                            imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_back),\r\n                            contentDescription = null\r\n                        )\r\n                    }\r\n                },\r\n                actions = {\r\n                    IconButton(onClick = { showBookmarksDialog = true }) {\r\n                        Icon(\r\n                            imageVector = ImageVector.vectorResource(R.drawable.ic_bookmark),\r\n                            contentDescription = null\r\n                        )\r\n                    }\r\n                    IconButton(onClick = onNavigateToSearch) {\r\n                        Icon(\r\n                            imageVector = ImageVector.vectorResource(R.drawable.ic_search),\r\n                            contentDescription = null\r\n                        )\r\n                    }\r\n                })\r\n        }) { padding ->\r\n\r\n        LazyColumn(\r\n            modifier = Modifier\r\n                .fillMaxSize()\r\n                .padding(padding)\r\n                .nestedScroll(scrollBehavior.nestedScrollConnection)\r\n        ) {\r\n            itemsIndexed(QuranData.surahs, key = { _, surah -> surah.number }) { _, surah ->\r\n                val itemState = surahStates[surah.number] ?: SurahItemState.NotDownloaded\r\n                SurahRow(\r\n                    modifier = Modifier\r\n                        .fillMaxWidth()\r\n                        .padding(horizontal = 20.dp, vertical = 14.dp),\r\n                    surah = surah,\r\n                    onClick = { onSurahSelected(surah.number, null) },\r\n                    onPlayPause = {\r\n                        if (globalPlayerViewModel.isPlaying.value) {\r\n                            globalPlayerViewModel.togglePlayPause()\r\n                        } else {\r\n                            globalPlayerViewModel.playSurah(surah.number)\r\n                        }\r\n                    },\r\n                    itemState = itemState,\r\n                    onDownload = {\r\n                        surahToDownload = surah.number\r\n                        showReciterPicker = true\r\n                    },\r\n                    onCancel = { workId -> globalPlayerViewModel.cancelDownload(workId) },\r\n                )\r\n                HorizontalDivider(\r\n                    modifier = Modifier.padding(horizontal = 20.dp),\r\n                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)\r\n                )\r\n            }\r\n        }\r\n\r\n    }\r\n}\r\n\r\n@Composable\r\nprivate fun SurahRow(\r\n    modifier: Modifier = Modifier,\r\n    surah: Surah,\r\n    itemState: SurahItemState,\r\n    onClick: () -> Unit,\r\n    onDownload: () -> Unit,\r\n    onCancel: (UUID) -> Unit,\r\n    onPlayPause: () -> Unit,\r\n) {\r\n    Surface(onClick = onClick, color = MaterialTheme.colorScheme.surface) {\r\n        Row(\r\n            modifier = modifier,\r\n            verticalAlignment = Alignment.CenterVertically,\r\n            horizontalArrangement = Arrangement.SpaceBetween\r\n        ) {\r\n            // Surah number badge\r\n            Surface(\r\n                shape = MaterialTheme.shapes.small,\r\n                color = MaterialTheme.colorScheme.primaryContainer,\r\n                modifier = Modifier.size(36.dp)\r\n            ) {\r\n                Box(contentAlignment = Alignment.Center) {\r\n                    Text(\r\n                        text = surah.number.toString(),\r\n                        style = MaterialTheme.typography.labelMedium,\r\n                        color = MaterialTheme.colorScheme.onPrimaryContainer\r\n                    )\r\n                }\r\n            }\r\n\r\n            Spacer(Modifier.width(14.dp))\r\n\r\n            // Names\r\n            Column(modifier = Modifier.weight(1f)) {\r\n                Text(\r\n                    text = surah.nameTransliterated,\r\n                    style = MaterialTheme.typography.bodyMedium,\r\n                    fontWeight = FontWeight.SemiBold\r\n                )\r\n                Text(\r\n                    text = \"Pages ${surah.startPage} – ${QuranData.endPageOf(surah)}\",\r\n                    style = MaterialTheme.typography.labelSmall,\r\n                    color = MaterialTheme.colorScheme.onSurfaceVariant\r\n                )\r\n            }\r\n\r\n            // Arabic name + bookmark indicator\r\n            Column(horizontalAlignment = Alignment.End) {\r\n                Text(\r\n                    text = surah.nameArabic,\r\n                    style = MaterialTheme.typography.titleMedium,\r\n                    textAlign = TextAlign.End,\r\n                    color = MaterialTheme.colorScheme.primary\r\n                )\r\n            }\r\n\r\n            Spacer(Modifier.width(8.dp))\r\n            when (itemState) {\r\n                SurahItemState.NotDownloaded -> {\r\n                    IconButton(onClick = onDownload) {\r\n                        Icon(\r\n                            imageVector = ImageVector.vectorResource(R.drawable.ic_download),\r\n                            contentDescription = \"Download\",\r\n                            tint = MaterialTheme.colorScheme.onSurfaceVariant\r\n                        )\r\n                    }\r\n                }\r\n\r\n                is SurahItemState.Downloading -> {\r\n                    Box(contentAlignment = Alignment.Center) {\r\n                        CircularProgressIndicator(\r\n                            progress = { itemState.progress },\r\n                            modifier = Modifier.size(32.dp),\r\n                            strokeWidth = 3.dp\r\n                        )\r\n                        IconButton(\r\n                            onClick = { onCancel(itemState.workId) },\r\n                            modifier = Modifier.size(32.dp)\r\n                        ) {\r\n                            Icon(\r\n                                imageVector = ImageVector.vectorResource(R.drawable.ic_close),\r\n                                contentDescription = \"Cancel\",\r\n                                modifier = Modifier.size(16.dp),\r\n                                tint = MaterialTheme.colorScheme.error\r\n                            )\r\n                        }\r\n                    }\r\n                }\r\n\r\n                SurahItemState.Downloaded -> {\r\n                    IconButton(onClick = onPlayPause) {\r\n                        Icon(\r\n                            imageVector = ImageVector.vectorResource(R.drawable.ic_play),\r\n                            contentDescription = \"Play\",\r\n                            tint = MaterialTheme.colorScheme.primary\r\n                        )\r\n                    }\r\n                }\r\n\r\n                SurahItemState.Playing -> {\r\n                    IconButton(onClick = onPlayPause) {\r\n                        Icon(\r\n                            imageVector = ImageVector.vectorResource(R.drawable.ic_pause),\r\n                            contentDescription = \"Pause\",\r\n                            tint = MaterialTheme.colorScheme.primary\r\n                        )\r\n                    }\r\n                }\r\n\r\n                SurahItemState.Paused -> {\r\n                    IconButton(onClick = onPlayPause) {\r\n                        Icon(\r\n                            imageVector = ImageVector.vectorResource(R.drawable.ic_resume),\r\n                            contentDescription = \"Resume\",\r\n                            tint = MaterialTheme.colorScheme.primary\r\n                        )\r\n                    }\r\n                }\r\n            }\r\n        }\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/hussein/mawaqit/presentation/quran/list_screen/SurahListScreen.kt b/app/src/main/java/com/hussein/mawaqit/presentation/quran/list_screen/SurahListScreen.kt
+--- a/app/src/main/java/com/hussein/mawaqit/presentation/quran/list_screen/SurahListScreen.kt	(revision 9c6a0d5e67ca13ed5dfd4ff74087cf23e9dc4a99)
++++ b/app/src/main/java/com/hussein/mawaqit/presentation/quran/list_screen/SurahListScreen.kt	(date 1774845187408)
+@@ -60,9 +60,6 @@
+     globalPlayerViewModel: GlobalPlayerViewModel = koinViewModel()
+ 
+ ) {
+-
+-    val allSurahs by surahListViewModel.allSurahs.collectAsStateWithLifecycle()
+-
+     val surahStates by globalPlayerViewModel.surahStates.collectAsStateWithLifecycle()
+     val selectedReciter by globalPlayerViewModel.selectedReciter.collectAsStateWithLifecycle()
+     val bookmarks by surahListViewModel.bookmarks.collectAsStateWithLifecycle()
+Index: app/src/main/res/drawable/ic_home.xml
+===================================================================
+diff --git a/app/src/main/res/drawable/ic_home.xml b/app/src/main/res/drawable/ic_home.xml
+new file mode 100644
+--- /dev/null	(date 1774846948485)
++++ b/app/src/main/res/drawable/ic_home.xml	(date 1774846948485)
+@@ -0,0 +1,9 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="24dp"
++    android:height="24dp"
++    android:viewportWidth="960"
++    android:viewportHeight="960">
++  <path
++      android:pathData="M240,760h120v-240h240v240h120v-360L480,220 240,400v360ZM160,840v-480l320,-240 320,240v480L520,840v-240h-80v240L160,840ZM480,490Z"
++      android:fillColor="#e3e3e3"/>
++</vector>
+Index: app/src/main/java/com/hussein/mawaqit/data/db/QuranEntities.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.hussein.mawaqit.data.db\r\n\r\nimport androidx.room.Entity\r\nimport androidx.room.ForeignKey\r\nimport androidx.room.Index\r\nimport androidx.room.PrimaryKey\r\n\r\n@Entity(tableName = \"surahs\")\r\ndata class SurahEntity(\r\n    @PrimaryKey val number: Int,\r\n    val nameArabic: String,\r\n    val nameTransliterated: String,\r\n    val totalAyahs: Int\r\n)\r\n\r\n@Entity(\r\n    tableName = \"ayahs\",\r\n    primaryKeys = [\"surahNumber\", \"numberInSurah\"],\r\n    foreignKeys = [ForeignKey(\r\n        entity = SurahEntity::class,\r\n        parentColumns = [\"number\"],\r\n        childColumns = [\"surahNumber\"],\r\n        onDelete = ForeignKey.CASCADE\r\n    )],\r\n    indices = [Index(\"surahNumber\")]\r\n)\r\ndata class AyahEntity(\r\n    val surahNumber: Int,\r\n    val numberInSurah: Int,\r\n    val text: String,\r\n    val normalizedText: String\r\n)\r\n\r\n@Entity(\r\n    tableName = \"bookmarks\",\r\n    foreignKeys = [ForeignKey(\r\n        entity = SurahEntity::class,\r\n        parentColumns = [\"number\"],\r\n        childColumns = [\"surahNumber\"],\r\n        onDelete = ForeignKey.CASCADE\r\n    )],\r\n    indices = [Index(\"surahNumber\")]\r\n)\r\ndata class BookmarkEntity(\r\n    @PrimaryKey(autoGenerate = true) val id: Int = 0,\r\n    val surahNumber: Int,\r\n    val ayahNumber: Int,\r\n    val addedAt: Long = System.currentTimeMillis()\r\n)
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/hussein/mawaqit/data/db/QuranEntities.kt b/app/src/main/java/com/hussein/mawaqit/data/db/QuranEntities.kt
+--- a/app/src/main/java/com/hussein/mawaqit/data/db/QuranEntities.kt	(revision 9c6a0d5e67ca13ed5dfd4ff74087cf23e9dc4a99)
++++ b/app/src/main/java/com/hussein/mawaqit/data/db/QuranEntities.kt	(date 1774844320604)
+@@ -46,4 +46,13 @@
+     val surahNumber: Int,
+     val ayahNumber: Int,
+     val addedAt: Long = System.currentTimeMillis()
+-)
+\ No newline at end of file
++)
++
++//@Entity(tableName = "ayah_fts")
++//@Fts4(contentEntity = AyahEntity::class)
++//data class AyahEntityFts(
++//    val surahNumber: Int,
++//    val ayahNumber: Int,
++//    val text: String,
++//    val normalizedText: String
++//)
+\ No newline at end of file
+Index: gradle/libs.versions.toml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>[versions]\r\nagp = \"9.1.0\"\r\ncoreKtx = \"1.17.0\"\r\njunit = \"4.13.2\"\r\njunitVersion = \"1.3.0\"\r\nespressoCore = \"3.7.0\"\r\nlifecycleRuntimeKtx = \"2.10.0\"\r\nactivityCompose = \"1.12.4\"\r\nkotlin = \"2.2.21\"\r\ncomposeBom = \"2026.02.01\"\r\n\r\nprayerTimes = \"0.0.6\"\r\ngmsLocation = \"21.3.0\"\r\ncomposeViewmodel = \"2.10.0\"\r\nsplashScreen = \"1.2.0\"\r\n\r\nnav3Core = \"1.1.0-rc01\"\r\nlifecycleViewmodelNav3 = \"2.11.0-alpha03\"\r\nkotlinSerialization = \"2.2.21\"\r\nkotlinxSerializationCore = \"1.9.0\"\r\n\r\n\r\nworkManagerVersion = \"2.11.1\"\r\ndatastorePreferences = \"1.1.1\"\r\njetbrainsKotlinJvm = \"2.2.21\"\r\n\r\nktor = \"3.4.1\"\r\nkotlinxDatetime = \"0.6.0\"\r\nglance = \"1.1.0\"\r\nlifecycleCompose = \"2.10.0\"\r\nkoin = \"4.2.0\"\r\nroom = \"2.8.4\"\r\n\r\n\r\n\r\n[libraries]\r\nandroidx-core-ktx = { group = \"androidx.core\", name = \"core-ktx\", version.ref = \"coreKtx\" }\r\njunit = { group = \"junit\", name = \"junit\", version.ref = \"junit\" }\r\nandroidx-junit = { group = \"androidx.test.ext\", name = \"junit\", version.ref = \"junitVersion\" }\r\nandroidx-espresso-core = { group = \"androidx.test.espresso\", name = \"espresso-core\", version.ref = \"espressoCore\" }\r\nandroidx-lifecycle-runtime-ktx = { group = \"androidx.lifecycle\", name = \"lifecycle-runtime-ktx\", version.ref = \"lifecycleRuntimeKtx\" }\r\nandroidx-activity-compose = { group = \"androidx.activity\", name = \"activity-compose\", version.ref = \"activityCompose\" }\r\nandroidx-compose-bom = { group = \"androidx.compose\", name = \"compose-bom\", version.ref = \"composeBom\" }\r\nandroidx-compose-ui = { group = \"androidx.compose.ui\", name = \"ui\" }\r\nandroidx-compose-ui-graphics = { group = \"androidx.compose.ui\", name = \"ui-graphics\" }\r\nandroidx-compose-ui-tooling = { group = \"androidx.compose.ui\", name = \"ui-tooling\" }\r\nandroidx-compose-ui-tooling-preview = { group = \"androidx.compose.ui\", name = \"ui-tooling-preview\" }\r\nandroidx-compose-ui-test-manifest = { group = \"androidx.compose.ui\", name = \"ui-test-manifest\" }\r\nandroidx-compose-ui-test-junit4 = { group = \"androidx.compose.ui\", name = \"ui-test-junit4\" }\r\nandroidx-compose-material3 = { group = \"androidx.compose.material3\", name = \"material3\" }\r\nbatoul-prayerTimes = { module = \"com.batoulapps.adhan:adhan2\", version.ref = \"prayerTimes\" }\r\n\r\ncompose-viewmodel = { module = \"androidx.lifecycle:lifecycle-viewmodel-compose\", version.ref = \"composeViewmodel\" }\r\nandroidx-core-splashscreen = { group = \"androidx.core\", name = \"core-splashscreen\", version.ref = \"splashScreen\" }\r\nandroidx-navigation3-runtime = { module = \"androidx.navigation3:navigation3-runtime\", version.ref = \"nav3Core\" }\r\nandroidx-navigation3-ui = { module = \"androidx.navigation3:navigation3-ui\", version.ref = \"nav3Core\" }\r\ncompose-material3e = { module = \"androidx.compose.material3:material3\", version = \"1.5.0-alpha15\" }\r\nandroidx-media3-exoplayer = { module = \"androidx.media:media\", version = \"1.7.1\" }\r\nandroidx-lifecycle-viewmodel-navigation3 = { module = \"androidx.lifecycle:lifecycle-viewmodel-navigation3\", version.ref = \"lifecycleViewmodelNav3\" }\r\nkotlinx-serialization-core = { module = \"org.jetbrains.kotlinx:kotlinx-serialization-core\", version.ref = \"kotlinxSerializationCore\" }\r\nkotlinx-serialization-json = { module = \"org.jetbrains.kotlinx:kotlinx-serialization-json\", version = \"1.10.0\" }\r\n\r\n# work manager\r\nandroidx-work-runtime = { module = \"androidx.work:work-runtime\", version.ref = \"workManagerVersion\" }\r\nandroidx-work-coroutines = { module = \"androidx.work:work-runtime-ktx\", version.ref = \"workManagerVersion\" }\r\n# datastore-prefs\r\nandroidx-datastore-preferences = { module = \"androidx.datastore:datastore-preferences\", version.ref = \"datastorePreferences\" }\r\n# google location services\r\ngms-location = { module = \"com.google.android.gms:play-services-location\", version.ref = \"gmsLocation\" }\r\n\r\n# Ktor\r\nktor-client-android = { module = \"io.ktor:ktor-client-android\", version.ref = \"ktor\" }\r\nktor-client-content-negotiation = { module = \"io.ktor:ktor-client-content-negotiation\", version.ref = \"ktor\" }\r\nktor-serialization-kotlinx-json = { module = \"io.ktor:ktor-serialization-kotlinx-json\", version.ref = \"ktor\" }\r\n\r\n# Datetime\r\nkotlinx-datetime = { module = \"org.jetbrains.kotlinx:kotlinx-datetime\", version.ref = \"kotlinxDatetime\" }\r\n\r\n# Glance\r\nglance-appwidget = { module = \"androidx.glance:glance-appwidget\", version.ref = \"glance\" }\r\nglance-material3 = { module = \"androidx.glance:glance-material3\", version.ref = \"glance\" }\r\n\r\n#koin\r\nkoin-bom = { module = \"io.insert-koin:koin-bom\", version.ref = \"koin\" }\r\nkoin-android = { module = \"io.insert-koin:koin-android\" }\r\nkoin-androidx-compose = { module = \"io.insert-koin:koin-androidx-compose\" }\r\nkoin-compose-navigation3 = { module = \"io.insert-koin:koin-compose-navigation3\" }\r\nkoin-workmanager = { module = \"io.insert-koin:koin-androidx-workmanager\" }\r\n\r\n#room\r\nroom-runtime = { module = \"androidx.room:room-runtime\", version.ref = \"room\" }\r\nroom-ktx = { module = \"androidx.room:room-ktx\", version.ref = \"room\" }\r\nroom-compiler = { module = \"androidx.room:room-compiler\", version.ref = \"room\" }\r\n\r\n\r\n[plugins]\r\nandroid-application = { id = \"com.android.application\", version.ref = \"agp\" }\r\nandroid-library = { id = \"com.android.library\", version.ref = \"agp\" }\r\nkotlin-compose = { id = \"org.jetbrains.kotlin.plugin.compose\", version.ref = \"kotlin\" }\r\njetbrains-kotlin-android = { id = \"org.jetbrains.kotlin.android\", version.ref = \"kotlin\" }\r\njetbrains-kotlin-serialization = { id = \"org.jetbrains.kotlin.plugin.serialization\", version.ref = \"kotlinSerialization\" }\r\njetbrains-kotlin-jvm = { id = \"org.jetbrains.kotlin.jvm\", version.ref = \"jetbrainsKotlinJvm\" }\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/gradle/libs.versions.toml b/gradle/libs.versions.toml
+--- a/gradle/libs.versions.toml	(revision 9c6a0d5e67ca13ed5dfd4ff74087cf23e9dc4a99)
++++ b/gradle/libs.versions.toml	(date 1774849552172)
+@@ -1,13 +1,15 @@
+ [versions]
+ agp = "9.1.0"
+-coreKtx = "1.17.0"
++coreKtx = "1.18.0"
+ junit = "4.13.2"
+ junitVersion = "1.3.0"
+ espressoCore = "3.7.0"
+ lifecycleRuntimeKtx = "2.10.0"
+-activityCompose = "1.12.4"
++activityCompose = "1.13.0"
+ kotlin = "2.2.21"
+-composeBom = "2026.02.01"
++composeBom = "2026.03.01"
++
++media3Exoplayer = "1.10.0"
+ 
+ prayerTimes = "0.0.6"
+ gmsLocation = "21.3.0"
+@@ -34,11 +36,13 @@
+ 
+ 
+ [libraries]
+-androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+ junit = { group = "junit", name = "junit", version.ref = "junit" }
+ androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+ androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+ androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
++androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
++
++# compose
+ androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+ androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+ androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
+@@ -48,17 +52,32 @@
+ androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+ androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+ androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+-batoul-prayerTimes = { module = "com.batoulapps.adhan:adhan2", version.ref = "prayerTimes" }
++
++
++# exo player
++androidx-media3-exoplayer = { module = "androidx.media3:media3-exoplayer", version.ref = "media3Exoplayer" }
++androidx-media3-session = { module = "androidx.media3:media3-session", version.ref = "media3Exoplayer" }
+ 
+ compose-viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "composeViewmodel" }
++
++# splach screen api
+ androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "splashScreen" }
++
++
++
++kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinxSerializationCore" }
++kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.10.0" }
++
++# prayer times
++batoul-prayerTimes = { module = "com.batoulapps.adhan:adhan2", version.ref = "prayerTimes" }
++
++# navigation 3
+ androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "nav3Core" }
+ androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "nav3Core" }
+-compose-material3e = { module = "androidx.compose.material3:material3", version = "1.5.0-alpha15" }
+-androidx-media3-exoplayer = { module = "androidx.media:media", version = "1.7.1" }
+ androidx-lifecycle-viewmodel-navigation3 = { module = "androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "lifecycleViewmodelNav3" }
+-kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinxSerializationCore" }
+-kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.10.0" }
++
++# material 3 expressive
++compose-material3e = { module = "androidx.compose.material3:material3", version = "1.5.0-alpha16" }
+ 
+ # work manager
+ androidx-work-runtime = { module = "androidx.work:work-runtime", version.ref = "workManagerVersion" }
+Index: app/src/main/java/com/hussein/mawaqit/data/infrastructure/settings/SettingsRepository.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.hussein.mawaqit.data.infrastructure.settings\r\n\r\n\r\nimport android.content.Context\r\nimport androidx.datastore.core.DataStore\r\nimport androidx.datastore.preferences.core.Preferences\r\nimport androidx.datastore.preferences.core.booleanPreferencesKey\r\nimport androidx.datastore.preferences.core.edit\r\nimport androidx.datastore.preferences.core.stringPreferencesKey\r\nimport androidx.datastore.preferences.preferencesDataStore\r\nimport com.batoulapps.adhan2.CalculationMethod\r\nimport kotlinx.coroutines.flow.Flow\r\nimport kotlinx.coroutines.flow.firstOrNull\r\nimport kotlinx.coroutines.flow.map\r\n\r\nprivate val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = \"settings\")\r\n\r\n/**\r\n * Single source of truth for all user preferences.\r\n *\r\n * Uses Jetpack DataStore (Preferences) instead of SharedPreferences —\r\n * coroutine-safe, Flow-based, no main-thread I/O.\r\n */\r\nclass SettingsRepository(private val context: Context) {\r\n\r\n    // ---------------------------------------------------------------------------\r\n    // Keys\r\n    // ---------------------------------------------------------------------------\r\n\r\n    companion object {\r\n        // Per-prayer notification toggles\r\n        val NOTIFY_FAJR = booleanPreferencesKey(\"notify_fajr\")\r\n        val NOTIFY_DHUHR = booleanPreferencesKey(\"notify_dhuhr\")\r\n        val NOTIFY_ASR = booleanPreferencesKey(\"notify_asr\")\r\n        val NOTIFY_MAGHRIB = booleanPreferencesKey(\"notify_maghrib\")\r\n        val NOTIFY_ISHA = booleanPreferencesKey(\"notify_isha\")\r\n\r\n        val CALCULATION_METHOD = stringPreferencesKey(\"calculation_method\")\r\n        val NOTIFICATION_SOUND = stringPreferencesKey(\"notification_sound\")\r\n        val APP_THEME = stringPreferencesKey(\"app_theme\")\r\n        val APP_COLOR_SCHEME = stringPreferencesKey(\"app_color_scheme\")\r\n        val KEY_ONBOARDING_DONE = booleanPreferencesKey(\"onboarding_done\")\r\n        val KEY_QURAN_POPULATED_DONE = booleanPreferencesKey(\"quran_populated\")\r\n\r\n    }\r\n\r\n\r\n    val settingsFlow: Flow<AppSettings> = context.dataStore.data.map { prefs ->\r\n        AppSettings(\r\n            prayerNotifications = PrayerNotificationSettings(\r\n                fajr = prefs[NOTIFY_FAJR] ?: true,\r\n                dhuhr = prefs[NOTIFY_DHUHR] ?: true,\r\n                asr = prefs[NOTIFY_ASR] ?: true,\r\n                maghrib = prefs[NOTIFY_MAGHRIB] ?: true,\r\n                isha = prefs[NOTIFY_ISHA] ?: true\r\n            ),\r\n            calculationMethod = CalculationMethod.valueOf(\r\n                prefs[CALCULATION_METHOD] ?: CalculationMethod.MUSLIM_WORLD_LEAGUE.name\r\n            ),\r\n            notificationSound = NotificationSound.valueOf(\r\n                prefs[NOTIFICATION_SOUND] ?: NotificationSound.ADHAN.name\r\n            ),\r\n            appTheme = AppTheme.valueOf(\r\n                prefs[APP_THEME] ?: AppTheme.SYSTEM.name\r\n            ),\r\n            appColorScheme = AppColorScheme.valueOf(\r\n                prefs[APP_COLOR_SCHEME] ?: AppColorScheme.DYNAMIC.name\r\n            )\r\n        )\r\n    }\r\n\r\n\r\n    suspend fun setPrayerNotificationEnabled(prayer: String, enabled: Boolean) {\r\n        val key = prayerNotificationKey(prayer) ?: return\r\n        context.dataStore.edit { it[key] = enabled }\r\n    }\r\n\r\n    suspend fun setCalculationMethod(method: CalculationMethod) {\r\n        context.dataStore.edit { it[CALCULATION_METHOD] = method.name }\r\n    }\r\n\r\n    suspend fun setNotificationSound(sound: NotificationSound) {\r\n        context.dataStore.edit { it[NOTIFICATION_SOUND] = sound.name }\r\n    }\r\n\r\n    suspend fun setAppTheme(theme: AppTheme) {\r\n        context.dataStore.edit { it[APP_THEME] = theme.name }\r\n    }\r\n\r\n    suspend fun setAppColorScheme(scheme: AppColorScheme) {\r\n        context.dataStore.edit { it[APP_COLOR_SCHEME] = scheme.name }\r\n    }\r\n\r\n    private fun prayerNotificationKey(prayer: String): Preferences.Key<Boolean>? = when (prayer) {\r\n        \"Fajr\" -> NOTIFY_FAJR\r\n        \"Dhuhr\" -> NOTIFY_DHUHR\r\n        \"Asr\" -> NOTIFY_ASR\r\n        \"Maghrib\" -> NOTIFY_MAGHRIB\r\n        \"Isha\" -> NOTIFY_ISHA\r\n        else -> null\r\n    }\r\n\r\n    /** Convenience: returns whether a specific prayer's notification is enabled. */\r\n    fun isNotificationEnabled(prayerName: String, settings: AppSettings): Boolean =\r\n        when (prayerName) {\r\n            \"Fajr\" -> settings.prayerNotifications.fajr\r\n            \"Dhuhr\" -> settings.prayerNotifications.dhuhr\r\n            \"Asr\" -> settings.prayerNotifications.asr\r\n            \"Maghrib\" -> settings.prayerNotifications.maghrib\r\n            \"Isha\" -> settings.prayerNotifications.isha\r\n            else -> true\r\n        }\r\n\r\n\r\n    val isOnboardingDone: Flow<Boolean> = context.dataStore.data.map { prefs ->\r\n        prefs[KEY_ONBOARDING_DONE] ?: false\r\n    }\r\n\r\n    suspend fun isOnboardingDone(): Boolean =\r\n        isOnboardingDone.firstOrNull() ?: false\r\n\r\n    suspend fun setOnboardingDone() {\r\n        context.dataStore.edit { it[KEY_ONBOARDING_DONE] = true }\r\n    }\r\n\r\n    val isQuranPopulated: Flow<Boolean> = context.dataStore.data.map { prefs ->\r\n        prefs[KEY_QURAN_POPULATED_DONE] ?: false\r\n    }\r\n\r\n    suspend fun isQuranPopulated(): Boolean =\r\n        isQuranPopulated.firstOrNull() ?: false\r\n\r\n    suspend fun setQuranPopulated() {\r\n        context.dataStore.edit { it[KEY_QURAN_POPULATED_DONE] = true }\r\n    }\r\n}\r\n\r\n\r\ndata class AppSettings(\r\n    val prayerNotifications: PrayerNotificationSettings,\r\n    val calculationMethod: CalculationMethod,\r\n    val notificationSound: NotificationSound,\r\n    val appTheme: AppTheme,\r\n    val appColorScheme: AppColorScheme\r\n)\r\n\r\ndata class PrayerNotificationSettings(\r\n    val fajr: Boolean,\r\n    val dhuhr: Boolean,\r\n    val asr: Boolean,\r\n    val maghrib: Boolean,\r\n    val isha: Boolean\r\n)\r\n\r\nenum class NotificationSound(val displayName: String) {\r\n    ADHAN(\"Adhan\"),\r\n    NOTIFICATION(\"Notification\"),\r\n    NONE(\"None - Don't Show Notifications\")\r\n}\r\n\r\nenum class AppTheme(val displayName: String) {\r\n    LIGHT(\"Light\"),\r\n    DARK(\"Dark\"),\r\n    SYSTEM(\"System Default\")\r\n}\r\n\r\nenum class AppColorScheme(val displayName: String) {\r\n    DYNAMIC(\"Dynamic (Material You)\"),\r\n    CUSTOM(\"Mawaqit Theme\")\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/hussein/mawaqit/data/infrastructure/settings/SettingsRepository.kt b/app/src/main/java/com/hussein/mawaqit/data/infrastructure/settings/SettingsRepository.kt
+--- a/app/src/main/java/com/hussein/mawaqit/data/infrastructure/settings/SettingsRepository.kt	(revision 9c6a0d5e67ca13ed5dfd4ff74087cf23e9dc4a99)
++++ b/app/src/main/java/com/hussein/mawaqit/data/infrastructure/settings/SettingsRepository.kt	(date 1774999757798)
+@@ -58,7 +58,7 @@
+                 prefs[CALCULATION_METHOD] ?: CalculationMethod.MUSLIM_WORLD_LEAGUE.name
+             ),
+             notificationSound = NotificationSound.valueOf(
+-                prefs[NOTIFICATION_SOUND] ?: NotificationSound.ADHAN.name
++                prefs[NOTIFICATION_SOUND] ?: NotificationSound.NOTIFICATION.name
+             ),
+             appTheme = AppTheme.valueOf(
+                 prefs[APP_THEME] ?: AppTheme.SYSTEM.name
+Index: app/src/main/java/com/hussein/mawaqit/data/infrastructure/workers/QuranPopulationWorker.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.hussein.mawaqit.data.infrastructure.workers\r\n\r\nimport android.content.Context\r\nimport android.util.Log\r\nimport androidx.work.CoroutineWorker\r\nimport androidx.work.ExistingWorkPolicy\r\nimport androidx.work.OneTimeWorkRequestBuilder\r\nimport androidx.work.WorkManager\r\nimport androidx.work.WorkerParameters\r\nimport androidx.work.workDataOf\r\nimport com.hussein.mawaqit.data.db.AyahEntity\r\nimport com.hussein.mawaqit.data.db.QuranDatabase\r\nimport com.hussein.mawaqit.data.db.SurahEntity\r\nimport kotlinx.coroutines.Dispatchers\r\nimport kotlinx.coroutines.withContext\r\nimport kotlinx.serialization.json.Json\r\nimport kotlinx.serialization.json.jsonArray\r\nimport kotlinx.serialization.json.jsonObject\r\nimport kotlinx.serialization.json.jsonPrimitive\r\nimport org.koin.core.component.KoinComponent\r\nimport org.koin.core.component.inject\r\n\r\nclass QuranPopulationWorker(\r\n    context: Context,\r\n    params: WorkerParameters\r\n) : CoroutineWorker(context, params), KoinComponent {\r\n\r\n    private val db: QuranDatabase by inject()\r\n    private val json = Json { ignoreUnknownKeys = true }\r\n\r\n    companion object {\r\n        const val WORK_NAME = \"quran_population\"\r\n        const val KEY_PROGRESS = \"progress\"\r\n        const val KEY_CURRENT_SURAH = \"current_surah\"\r\n        private const val TAG = \"QuranPopulation\"\r\n\r\n    }\r\n\r\n    override suspend fun doWork(): Result = withContext(Dispatchers.IO) {\r\n        try {\r\n            if (db.ayahDao().count() > 0) {\r\n                Log.d(TAG, \"Database already populated — skipping\")\r\n                return@withContext Result.success()\r\n            }\r\n\r\n            Log.d(TAG, \"Starting Quran database population\")\r\n\r\n            val surahs = mutableListOf<SurahEntity>()\r\n            val ayahs = mutableListOf<AyahEntity>()\r\n\r\n            // Read the whole Quran from a single file\r\n            val raw = applicationContext.assets\r\n                .open(\"quran/quran.json\")\r\n                .bufferedReader()\r\n                .use { it.readText() }\r\n            val surahsArray = json.parseToJsonElement(raw).jsonArray\r\n\r\n            surahsArray.forEachIndexed { index, surahElement ->\r\n                val root = surahElement.jsonObject\r\n                val surahNumber = root[\"id\"]!!.jsonPrimitive.content.toInt()\r\n                val versesArray = root[\"verses\"]!!.jsonArray\r\n\r\n                surahs.add(\r\n                    SurahEntity(\r\n                        number = surahNumber,\r\n                        nameArabic = root[\"name\"]!!.jsonPrimitive.content,\r\n                        nameTransliterated = root[\"transliteration\"]!!.jsonPrimitive.content,\r\n                        totalAyahs = versesArray.size\r\n                    )\r\n                )\r\n\r\n                versesArray.forEach { entry ->\r\n                    val obj = entry.jsonObject\r\n                    ayahs.add(\r\n                        AyahEntity(\r\n                            surahNumber = surahNumber,\r\n                            numberInSurah = obj[\"id\"]!!.jsonPrimitive.content.toInt(),\r\n                            text = obj[\"text\"]!!.jsonPrimitive.content,\r\n                            normalizedText = obj[\"normalized\"]!!.jsonPrimitive.content\r\n                        )\r\n                    )\r\n                }\r\n\r\n                val progress = (index + 1) / 114f\r\n                setProgress(\r\n                    workDataOf(\r\n                        KEY_PROGRESS to progress,\r\n                        KEY_CURRENT_SURAH to surahNumber\r\n                    )\r\n                )\r\n            }\r\n\r\n            db.surahDao().insertAll(surahs)\r\n            db.ayahDao().insertAll(ayahs)\r\n\r\n            Log.d(TAG, \"Population complete: ${surahs.size} surahs, ${ayahs.size} ayahs\")\r\n            Result.success()\r\n        } catch (e: Exception) {\r\n            Log.e(TAG, \"Population failed\", e)\r\n            Result.retry()\r\n        }\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/hussein/mawaqit/data/infrastructure/workers/QuranPopulationWorker.kt b/app/src/main/java/com/hussein/mawaqit/data/infrastructure/workers/QuranPopulationWorker.kt
+--- a/app/src/main/java/com/hussein/mawaqit/data/infrastructure/workers/QuranPopulationWorker.kt	(revision 9c6a0d5e67ca13ed5dfd4ff74087cf23e9dc4a99)
++++ b/app/src/main/java/com/hussein/mawaqit/data/infrastructure/workers/QuranPopulationWorker.kt	(date 1774842736569)
+@@ -76,7 +76,7 @@
+                             surahNumber = surahNumber,
+                             numberInSurah = obj["id"]!!.jsonPrimitive.content.toInt(),
+                             text = obj["text"]!!.jsonPrimitive.content,
+-                            normalizedText = obj["normalized"]!!.jsonPrimitive.content
++                            normalizedText = obj["text"]!!.jsonPrimitive.content.normalizeArabic()
+                         )
+                     )
+                 }
+@@ -100,4 +100,21 @@
+             Result.retry()
+         }
+     }
++
++    private fun String.normalizeArabic(): String = this
++        .replace('أ', 'ا')
++        .replace('إ', 'ا')
++        .replace('آ', 'ا')
++        .replace('ٱ', 'ا')
++        // Normalize ya variations → bare ya
++        .replace('ى', 'ي')
++        .replace('ئ', 'ي')
++        // Normalize waw
++        .replace('ؤ', 'و')
++        // Normalize ta marbuta → ha
++        .replace('ة', 'ه')
++        // Remove tashkeel (diacritics) — Unicode range 0x064B–0x065F
++        .replace(Regex("[\u064B-\u065F]"), "")
++        // Remove superscript alef and other Quranic marks
++        .replace(Regex("[\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED]"), "")
+ }
+\ No newline at end of file
+Index: app/src/main/java/com/hussein/mawaqit/presentation/settings/SettingsScreen.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.hussein.mawaqit.presentation.settings\r\n\r\nimport CurrentLocationFetcher\r\nimport android.Manifest\r\nimport android.content.Intent\r\nimport android.provider.Settings\r\nimport android.widget.Toast\r\nimport androidx.activity.compose.rememberLauncherForActivityResult\r\nimport androidx.activity.result.contract.ActivityResultContracts\r\nimport androidx.compose.animation.AnimatedVisibility\r\nimport androidx.compose.animation.expandVertically\r\nimport androidx.compose.animation.fadeIn\r\nimport androidx.compose.animation.fadeOut\r\nimport androidx.compose.animation.shrinkVertically\r\nimport androidx.compose.foundation.BorderStroke\r\nimport androidx.compose.foundation.clickable\r\nimport androidx.compose.foundation.layout.Arrangement\r\nimport androidx.compose.foundation.layout.Column\r\nimport androidx.compose.foundation.layout.PaddingValues\r\nimport androidx.compose.foundation.layout.Row\r\nimport androidx.compose.foundation.layout.Spacer\r\nimport androidx.compose.foundation.layout.fillMaxSize\r\nimport androidx.compose.foundation.layout.fillMaxWidth\r\nimport androidx.compose.foundation.layout.height\r\nimport androidx.compose.foundation.layout.padding\r\nimport androidx.compose.foundation.layout.size\r\nimport androidx.compose.foundation.lazy.LazyColumn\r\nimport androidx.compose.foundation.shape.RoundedCornerShape\r\nimport androidx.compose.material3.AlertDialog\r\nimport androidx.compose.material3.CircularProgressIndicator\r\nimport androidx.compose.material3.ExperimentalMaterial3Api\r\nimport androidx.compose.material3.ExperimentalMaterial3ExpressiveApi\r\nimport androidx.compose.material3.FilledTonalIconButton\r\nimport androidx.compose.material3.Icon\r\nimport androidx.compose.material3.MaterialTheme\r\nimport androidx.compose.material3.ModalBottomSheet\r\nimport androidx.compose.material3.Scaffold\r\nimport androidx.compose.material3.Surface\r\nimport androidx.compose.material3.Switch\r\nimport androidx.compose.material3.Text\r\nimport androidx.compose.material3.TextButton\r\nimport androidx.compose.material3.TopAppBar\r\nimport androidx.compose.material3.rememberModalBottomSheetState\r\nimport androidx.compose.runtime.Composable\r\nimport androidx.compose.runtime.LaunchedEffect\r\nimport androidx.compose.runtime.getValue\r\nimport androidx.compose.runtime.mutableStateOf\r\nimport androidx.compose.runtime.remember\r\nimport androidx.compose.runtime.setValue\r\nimport androidx.compose.ui.Alignment\r\nimport androidx.compose.ui.Modifier\r\nimport androidx.compose.ui.graphics.Color\r\nimport androidx.compose.ui.graphics.vector.ImageVector\r\nimport androidx.compose.ui.platform.LocalContext\r\nimport androidx.compose.ui.res.vectorResource\r\nimport androidx.compose.ui.text.font.FontWeight\r\nimport androidx.compose.ui.unit.dp\r\nimport androidx.lifecycle.compose.collectAsStateWithLifecycle\r\nimport com.batoulapps.adhan2.CalculationMethod\r\nimport com.hussein.core.models.SavedLocation\r\nimport com.hussein.mawaqit.R\r\nimport com.hussein.mawaqit.data.infrastructure.settings.AppColorScheme\r\nimport com.hussein.mawaqit.data.infrastructure.settings.AppSettings\r\nimport com.hussein.mawaqit.data.infrastructure.settings.AppTheme\r\nimport com.hussein.mawaqit.data.infrastructure.settings.NotificationSound\r\nimport com.hussein.mawaqit.data.infrastructure.settings.PrayerNotificationSettings\r\nimport com.hussein.mawaqit.presentation.shared.LoadingContent\r\nimport com.hussein.mawaqit.presentation.util.getPrayersDisplayNames\r\nimport com.hussein.mawaqit.presentation.util.hasLocationPermission\r\nimport com.hussein.mawaqit.presentation.util.isLocationPermanentlyDenied\r\nimport com.hussein.mawaqit.presentation.util.openAppSettings\r\nimport com.hussein.mawaqit.ui.listShapes\r\nimport org.koin.androidx.compose.koinViewModel\r\n\r\n\r\n@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)\r\n@Composable\r\nfun SettingsScreen(\r\n    onBack: () -> Unit, viewModel: SettingsViewModel = koinViewModel()\r\n) {\r\n    val settings by viewModel.settings.collectAsStateWithLifecycle()\r\n    val locationState by viewModel.locationState.collectAsStateWithLifecycle()\r\n    val savedLocation by viewModel.savedLocation.collectAsStateWithLifecycle()\r\n    val context = LocalContext.current\r\n\r\n    var pendingAction by remember { mutableStateOf<LocationAction>(LocationAction.None) }\r\n\r\n    // ── Permission launcher ───────────────────────────────────────────────────\r\n    val permissionLauncher = rememberLauncherForActivityResult(\r\n        ActivityResultContracts.RequestMultiplePermissions()\r\n    ) { results ->\r\n        val granted = results[Manifest.permission.ACCESS_FINE_LOCATION] == true ||\r\n                results[Manifest.permission.ACCESS_COARSE_LOCATION] == true\r\n        if (granted) {\r\n            viewModel.fetchAndSaveLocation()\r\n        } else {\r\n            // After denial,\r\n            // shouldShowRationale flips to false = permanently denied\r\n            pendingAction = LocationAction.None\r\n        }\r\n    }\r\n\r\n    // ── Kick off the right flow when user taps \"Update Location\" ─────────────\r\n    fun onUpdateLocationTapped() {\r\n        when {\r\n            // GPS disabled — send to system location settings\r\n            !CurrentLocationFetcher.isLocationEnabled(context) -> {\r\n                pendingAction = LocationAction.ShowGpsDialog\r\n            }\r\n\r\n            // Permission already granted — fetch immediately\r\n            context.hasLocationPermission() -> {\r\n                viewModel.fetchAndSaveLocation()\r\n            }\r\n\r\n            // Permission denied once before — show rationale first\r\n            else -> {\r\n                pendingAction = LocationAction.ShowRationaleDialog\r\n            }\r\n        }\r\n    }\r\n\r\n    LaunchedEffect(locationState) {\r\n        if (locationState is SettingsViewModel.LocationUpdateState.Error) {\r\n            Toast.makeText(context, \"Error updating location\", Toast.LENGTH_SHORT).show()\r\n        }\r\n    }\r\n\r\n    Scaffold(\r\n        topBar = {\r\n            TopAppBar(title = { Text(\"Settings\") }, navigationIcon = {\r\n                FilledTonalIconButton(onClick = onBack) {\r\n                    Icon(\r\n                        imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_back),\r\n                        contentDescription = \"Back\"\r\n                    )\r\n                }\r\n            })\r\n        }) { innerPadding ->\r\n        if (settings == null) {\r\n            LoadingContent()\r\n        } else {\r\n            SettingsContent(\r\n                settings = settings!!,\r\n                locationState = locationState,\r\n                savedLocation = savedLocation,\r\n                onUpdateLocationTapped = ::onUpdateLocationTapped,\r\n                onLocationErrorDismissed = { viewModel.resetLocationState() },\r\n                onPrayerToggled = viewModel::onPrayerNotificationToggled,\r\n                onMethodChanged = viewModel::onCalculationMethodChanged,\r\n                onSoundChanged = viewModel::onNotificationSoundChanged,\r\n                onThemeChanged = viewModel::onAppThemeChanged,\r\n                onColorSchemeChanged = viewModel::onAppColorSchemeChanged,\r\n                modifier = Modifier.padding(innerPadding)\r\n            )\r\n        }\r\n    }\r\n    when (pendingAction) {\r\n\r\n        LocationAction.ShowGpsDialog -> {\r\n            AlertDialog(\r\n                onDismissRequest = { pendingAction = LocationAction.None },\r\n                title = { Text(\"GPS is Disabled\") },\r\n                text = { Text(\"Location services are turned off. Please enable GPS to update your prayer location.\") },\r\n                confirmButton = {\r\n                    TextButton(onClick = {\r\n                        pendingAction = LocationAction.None\r\n                        context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))\r\n                    }) { Text(\"Open Settings\") }\r\n                },\r\n                dismissButton = {\r\n                    TextButton(onClick = { pendingAction = LocationAction.None }) {\r\n                        Text(\"Cancel\")\r\n                    }\r\n                }\r\n            )\r\n        }\r\n\r\n        LocationAction.ShowRationaleDialog -> {\r\n            AlertDialog(\r\n                onDismissRequest = { pendingAction = LocationAction.None },\r\n                title = { Text(\"Location Permission Needed\") },\r\n                text = { Text(\"Prayer times are calculated from your coordinates. Your location is stored only on this device and never shared.\") },\r\n                confirmButton = {\r\n                    TextButton(onClick = {\r\n                        pendingAction = LocationAction.None\r\n                        // If permanently denied, shouldShowRationale is false — go to app settings\r\n                        if (context.isLocationPermanentlyDenied()) {\r\n                            context.openAppSettings()\r\n                        } else {\r\n                            permissionLauncher.launch(\r\n                                arrayOf(\r\n                                    Manifest.permission.ACCESS_FINE_LOCATION,\r\n                                    Manifest.permission.ACCESS_COARSE_LOCATION\r\n                                )\r\n                            )\r\n                        }\r\n                    }) {\r\n                        Text(if (context.isLocationPermanentlyDenied()) \"Open com.hussein.islamic.presentation.Settings\" else \"Allow\")\r\n                    }\r\n                },\r\n                dismissButton = {\r\n                    TextButton(onClick = { pendingAction = LocationAction.None }) {\r\n                        Text(\"Cancel\")\r\n                    }\r\n                }\r\n            )\r\n        }\r\n\r\n        LocationAction.None -> Unit\r\n    }\r\n}\r\n\r\n\r\n@OptIn(ExperimentalMaterial3ExpressiveApi::class)\r\n@Composable\r\nprivate fun SettingsContent(\r\n    settings: AppSettings,\r\n    savedLocation: SavedLocation?,\r\n    locationState: SettingsViewModel.LocationUpdateState,\r\n    onPrayerToggled: (String, Boolean) -> Unit,\r\n    onMethodChanged: (CalculationMethod) -> Unit,\r\n    onSoundChanged: (NotificationSound) -> Unit,\r\n    onThemeChanged: (AppTheme) -> Unit,\r\n    onColorSchemeChanged: (AppColorScheme) -> Unit,\r\n    onUpdateLocationTapped: () -> Unit,\r\n    onLocationErrorDismissed: () -> Unit,\r\n    modifier: Modifier = Modifier\r\n) {\r\n\r\n    LazyColumn(\r\n        modifier = modifier.fillMaxSize(),\r\n        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),\r\n        verticalArrangement = Arrangement.spacedBy(4.dp)\r\n    ) {\r\n\r\n        item {\r\n            SectionHeader(\"Prayer Notifications\")\r\n            val enabled = settings.notificationSound != NotificationSound.NONE\r\n\r\n            PickerRow(\r\n                label = \"Sound\",\r\n                currentValue = settings.notificationSound.displayName,\r\n                options = NotificationSound.entries.map { it.displayName },\r\n                onOptionSelected = { name ->\r\n                    onSoundChanged(NotificationSound.entries.first { it.displayName == name })\r\n                })\r\n\r\n            AnimatedVisibility(\r\n                enabled,\r\n                enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()\r\n            ) {\r\n                Column(modifier = Modifier.padding(vertical = 4.dp)) {\r\n                    getPrayersDisplayNames().forEachIndexed { index, prayer ->\r\n\r\n                        val enabled = settings.prayerNotifications.isEnabledFor(prayer)\r\n\r\n                        ToggleRow(\r\n                            label = prayer,\r\n                            checked = enabled,\r\n                            onCheckedChange = { onPrayerToggled(prayer, it) },\r\n                            shape = when (index) {\r\n                                0 -> listShapes.topItem\r\n                                4 -> listShapes.bottomItem\r\n                                else -> listShapes.midItem\r\n                            }\r\n                        )\r\n                    }\r\n                }\r\n            }\r\n\r\n        }\r\n\r\n        item {\r\n            SectionHeader(\"Location\")\r\n            LocationRow(\r\n                locationState = locationState,\r\n                savedLocation = savedLocation,\r\n                onUpdateTapped = onUpdateLocationTapped,\r\n                onErrorDismissed = onLocationErrorDismissed\r\n            )\r\n            Spacer(Modifier.height(8.dp))\r\n        }\r\n\r\n        item {\r\n            SectionHeader(\"Calculation Method\")\r\n            PickerRow(\r\n                label = \"Method\",\r\n                currentValue = settings.calculationMethod.displayName(),\r\n                options = CalculationMethod.entries.filter { it != CalculationMethod.OTHER }\r\n                    .map { it.displayName() },\r\n                onOptionSelected = { name ->\r\n                    val method = CalculationMethod.entries.first { it.displayName() == name }\r\n                    onMethodChanged(method)\r\n                })\r\n        }\r\n\r\n        item {\r\n            SectionHeader(\"Appearance\")\r\n            PickerRow(\r\n                label = \"Theme\",\r\n                shape = RoundedCornerShape(\r\n                    bottomStart = 2.dp,\r\n                    bottomEnd = 2.dp,\r\n                    topEnd = 16.dp,\r\n                    topStart = 16.dp\r\n                ),\r\n                currentValue = settings.appTheme.displayName,\r\n                options = AppTheme.entries.map { it.displayName },\r\n                onOptionSelected = { name ->\r\n                    onThemeChanged(AppTheme.entries.first { it.displayName == name })\r\n                })\r\n            Spacer(Modifier.height(1.dp))\r\n            PickerRow(\r\n                label = \"Color Scheme\",\r\n                shape = RoundedCornerShape(\r\n                    bottomStart = 16.dp,\r\n                    bottomEnd = 16.dp,\r\n                    topEnd = 2.dp,\r\n                    topStart = 2.dp\r\n                ),\r\n                currentValue = settings.appColorScheme.displayName,\r\n                options = AppColorScheme.entries.map { it.displayName },\r\n                onOptionSelected = { name ->\r\n                    onColorSchemeChanged(AppColorScheme.entries.first { it.displayName == name })\r\n                })\r\n        }\r\n    }\r\n}\r\n\r\n\r\n@Composable\r\nprivate fun ToggleRow(\r\n    label: String,\r\n    checked: Boolean,\r\n    onCheckedChange: (Boolean) -> Unit,\r\n    shape: RoundedCornerShape\r\n) {\r\n    SettingOptionContainer(clickEnabled = false, shape = shape, modifier = Modifier.padding(1.dp)) {\r\n        Row(\r\n            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),\r\n            verticalAlignment = Alignment.CenterVertically\r\n        ) {\r\n            Text(\r\n                text = label,\r\n                style = MaterialTheme.typography.bodyLarge,\r\n                modifier = Modifier.weight(1f)\r\n            )\r\n            Switch(checked = checked, onCheckedChange = onCheckedChange)\r\n        }\r\n\r\n    }\r\n}\r\n\r\n@OptIn(ExperimentalMaterial3Api::class)\r\n@Composable\r\nprivate fun PickerRow(\r\n    label: String,\r\n    currentValue: String,\r\n    shape: RoundedCornerShape = RoundedCornerShape(16.dp),\r\n    options: List<String>,\r\n    onOptionSelected: (String) -> Unit\r\n) {\r\n    var showSheet by remember { mutableStateOf(false) }\r\n    val sheetState = rememberModalBottomSheetState()\r\n    SettingOptionContainer(onClick = { showSheet = true }, shape = shape) {\r\n        Column(\r\n            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),\r\n            horizontalAlignment = Alignment.Start, verticalArrangement = Arrangement.spacedBy(4.dp)\r\n        ) {\r\n            Text(label, style = MaterialTheme.typography.bodyLarge)\r\n            Text(\r\n                text = currentValue,\r\n                style = MaterialTheme.typography.bodyMedium,\r\n                color = MaterialTheme.colorScheme.onSurfaceVariant\r\n            )\r\n        }\r\n\r\n    }\r\n\r\n    if (showSheet) {\r\n        ModalBottomSheet(\r\n            onDismissRequest = { showSheet = false }, sheetState = sheetState\r\n        ) {\r\n            Column(\r\n                modifier = Modifier\r\n                    .padding(start = 16.dp, end = 16.dp, bottom = 32.dp)\r\n            ) {\r\n                Text(\r\n                    text = label,\r\n                    style = MaterialTheme.typography.titleLarge,\r\n                    fontWeight = FontWeight.SemiBold,\r\n                    modifier = Modifier.padding(vertical = 12.dp)\r\n                )\r\n                options.forEach { option ->\r\n                    Surface(\r\n                        shape = RoundedCornerShape(12.dp),\r\n                        modifier = Modifier\r\n                            .fillMaxWidth()\r\n                            .padding(4.dp),\r\n                        onClick = {\r\n                            onOptionSelected(option)\r\n                            showSheet = false\r\n                        },\r\n                        border = BorderStroke(\r\n                            width = 1.dp,\r\n                            color = if (option == currentValue) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant\r\n                        )\r\n                    ) {\r\n                        Row(\r\n                            modifier = Modifier\r\n                                .fillMaxWidth()\r\n                                .padding(18.dp),\r\n                            horizontalArrangement = Arrangement.Start\r\n                        ) {\r\n                            Text(text = option, style = MaterialTheme.typography.bodyLarge)\r\n                        }\r\n\r\n                    }\r\n                }\r\n            }\r\n        }\r\n    }\r\n}\r\n\r\n\r\n@Composable\r\nprivate fun LocationRow(\r\n    locationState: SettingsViewModel.LocationUpdateState,\r\n    savedLocation: SavedLocation?,\r\n    onUpdateTapped: () -> Unit,\r\n    onErrorDismissed: () -> Unit\r\n) {\r\n    // Resolve what to display — Success overrides the persisted savedLocation\r\n    val displayLocation = when (locationState) {\r\n        is SettingsViewModel.LocationUpdateState.Success -> locationState.location\r\n        else -> savedLocation\r\n    }\r\n\r\n    SettingOptionContainer(\r\n        clickEnabled = false\r\n    ) {\r\n        Column(\r\n            modifier = Modifier\r\n                .fillMaxWidth()\r\n                .padding(horizontal = 16.dp, vertical = 12.dp)\r\n        ) {\r\n            Row(\r\n                modifier = Modifier.fillMaxWidth(),\r\n                verticalAlignment = Alignment.CenterVertically,\r\n                horizontalArrangement = Arrangement.SpaceBetween\r\n            ) {\r\n                Row(\r\n                    verticalAlignment = Alignment.CenterVertically,\r\n                    modifier = Modifier.weight(1f)\r\n                ) {\r\n                    Icon(\r\n                        imageVector = ImageVector.vectorResource(R.drawable.ic_location),\r\n                        contentDescription = null,\r\n                        tint = MaterialTheme.colorScheme.onSurfaceVariant,\r\n                        modifier = Modifier.size(18.dp)\r\n                    )\r\n                    Column(modifier = Modifier.padding(start = 8.dp)) {\r\n                        Text(\r\n                            text = displayLocation?.cityName ?: \"No location set\",\r\n                            style = MaterialTheme.typography.bodyLarge\r\n                        )\r\n                        if (displayLocation != null) {\r\n                            Text(\r\n                                text = \"%.4f°, %.4f°\".format(\r\n                                    displayLocation.latitude,\r\n                                    displayLocation.longitude\r\n                                ),\r\n                                style = MaterialTheme.typography.bodySmall,\r\n                                color = MaterialTheme.colorScheme.onSurfaceVariant\r\n                            )\r\n                        }\r\n                    }\r\n                }\r\n\r\n                when (locationState) {\r\n                    SettingsViewModel.LocationUpdateState.Fetching -> {\r\n                        CircularProgressIndicator(\r\n                            modifier = Modifier.size(20.dp),\r\n                            strokeWidth = 2.dp\r\n                        )\r\n                    }\r\n\r\n                    else -> {\r\n                        TextButton(onClick = onUpdateTapped) {\r\n                            Text(\r\n                                text = if (displayLocation != null) \"Update\" else \"Set\",\r\n                                style = MaterialTheme.typography.labelLarge,\r\n                                color = MaterialTheme.colorScheme.primary\r\n                            )\r\n                        }\r\n                    }\r\n                }\r\n            }\r\n\r\n            // Inline error\r\n            if (locationState is SettingsViewModel.LocationUpdateState.Error) {\r\n                Spacer(Modifier.height(4.dp))\r\n                Row(\r\n                    modifier = Modifier.fillMaxWidth(),\r\n                    horizontalArrangement = Arrangement.SpaceBetween,\r\n                    verticalAlignment = Alignment.CenterVertically\r\n                ) {\r\n                    Text(\r\n                        text = locationState.message,\r\n                        style = MaterialTheme.typography.bodySmall,\r\n                        color = MaterialTheme.colorScheme.error,\r\n                        modifier = Modifier.weight(1f)\r\n                    )\r\n                    TextButton(onClick = onErrorDismissed) { Text(\"Dismiss\") }\r\n                }\r\n            }\r\n        }\r\n    }\r\n\r\n}\r\n\r\n@Composable\r\nprivate fun SettingOptionContainer(\r\n    modifier: Modifier = Modifier,\r\n    shape: RoundedCornerShape = RoundedCornerShape(16.dp),\r\n    color: Color = MaterialTheme.colorScheme.surfaceContainer,\r\n    clickEnabled: Boolean = true,\r\n    onClick: () -> Unit = {},\r\n    content: @Composable () -> Unit\r\n) {\r\n    Surface(\r\n        modifier = Modifier\r\n            .fillMaxWidth()\r\n            .clickable(clickEnabled, onClick = onClick)\r\n            .then(modifier),\r\n        shape = shape,\r\n        color = color\r\n    ) {\r\n        content()\r\n    }\r\n}\r\n\r\n@Composable\r\nprivate fun SectionHeader(title: String) {\r\n    Text(\r\n        text = title.uppercase(),\r\n        style = MaterialTheme.typography.labelSmall,\r\n        color = MaterialTheme.colorScheme.primary,\r\n        fontWeight = FontWeight.SemiBold,\r\n        modifier = Modifier.padding(vertical = 8.dp)\r\n    )\r\n}\r\n\r\nprivate sealed interface LocationAction {\r\n    data object None : LocationAction\r\n    data object ShowGpsDialog : LocationAction\r\n    data object ShowRationaleDialog : LocationAction\r\n}\r\n\r\nprivate fun PrayerNotificationSettings.isEnabledFor(prayer: String): Boolean = when (prayer) {\r\n    \"Fajr\" -> fajr\r\n    \"Dhuhr\" -> dhuhr\r\n    \"Asr\" -> asr\r\n    \"Maghrib\" -> maghrib\r\n    \"Isha\" -> isha\r\n    else -> true\r\n}\r\n\r\nprivate fun CalculationMethod.displayName(): String = when (this) {\r\n    CalculationMethod.MUSLIM_WORLD_LEAGUE -> \"Muslim World League\"\r\n    CalculationMethod.EGYPTIAN -> \"Egyptian\"\r\n    CalculationMethod.KARACHI -> \"Karachi\"\r\n    CalculationMethod.UMM_AL_QURA -> \"Umm Al-Qura\"\r\n    CalculationMethod.DUBAI -> \"Dubai\"\r\n    CalculationMethod.MOON_SIGHTING_COMMITTEE -> \"Moon Sighting Committee\"\r\n    CalculationMethod.NORTH_AMERICA -> \"North America (ISNA)\"\r\n    CalculationMethod.KUWAIT -> \"Kuwait\"\r\n    CalculationMethod.QATAR -> \"Qatar\"\r\n    CalculationMethod.SINGAPORE -> \"Singapore\"\r\n    CalculationMethod.TURKEY -> \"Turkey\"\r\n    CalculationMethod.OTHER -> \"\"\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/hussein/mawaqit/presentation/settings/SettingsScreen.kt b/app/src/main/java/com/hussein/mawaqit/presentation/settings/SettingsScreen.kt
+--- a/app/src/main/java/com/hussein/mawaqit/presentation/settings/SettingsScreen.kt	(revision 9c6a0d5e67ca13ed5dfd4ff74087cf23e9dc4a99)
++++ b/app/src/main/java/com/hussein/mawaqit/presentation/settings/SettingsScreen.kt	(date 1774850970204)
+@@ -32,9 +32,12 @@
+ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+ import androidx.compose.material3.FilledTonalIconButton
+ import androidx.compose.material3.Icon
++import androidx.compose.material3.ListItemDefaults
++import androidx.compose.material3.ListItemShapes
+ import androidx.compose.material3.MaterialTheme
+ import androidx.compose.material3.ModalBottomSheet
+ import androidx.compose.material3.Scaffold
++import androidx.compose.material3.SegmentedListItem
+ import androidx.compose.material3.Surface
+ import androidx.compose.material3.Switch
+ import androidx.compose.material3.Text
+@@ -50,6 +53,7 @@
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.graphics.Color
++import androidx.compose.ui.graphics.Shape
+ import androidx.compose.ui.graphics.vector.ImageVector
+ import androidx.compose.ui.platform.LocalContext
+ import androidx.compose.ui.res.vectorResource
+@@ -250,11 +254,11 @@
+                 enabled,
+                 enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()
+             ) {
+-                Column(modifier = Modifier.padding(vertical = 4.dp)) {
++                Column(modifier = Modifier.padding(vertical = 4.dp) , verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                     getPrayersDisplayNames().forEachIndexed { index, prayer ->
+ 
+                         val enabled = settings.prayerNotifications.isEnabledFor(prayer)
+-
++                        
+                         ToggleRow(
+                             label = prayer,
+                             checked = enabled,
+@@ -523,7 +527,7 @@
+ @Composable
+ private fun SettingOptionContainer(
+     modifier: Modifier = Modifier,
+-    shape: RoundedCornerShape = RoundedCornerShape(16.dp),
++    shape: Shape = MaterialTheme.shapes.large,
+     color: Color = MaterialTheme.colorScheme.surfaceContainer,
+     clickEnabled: Boolean = true,
+     onClick: () -> Unit = {},
+Index: app/src/main/java/com/hussein/mawaqit/ui/theme/Theme.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.hussein.mawaqit.ui.theme\r\n\r\nimport android.os.Build\r\nimport androidx.compose.foundation.isSystemInDarkTheme\r\nimport androidx.compose.material3.ColorScheme\r\nimport androidx.compose.material3.MaterialTheme\r\nimport androidx.compose.material3.darkColorScheme\r\nimport androidx.compose.material3.dynamicDarkColorScheme\r\nimport androidx.compose.material3.dynamicLightColorScheme\r\nimport androidx.compose.material3.lightColorScheme\r\nimport androidx.compose.runtime.Composable\r\nimport androidx.compose.ui.platform.LocalContext\r\nimport com.hussein.mawaqit.data.infrastructure.settings.AppColorScheme\r\nimport com.hussein.mawaqit.data.infrastructure.settings.AppTheme\r\n\r\nprivate val DarkColorScheme = darkColorScheme(\r\n    primary = Purple80,\r\n    secondary = PurpleGrey80,\r\n    tertiary = Pink80\r\n)\r\n\r\nprivate val LightColorScheme = lightColorScheme(\r\n    primary = Purple40,\r\n    secondary = PurpleGrey40,\r\n    tertiary = Pink40\r\n\r\n    /* Other default colors to override\r\n    background = Color(0xFFFFFBFE),\r\n    surface = Color(0xFFFFFBFE),\r\n    onPrimary = Color.White,\r\n    onSecondary = Color.White,\r\n    onTertiary = Color.White,\r\n    onBackground = Color(0xFF1C1B1F),\r\n    onSurface = Color(0xFF1C1B1F),\r\n    */\r\n)\r\n\r\nprivate val greenLightScheme = lightColorScheme(\r\n    primary = primaryLight,\r\n    onPrimary = onPrimaryLight,\r\n    primaryContainer = primaryContainerLight,\r\n    onPrimaryContainer = onPrimaryContainerLight,\r\n    secondary = secondaryLight,\r\n    onSecondary = onSecondaryLight,\r\n    secondaryContainer = secondaryContainerLight,\r\n    onSecondaryContainer = onSecondaryContainerLight,\r\n    tertiary = tertiaryLight,\r\n    onTertiary = onTertiaryLight,\r\n    tertiaryContainer = tertiaryContainerLight,\r\n    onTertiaryContainer = onTertiaryContainerLight,\r\n    error = errorLight,\r\n    onError = onErrorLight,\r\n    errorContainer = errorContainerLight,\r\n    onErrorContainer = onErrorContainerLight,\r\n    background = backgroundLight,\r\n    onBackground = onBackgroundLight,\r\n    surface = surfaceLight,\r\n    onSurface = onSurfaceLight,\r\n    surfaceVariant = surfaceVariantLight,\r\n    onSurfaceVariant = onSurfaceVariantLight,\r\n    outline = outlineLight,\r\n    outlineVariant = outlineVariantLight,\r\n    scrim = scrimLight,\r\n    inverseSurface = inverseSurfaceLight,\r\n    inverseOnSurface = inverseOnSurfaceLight,\r\n    inversePrimary = inversePrimaryLight,\r\n    surfaceDim = surfaceDimLight,\r\n    surfaceBright = surfaceBrightLight,\r\n    surfaceContainerLowest = surfaceContainerLowestLight,\r\n    surfaceContainerLow = surfaceContainerLowLight,\r\n    surfaceContainer = surfaceContainerLight,\r\n    surfaceContainerHigh = surfaceContainerHighLight,\r\n    surfaceContainerHighest = surfaceContainerHighestLight,\r\n)\r\n\r\nprivate val greenDarkScheme = darkColorScheme(\r\n    primary = primaryDark,\r\n    onPrimary = onPrimaryDark,\r\n    primaryContainer = primaryContainerDark,\r\n    onPrimaryContainer = onPrimaryContainerDark,\r\n    secondary = secondaryDark,\r\n    onSecondary = onSecondaryDark,\r\n    secondaryContainer = secondaryContainerDark,\r\n    onSecondaryContainer = onSecondaryContainerDark,\r\n    tertiary = tertiaryDark,\r\n    onTertiary = onTertiaryDark,\r\n    tertiaryContainer = tertiaryContainerDark,\r\n    onTertiaryContainer = onTertiaryContainerDark,\r\n    error = errorDark,\r\n    onError = onErrorDark,\r\n    errorContainer = errorContainerDark,\r\n    onErrorContainer = onErrorContainerDark,\r\n    background = backgroundDark,\r\n    onBackground = onBackgroundDark,\r\n    surface = surfaceDark,\r\n    onSurface = onSurfaceDark,\r\n    surfaceVariant = surfaceVariantDark,\r\n    onSurfaceVariant = onSurfaceVariantDark,\r\n    outline = outlineDark,\r\n    outlineVariant = outlineVariantDark,\r\n    scrim = scrimDark,\r\n    inverseSurface = inverseSurfaceDark,\r\n    inverseOnSurface = inverseOnSurfaceDark,\r\n    inversePrimary = inversePrimaryDark,\r\n    surfaceDim = surfaceDimDark,\r\n    surfaceBright = surfaceBrightDark,\r\n    surfaceContainerLowest = surfaceContainerLowestDark,\r\n    surfaceContainerLow = surfaceContainerLowDark,\r\n    surfaceContainer = surfaceContainerDark,\r\n    surfaceContainerHigh = surfaceContainerHighDark,\r\n    surfaceContainerHighest = surfaceContainerHighestDark,\r\n)\r\n\r\n@Composable\r\nfun IslamicTheme(\r\n    appTheme: AppTheme = AppTheme.SYSTEM,\r\n    appColorScheme: AppColorScheme = AppColorScheme.DYNAMIC,\r\n    content: @Composable () -> Unit\r\n) {\r\n    val darkTheme = when (appTheme) {\r\n        AppTheme.DARK   -> true\r\n        AppTheme.LIGHT  -> false\r\n        AppTheme.SYSTEM -> isSystemInDarkTheme()\r\n    }\r\n\r\n    val context = LocalContext.current\r\n\r\n    val colorScheme: ColorScheme = when (appColorScheme) {\r\n        AppColorScheme.DYNAMIC -> {\r\n            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {\r\n                // Material You — pulls colors from the user's wallpaper\r\n                if (darkTheme) dynamicDarkColorScheme(context)\r\n                else           dynamicLightColorScheme(context)\r\n            } else {\r\n                // Fallback to custom scheme on Android < 12\r\n                if (darkTheme) greenDarkScheme else greenLightScheme\r\n            }\r\n        }\r\n        AppColorScheme.CUSTOM -> {\r\n            if (darkTheme) greenDarkScheme else greenLightScheme\r\n        }\r\n    }\r\n\r\n    MaterialTheme(\r\n        colorScheme = colorScheme,\r\n        content     = content\r\n    )\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/hussein/mawaqit/ui/theme/Theme.kt b/app/src/main/java/com/hussein/mawaqit/ui/theme/Theme.kt
+--- a/app/src/main/java/com/hussein/mawaqit/ui/theme/Theme.kt	(revision 9c6a0d5e67ca13ed5dfd4ff74087cf23e9dc4a99)
++++ b/app/src/main/java/com/hussein/mawaqit/ui/theme/Theme.kt	(date 1774999552353)
+@@ -112,7 +112,7 @@
+ )
+ 
+ @Composable
+-fun IslamicTheme(
++fun MawaqitTheme(
+     appTheme: AppTheme = AppTheme.SYSTEM,
+     appColorScheme: AppColorScheme = AppColorScheme.DYNAMIC,
+     content: @Composable () -> Unit
+Index: app/src/main/res/drawable/ic_book.xml
+===================================================================
+diff --git a/app/src/main/res/drawable/ic_book.xml b/app/src/main/res/drawable/ic_book.xml
+new file mode 100644
+--- /dev/null	(date 1774846948495)
++++ b/app/src/main/res/drawable/ic_book.xml	(date 1774846948495)
+@@ -0,0 +1,9 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="24dp"
++    android:height="24dp"
++    android:viewportWidth="960"
++    android:viewportHeight="960">
++  <path
++      android:pathData="M260,640q47,0 91.5,10.5T440,682v-394q-41,-24 -87,-36t-93,-12q-36,0 -71.5,7T120,268v396q35,-12 69.5,-18t70.5,-6ZM520,682q44,-21 88.5,-31.5T700,640q36,0 70.5,6t69.5,18v-396q-33,-14 -68.5,-21t-71.5,-7q-47,0 -93,12t-87,36v394ZM480,800q-48,-38 -104,-59t-116,-21q-42,0 -82.5,11T100,762q-21,11 -40.5,-1T40,726v-482q0,-11 5.5,-21T62,208q46,-24 96,-36t102,-12q58,0 113.5,15T480,220q51,-30 106.5,-45T700,160q52,0 102,12t96,36q11,5 16.5,15t5.5,21v482q0,23 -19.5,35t-40.5,1q-37,-20 -77.5,-31T700,720q-60,0 -116,21t-104,59ZM280,466Z"
++      android:fillColor="#e3e3e3"/>
++</vector>
+Index: app/build.gradle.kts
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>plugins {\r\n    alias(libs.plugins.android.application)\r\n    alias(libs.plugins.kotlin.compose)\r\n    alias(libs.plugins.jetbrains.kotlin.serialization)\r\n    id(\"com.google.devtools.ksp\") version \"2.3.6\"\r\n\r\n}\r\n\r\nandroid {\r\n    namespace = \"com.hussein.mawaqit\"\r\n    compileSdk = 36\r\n\r\n    defaultConfig {\r\n        applicationId = \"com.hussein.mawaqit\"\r\n        minSdk = 29\r\n        targetSdk = 36\r\n        versionCode = 1\r\n        versionName = \"1.0\"\r\n\r\n        testInstrumentationRunner = \"androidx.test.runner.AndroidJUnitRunner\"\r\n    }\r\n\r\n    buildTypes {\r\n        release {\r\n            isMinifyEnabled = false\r\n            proguardFiles(\r\n                getDefaultProguardFile(\"proguard-android-optimize.txt\"),\r\n                \"proguard-rules.pro\"\r\n            )\r\n        }\r\n    }\r\n    compileOptions {\r\n        sourceCompatibility = JavaVersion.VERSION_11\r\n        targetCompatibility = JavaVersion.VERSION_11\r\n    }\r\n    buildFeatures {\r\n        compose = true\r\n    }\r\n}\r\n\r\nksp {\r\n    arg(\"room.generateKotlin\", \"true\")\r\n}\r\n\r\ndependencies {\r\n    implementation(libs.androidx.core.ktx)\r\n    implementation(libs.androidx.lifecycle.runtime.ktx)\r\n    implementation(libs.androidx.activity.compose)\r\n    implementation(platform(libs.androidx.compose.bom))\r\n    implementation(libs.androidx.compose.ui)\r\n    implementation(libs.androidx.compose.ui.graphics)\r\n    implementation(libs.androidx.compose.ui.tooling.preview)\r\n    implementation(libs.androidx.compose.material3)\r\n    testImplementation(libs.junit)\r\n    androidTestImplementation(libs.androidx.junit)\r\n    androidTestImplementation(libs.androidx.espresso.core)\r\n    androidTestImplementation(platform(libs.androidx.compose.bom))\r\n    androidTestImplementation(libs.androidx.compose.ui.test.junit4)\r\n    debugImplementation(libs.androidx.compose.ui.tooling)\r\n    debugImplementation(libs.androidx.compose.ui.test.manifest)\r\n\r\n    // presentation\r\n    implementation(libs.compose.viewmodel)\r\n    implementation(libs.androidx.core.splashscreen)\r\n\r\n    implementation(libs.androidx.navigation3.runtime)\r\n    implementation(libs.androidx.navigation3.ui)\r\n    implementation(libs.androidx.lifecycle.viewmodel.navigation3)\r\n    // kotlinx-serialization\r\n    implementation(libs.kotlinx.serialization.core)\r\n    implementation(libs.kotlinx.serialization.json)\r\n\r\n\r\n    // work manager\r\n    implementation(libs.androidx.work.runtime)\r\n    implementation(libs.androidx.work.coroutines)\r\n\r\n    // gms location services\r\n    implementation(libs.gms.location)\r\n\r\n    // datastore\r\n    implementation(libs.androidx.datastore.preferences)\r\n\r\n    // material 3e\r\n    implementation(libs.compose.material3e)\r\n    implementation(libs.androidx.media3.exoplayer)\r\n\r\n    // prayer times\r\n    implementation(libs.batoul.prayerTimes)\r\n\r\n    // ktor-client\r\n    implementation(libs.ktor.client.android)\r\n    implementation(libs.ktor.client.content.negotiation)\r\n    implementation(libs.ktor.serialization.kotlinx.json)\r\n\r\n    implementation(\"androidx.media3:media3-exoplayer:1.9.2\")\r\n    implementation(\"androidx.media3:media3-session:1.9.2\")\r\n\r\n    implementation(platform(libs.koin.bom))\r\n    implementation(libs.koin.android)\r\n    implementation(libs.koin.androidx.compose)\r\n    implementation(libs.koin.compose.navigation3)\r\n    implementation(libs.koin.workmanager)\r\n\r\n    implementation(libs.room.runtime)\r\n    implementation(libs.room.ktx)\r\n    ksp(libs.room.compiler)\r\n\r\n    implementation(project(\":core\"))\r\n\r\n\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/build.gradle.kts b/app/build.gradle.kts
+--- a/app/build.gradle.kts	(revision 9c6a0d5e67ca13ed5dfd4ff74087cf23e9dc4a99)
++++ b/app/build.gradle.kts	(date 1774849552234)
+@@ -63,9 +63,11 @@
+     implementation(libs.compose.viewmodel)
+     implementation(libs.androidx.core.splashscreen)
+ 
++    // navigation 3
+     implementation(libs.androidx.navigation3.runtime)
+     implementation(libs.androidx.navigation3.ui)
+     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
++
+     // kotlinx-serialization
+     implementation(libs.kotlinx.serialization.core)
+     implementation(libs.kotlinx.serialization.json)
+@@ -83,7 +85,6 @@
+ 
+     // material 3e
+     implementation(libs.compose.material3e)
+-    implementation(libs.androidx.media3.exoplayer)
+ 
+     // prayer times
+     implementation(libs.batoul.prayerTimes)
+@@ -93,15 +94,18 @@
+     implementation(libs.ktor.client.content.negotiation)
+     implementation(libs.ktor.serialization.kotlinx.json)
+ 
+-    implementation("androidx.media3:media3-exoplayer:1.9.2")
+-    implementation("androidx.media3:media3-session:1.9.2")
++    // exo player
++    implementation(libs.androidx.media3.exoplayer)
++    implementation(libs.androidx.media3.session)
+ 
++    // koin
+     implementation(platform(libs.koin.bom))
+     implementation(libs.koin.android)
+     implementation(libs.koin.androidx.compose)
+     implementation(libs.koin.compose.navigation3)
+     implementation(libs.koin.workmanager)
+ 
++    // room db
+     implementation(libs.room.runtime)
+     implementation(libs.room.ktx)
+     ksp(libs.room.compiler)
+Index: app/src/main/java/com/hussein/mawaqit/KoinModules.kt
+===================================================================
+diff --git a/app/src/main/java/com/hussein/mawaqit/KoinModules.kt b/app/src/main/java/com/hussein/mawaqit/di/KoinModules.kt
+rename from app/src/main/java/com/hussein/mawaqit/KoinModules.kt
+rename to app/src/main/java/com/hussein/mawaqit/di/KoinModules.kt
+--- a/app/src/main/java/com/hussein/mawaqit/KoinModules.kt	(revision 9c6a0d5e67ca13ed5dfd4ff74087cf23e9dc4a99)
++++ b/app/src/main/java/com/hussein/mawaqit/di/KoinModules.kt	(date 1774846356356)
+@@ -1,4 +1,4 @@
+-package com.hussein.mawaqit
++package com.hussein.mawaqit.di
+ 
+ import CurrentLocationFetcher
+ import androidx.work.WorkManager
+Index: app/src/main/java/com/hussein/mawaqit/data/infrastructure/notification/NotificationUtils.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.hussein.mawaqit.data.infrastructure.notification\r\n\r\nimport android.app.NotificationChannel\r\nimport android.app.NotificationManager\r\nimport android.content.Context\r\nimport com.hussein.mawaqit.data.infrastructure.receivers.PrayerAlarmReceiver\r\nimport com.hussein.mawaqit.data.infrastructure.services.AzanPlayerService\r\n\r\nobject NotificationUtils {\r\n\r\n\r\n    private fun ensureChannelExists(\r\n        manager: NotificationManager,\r\n        channelId: String,\r\n        channelName: String,\r\n        channelDescription: String\r\n    ) {\r\n        val channel = NotificationChannel(\r\n            channelId,\r\n            channelName,\r\n            NotificationManager.IMPORTANCE_HIGH\r\n        ).apply {\r\n            description = channelDescription\r\n            setSound(null, null) // sound is handled by AzanPlayerService, not the channel\r\n            enableVibration(true)\r\n        }\r\n        manager.createNotificationChannel(channel)\r\n    }\r\n\r\n\r\n    /**\r\n     * Returns false if the user has blocked the relevant notification channel\r\n     * in system settings, so we don't waste an AlarmManager slot on it.\r\n     *\r\n     * - Fajr → checked against [AzanPlayerService.CHANNEL_ID] (azan_player)\r\n     * - Others → checked against [PrayerAlarmReceiver.CHANNEL_ID] (prayer_notifications)\r\n     *   but if the screen was off at alarm time, AzanPlayerService.CHANNEL_ID is used instead.\r\n     *   We check both — if either is enabled, scheduling is worthwhile.\r\n     */\r\n    fun areChannelEnabled(context: Context): Boolean {\r\n        val manager = context.getSystemService(NotificationManager::class.java)\r\n\r\n        // If global notifications are disabled, nothing will show\r\n        if (!manager.areNotificationsEnabled()) return false\r\n\r\n        fun channelEnabled(channelId: String): Boolean {\r\n            val channel = manager.getNotificationChannel(channelId) ?: return true\r\n            return channel.importance != NotificationManager.IMPORTANCE_NONE\r\n        }\r\n\r\n        // At alarm time the receiver picks either AzanPlayerService (screen off)\r\n        // or the silent prayer_notifications channel (screen on).\r\n        // Schedule the alarm if at least one of those paths is open.\r\n        val azanChannelOpen = channelEnabled(AzanPlayerService.AZAN_CHANNEL_ID)\r\n        val silentChannelOpen = channelEnabled(PrayerAlarmReceiver.PRAYER_NOTIFICATION_CHANNEL_ID)\r\n\r\n        return azanChannelOpen || silentChannelOpen\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/hussein/mawaqit/data/infrastructure/notification/NotificationUtils.kt b/app/src/main/java/com/hussein/mawaqit/data/infrastructure/notification/NotificationUtils.kt
+--- a/app/src/main/java/com/hussein/mawaqit/data/infrastructure/notification/NotificationUtils.kt	(revision 9c6a0d5e67ca13ed5dfd4ff74087cf23e9dc4a99)
++++ b/app/src/main/java/com/hussein/mawaqit/data/infrastructure/notification/NotificationUtils.kt	(date 1774849834238)
+@@ -1,59 +1,13 @@
+ package com.hussein.mawaqit.data.infrastructure.notification
+ 
+-import android.app.NotificationChannel
+ import android.app.NotificationManager
+ import android.content.Context
+-import com.hussein.mawaqit.data.infrastructure.receivers.PrayerAlarmReceiver
+-import com.hussein.mawaqit.data.infrastructure.services.AzanPlayerService
+ 
+ object NotificationUtils {
+ 
+-
+-    private fun ensureChannelExists(
+-        manager: NotificationManager,
+-        channelId: String,
+-        channelName: String,
+-        channelDescription: String
+-    ) {
+-        val channel = NotificationChannel(
+-            channelId,
+-            channelName,
+-            NotificationManager.IMPORTANCE_HIGH
+-        ).apply {
+-            description = channelDescription
+-            setSound(null, null) // sound is handled by AzanPlayerService, not the channel
+-            enableVibration(true)
+-        }
+-        manager.createNotificationChannel(channel)
+-    }
+-
+-
+-    /**
+-     * Returns false if the user has blocked the relevant notification channel
+-     * in system settings, so we don't waste an AlarmManager slot on it.
+-     *
+-     * - Fajr → checked against [AzanPlayerService.CHANNEL_ID] (azan_player)
+-     * - Others → checked against [PrayerAlarmReceiver.CHANNEL_ID] (prayer_notifications)
+-     *   but if the screen was off at alarm time, AzanPlayerService.CHANNEL_ID is used instead.
+-     *   We check both — if either is enabled, scheduling is worthwhile.
+-     */
+-    fun areChannelEnabled(context: Context): Boolean {
++    fun channelEnabled(context: Context, channelId: String): Boolean {
+         val manager = context.getSystemService(NotificationManager::class.java)
+-
+-        // If global notifications are disabled, nothing will show
+-        if (!manager.areNotificationsEnabled()) return false
+-
+-        fun channelEnabled(channelId: String): Boolean {
+-            val channel = manager.getNotificationChannel(channelId) ?: return true
+-            return channel.importance != NotificationManager.IMPORTANCE_NONE
+-        }
+-
+-        // At alarm time the receiver picks either AzanPlayerService (screen off)
+-        // or the silent prayer_notifications channel (screen on).
+-        // Schedule the alarm if at least one of those paths is open.
+-        val azanChannelOpen = channelEnabled(AzanPlayerService.AZAN_CHANNEL_ID)
+-        val silentChannelOpen = channelEnabled(PrayerAlarmReceiver.PRAYER_NOTIFICATION_CHANNEL_ID)
+-
+-        return azanChannelOpen || silentChannelOpen
++        val channel = manager.getNotificationChannel(channelId) ?: return true
++        return channel.importance != NotificationManager.IMPORTANCE_NONE
+     }
+ }
+\ No newline at end of file
+Index: app/src/main/java/com/hussein/mawaqit/presentation/quran/reader/QuranReaderScreen.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.hussein.mawaqit.presentation.quran.reader\r\n\r\nimport androidx.activity.compose.BackHandler\r\nimport androidx.compose.animation.AnimatedContent\r\nimport androidx.compose.foundation.basicMarquee\r\nimport androidx.compose.foundation.layout.Arrangement\r\nimport androidx.compose.foundation.layout.Box\r\nimport androidx.compose.foundation.layout.Column\r\nimport androidx.compose.foundation.layout.PaddingValues\r\nimport androidx.compose.foundation.layout.Row\r\nimport androidx.compose.foundation.layout.Spacer\r\nimport androidx.compose.foundation.layout.fillMaxSize\r\nimport androidx.compose.foundation.layout.fillMaxWidth\r\nimport androidx.compose.foundation.layout.height\r\nimport androidx.compose.foundation.layout.navigationBarsPadding\r\nimport androidx.compose.foundation.layout.padding\r\nimport androidx.compose.foundation.layout.size\r\nimport androidx.compose.foundation.layout.width\r\nimport androidx.compose.foundation.lazy.LazyColumn\r\nimport androidx.compose.foundation.lazy.rememberLazyListState\r\nimport androidx.compose.foundation.text.ClickableText\r\nimport androidx.compose.material3.BottomSheetDefaults\r\nimport androidx.compose.material3.Button\r\nimport androidx.compose.material3.ContainedLoadingIndicator\r\nimport androidx.compose.material3.ExperimentalMaterial3Api\r\nimport androidx.compose.material3.ExperimentalMaterial3ExpressiveApi\r\nimport androidx.compose.material3.HorizontalDivider\r\nimport androidx.compose.material3.Icon\r\nimport androidx.compose.material3.IconButton\r\nimport androidx.compose.material3.MaterialTheme\r\nimport androidx.compose.material3.ModalBottomSheet\r\nimport androidx.compose.material3.OutlinedButton\r\nimport androidx.compose.material3.Scaffold\r\nimport androidx.compose.material3.Text\r\nimport androidx.compose.material3.TopAppBar\r\nimport androidx.compose.runtime.Composable\r\nimport androidx.compose.runtime.LaunchedEffect\r\nimport androidx.compose.runtime.getValue\r\nimport androidx.compose.runtime.mutableStateOf\r\nimport androidx.compose.runtime.remember\r\nimport androidx.compose.runtime.setValue\r\nimport androidx.compose.ui.Alignment\r\nimport androidx.compose.ui.Modifier\r\nimport androidx.compose.ui.graphics.vector.ImageVector\r\nimport androidx.compose.ui.res.stringResource\r\nimport androidx.compose.ui.res.vectorResource\r\nimport androidx.compose.ui.text.SpanStyle\r\nimport androidx.compose.ui.text.TextLayoutResult\r\nimport androidx.compose.ui.text.TextStyle\r\nimport androidx.compose.ui.text.buildAnnotatedString\r\nimport androidx.compose.ui.text.font.FontWeight\r\nimport androidx.compose.ui.text.style.TextAlign\r\nimport androidx.compose.ui.text.style.TextDirection\r\nimport androidx.compose.ui.text.withStyle\r\nimport androidx.compose.ui.unit.dp\r\nimport androidx.compose.ui.unit.sp\r\nimport androidx.lifecycle.compose.LifecycleResumeEffect\r\nimport androidx.lifecycle.compose.collectAsStateWithLifecycle\r\nimport com.hussein.mawaqit.R\r\nimport com.hussein.mawaqit.data.db.BookmarkEntity\r\nimport com.hussein.mawaqit.data.db.models.Ayah\r\nimport com.hussein.mawaqit.data.quran.QuranData\r\nimport com.hussein.mawaqit.data.quran.QuranFontSize\r\nimport com.hussein.mawaqit.data.quran.QuranTextAlignment\r\nimport com.hussein.mawaqit.data.quran.Surah\r\nimport com.hussein.mawaqit.data.quran.recitation.Reciter\r\nimport com.hussein.mawaqit.presentation.quran.components.AyahReciterPickerSheetContent\r\nimport com.hussein.mawaqit.presentation.shared.ErrorContent\r\nimport com.hussein.mawaqit.presentation.shared.LoadingContent\r\nimport com.hussein.mawaqit.ui.theme.quranFontFamily\r\nimport org.koin.androidx.compose.koinViewModel\r\n\r\n\r\n@OptIn(ExperimentalMaterial3Api::class)\r\n@Composable\r\nfun QuranReaderScreen(\r\n    surahIndex: Int,\r\n    onBack: () -> Unit,\r\n    viewModel: QuranViewModel = koinViewModel(),\r\n    scrollToAyah: Int? = null,\r\n) {\r\n    val readerState by viewModel.readerState.collectAsStateWithLifecycle()\r\n    val fontSize by viewModel.fontSize.collectAsStateWithLifecycle()\r\n    val quranTextAlignment by viewModel.textAlignment.collectAsStateWithLifecycle()\r\n    val bookmarks by viewModel.bookmarks.collectAsStateWithLifecycle()\r\n\r\n    val selectedAyah by viewModel.selectedAyah.collectAsStateWithLifecycle()\r\n    val tafsirState by viewModel.tafsirState.collectAsStateWithLifecycle()\r\n\r\n    val recitationState by viewModel.ayahRecitationState.collectAsStateWithLifecycle()\r\n    val playingAyah by viewModel.playingAyah.collectAsStateWithLifecycle()\r\n    val selectedReciter by viewModel.selectedReciter.collectAsStateWithLifecycle()\r\n    val hasNetwork by viewModel.networkAvailable.collectAsStateWithLifecycle()\r\n\r\n    var showReaderOptionsDialog by remember { mutableStateOf(false) }\r\n\r\n    // Maps ayahNumber → (lazyItemIndex, TextLayoutResult) for scroll precision\r\n    val layoutMap = remember { mutableMapOf<Int, Pair<Int, TextLayoutResult>>() }\r\n    val listState = rememberLazyListState()\r\n\r\n    // Scroll to bookmarked ayah once surah is loaded\r\n    LaunchedEffect(scrollToAyah, readerState) {\r\n        if (scrollToAyah == null) return@LaunchedEffect\r\n        if (readerState !is QuranReaderUiState.Success) return@LaunchedEffect\r\n        val entry = layoutMap[scrollToAyah] ?: return@LaunchedEffect\r\n        val (itemIndex, layout) = entry\r\n        val annotation = layout.layoutInput.text\r\n            .getStringAnnotations(\"AYAH\", 0, layout.layoutInput.text.length)\r\n            .firstOrNull { it.item == scrollToAyah.toString() }\r\n            ?: return@LaunchedEffect\r\n        val yOffset = layout.getBoundingBox(annotation.start).top.toInt()\r\n        listState.scrollToItem(itemIndex, scrollOffset = yOffset)\r\n    }\r\n\r\n    LifecycleResumeEffect(Unit) {\r\n        onPauseOrDispose {\r\n            if (viewModel.playingAyah.value != null) {\r\n                viewModel.stopAyah()\r\n            }\r\n        }\r\n    }\r\n\r\n    LaunchedEffect(surahIndex) { viewModel.loadSurah(surahIndex) }\r\n\r\n    // Fetch tafsir when an ayah is selected\r\n    // Ayah bottom sheet\r\n    selectedAyah?.let { ayah ->\r\n        val isBookmarked = bookmarks.any {\r\n            it.surahNumber == surahIndex && it.ayahNumber == ayah.numberInSurah\r\n        }\r\n        AyahBottomSheet(\r\n            ayah = ayah,\r\n            tafsirState = tafsirState,\r\n            isBookmarked = isBookmarked,\r\n            isPlaying = playingAyah == ayah.numberInSurah &&\r\n                    recitationState is AyahRecitationState.Playing,\r\n            currentReciter = selectedReciter,\r\n            onTafsir = { viewModel.fetchTafsir(surahIndex, ayah) },\r\n            onBookmark = { viewModel.toggleBookmark(surahIndex, ayah.numberInSurah) },\r\n            onPlayPause = {\r\n                if (playingAyah == ayah.numberInSurah &&\r\n                    recitationState !is AyahRecitationState.Idle\r\n                ) {\r\n                    viewModel.stopAyah()\r\n                } else {\r\n                    viewModel.playAyah(surahIndex, ayah.numberInSurah)\r\n                }\r\n            },\r\n            onReciterSelect = { viewModel.selectReciter(it) },\r\n            onDismiss = { viewModel.dismissTafsir() },\r\n            playEnabled = hasNetwork\r\n        )\r\n    }\r\n\r\n    BackHandler(enabled = recitationState is AyahRecitationState.Playing) {\r\n        viewModel.stopAyah()\r\n        onBack.invoke()\r\n    }\r\n\r\n    Scaffold(\r\n        topBar = {\r\n            TopAppBar(\r\n                title = {\r\n                    if (readerState is QuranReaderUiState.Success) {\r\n                        val surah = QuranData.surahs.getOrNull(surahIndex - 1)\r\n                        Text(surah?.nameArabic ?: \"\")\r\n                    }\r\n                },\r\n                navigationIcon = {\r\n                    IconButton(onClick = {\r\n                        if (recitationState is AyahRecitationState.Playing) {\r\n                            viewModel.stopAyah()\r\n                        }\r\n                        onBack.invoke()\r\n                    }) {\r\n                        Icon(\r\n                            ImageVector.vectorResource(R.drawable.ic_arrow_back),\r\n                            contentDescription = \"Back\"\r\n                        )\r\n                    }\r\n                },\r\n                actions = {\r\n                    // Font size toggle\r\n\r\n                    IconButton(onClick = {\r\n                        showReaderOptionsDialog = true\r\n                    }) {\r\n                        Icon(\r\n                            modifier = Modifier.size(18.dp),\r\n                            imageVector = ImageVector.vectorResource(com.hussein.mawaqit.R.drawable.ic_settings),\r\n                            contentDescription = null\r\n                        )\r\n                    }\r\n                }\r\n            )\r\n        }\r\n    ) { padding ->\r\n        when (val state = readerState) {\r\n            QuranReaderUiState.Idle,\r\n            QuranReaderUiState.Loading -> {\r\n                LoadingContent()\r\n            }\r\n\r\n            is QuranReaderUiState.Error -> {\r\n                ErrorContent(state.message)\r\n            }\r\n\r\n            is QuranReaderUiState.Success -> {\r\n                if (showReaderOptionsDialog) {\r\n                    QuranReaderOptionsDialog(\r\n                        selectedFontSize = fontSize,\r\n                        selectedTextAlignment = quranTextAlignment,\r\n                        onSelectedFontSize = {\r\n                            viewModel.setFontSize(it)\r\n                        },\r\n                        onSelectedTextAlignment = {\r\n                            viewModel.setTextAlignment(it)\r\n                        },\r\n                        onDismiss = {\r\n                            showReaderOptionsDialog = false\r\n                        }\r\n                    )\r\n                }\r\n                val surah = state.surah\r\n                LazyColumn(\r\n                    modifier = Modifier\r\n                        .fillMaxSize()\r\n                        .padding(padding),\r\n                    contentPadding = PaddingValues(bottom = 32.dp, start = 4.dp, end = 4.dp)\r\n                ) {\r\n                    item {\r\n                        SurahHeader(\r\n                            surah = QuranData.surahs[surahIndex - 1],\r\n                        )\r\n                    }\r\n                    item {\r\n                        FlowingAyahBlock(\r\n                            ayahs = surah.ayahs,\r\n                            fontSize = fontSize,\r\n                            quranTextAlignment = quranTextAlignment,\r\n                            bookmarks = bookmarks,\r\n                            surahIndex = surahIndex, onTap = { ayah ->\r\n                                viewModel.selectAyah(ayah)\r\n                            }, onTextLayout = { layout ->\r\n                                // Store layout for each ayah in this block\r\n                                surah.ayahs.forEach { ayah ->\r\n                                    layoutMap[ayah.numberInSurah] = 1 to layout\r\n                                }\r\n                            }\r\n                        )\r\n                    }\r\n                }\r\n            }\r\n        }\r\n    }\r\n}\r\n\r\n@Composable\r\nprivate fun FlowingAyahBlock(\r\n    ayahs: List<Ayah>,\r\n    fontSize: QuranFontSize,\r\n    quranTextAlignment: QuranTextAlignment,\r\n    bookmarks: List<BookmarkEntity>,\r\n    surahIndex: Int,\r\n    onTap: (Ayah) -> Unit,\r\n    onTextLayout: (TextLayoutResult) -> Unit = {}\r\n\r\n) {\r\n\r\n    val primary = MaterialTheme.colorScheme.primary\r\n    val onSurface = MaterialTheme.colorScheme.onSurface\r\n    val bookmarkColor = MaterialTheme.colorScheme.tertiary\r\n    // Tag used in AnnotatedString to detect ayah taps\r\n    val tag = \"AYAH\"\r\n\r\n    val annotated = buildAnnotatedString {\r\n        ayahs.forEach { ayah ->\r\n            val isBookmarked = bookmarks.any {\r\n                it.surahNumber == surahIndex && it.ayahNumber == ayah.numberInSurah\r\n            }// Ayah text\r\n            pushStringAnnotation(tag, ayah.numberInSurah.toString())\r\n            withStyle(\r\n                SpanStyle(\r\n                    color = if (isBookmarked) bookmarkColor else onSurface,\r\n                    fontSize = fontSize.sp.sp\r\n                )\r\n            ) {\r\n                append(ayah.text)\r\n            }\r\n            // Ayah number marker \u06DDN\r\n            withStyle(\r\n                SpanStyle(\r\n                    color = primary,\r\n                    fontSize = (fontSize.sp * 0.75).sp,\r\n                    fontWeight = FontWeight.Bold,\r\n                )\r\n            ) {\r\n                append(ayahMarker(ayah.numberInSurah))\r\n            }\r\n            pop()\r\n        }\r\n    }\r\n\r\n    ClickableText(\r\n        text = annotated,\r\n        modifier = Modifier\r\n            .fillMaxWidth()\r\n            .padding(),\r\n        style = TextStyle(\r\n            fontSize = fontSize.sp.sp,\r\n            lineHeight = (fontSize.sp * 2.0).sp,\r\n            textAlign = when (quranTextAlignment) {\r\n                QuranTextAlignment.Start -> TextAlign.Start\r\n                QuranTextAlignment.Center -> TextAlign.Center\r\n                QuranTextAlignment.End -> TextAlign.End\r\n            },\r\n            textDirection = TextDirection.Rtl, fontFamily = quranFontFamily\r\n        ),\r\n        onClick = { offset ->\r\n            annotated.getStringAnnotations(tag, offset, offset)\r\n                .firstOrNull()?.let { ann ->\r\n                    // skip showing\r\n                    if (ann.item.toInt() == 0) return@ClickableText\r\n                    val ayah = ayahs.find { it.numberInSurah == ann.item.toInt() }\r\n                    ayah?.let { onTap(it) }\r\n                }\r\n        }, onTextLayout = onTextLayout\r\n    )\r\n}\r\n\r\n\r\n@Composable\r\nprivate fun SurahHeader(surah: Surah) {\r\n    Column(\r\n        modifier = Modifier\r\n            .fillMaxWidth(),\r\n        horizontalAlignment = Alignment.CenterHorizontally\r\n    ) {\r\n        Text(\r\n            fontFamily = quranFontFamily,\r\n            text = surah.nameArabic,\r\n            style = MaterialTheme.typography.headlineMedium,\r\n            fontWeight = FontWeight.Bold,\r\n            color = MaterialTheme.colorScheme.primary\r\n        )\r\n        Text(\r\n            text = surah.nameTransliterated,\r\n            style = MaterialTheme.typography.bodyMedium,\r\n            color = MaterialTheme.colorScheme.onSurfaceVariant\r\n        )\r\n        Spacer(Modifier.height(8.dp))\r\n        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)\r\n    }\r\n}\r\n\r\nprivate fun ayahMarker(number: Int): String {\r\n    val arabicNumber = number.toString().map { ch ->\r\n        if (ch.isDigit()) '٠' + (ch - '0') else ch\r\n    }.joinToString(\"\")\r\n    return \" ﴿$arabicNumber﴾ \"\r\n}\r\n\r\n@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)\r\n@Composable\r\nprivate fun AyahBottomSheet(\r\n    ayah: Ayah,\r\n    tafsirState: TafsirState,\r\n    isBookmarked: Boolean,\r\n    onTafsir: () -> Unit,\r\n    onBookmark: () -> Unit,\r\n    isPlaying: Boolean,\r\n    onPlayPause: () -> Unit,\r\n    onDismiss: () -> Unit,\r\n    playEnabled: Boolean,\r\n    currentReciter: Reciter,\r\n    onReciterSelect: (Reciter) -> Unit,\r\n) {\r\n    ModalBottomSheet(\r\n        onDismissRequest = onDismiss,\r\n        dragHandle = { BottomSheetDefaults.DragHandle() }\r\n    ) {\r\n        var showReciterOptions by remember { mutableStateOf(false) }\r\n        AnimatedContent(showReciterOptions) { showReciterPicker ->\r\n            if (!showReciterPicker) {\r\n                Column(\r\n                    modifier = Modifier\r\n                        .fillMaxWidth()\r\n                        .padding(horizontal = 16.dp)\r\n                        .padding(bottom = 16.dp)\r\n                        .navigationBarsPadding(),\r\n                    horizontalAlignment = Alignment.End\r\n                ) {\r\n                    // Ayah text preview\r\n                    Text(\r\n                        text = ayah.text,\r\n                        style = MaterialTheme.typography.bodyLarge.copy(\r\n                            textDirection = TextDirection.Rtl,\r\n                            lineHeight = 30.sp\r\n                        ),\r\n                        textAlign = TextAlign.Center,\r\n                        modifier = Modifier.fillMaxWidth()\r\n                    )\r\n                    Spacer(Modifier.height(16.dp))\r\n                    // Tafsir content\r\n                    when (tafsirState) {\r\n                        TafsirState.Idle -> {\r\n                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {\r\n                                OutlinedButton(\r\n                                    modifier = Modifier.weight(0.6f),\r\n                                    onClick = onPlayPause,\r\n                                    enabled = playEnabled\r\n                                ) {\r\n                                    Icon(\r\n                                        imageVector = if (isPlaying) ImageVector.vectorResource(\r\n                                            R.drawable.ic_stop\r\n                                        )\r\n                                        else ImageVector.vectorResource(R.drawable.ic_play),\r\n                                        contentDescription = null,\r\n                                        modifier = Modifier.size(18.dp)\r\n                                    )\r\n                                    Spacer(Modifier.width(4.dp))\r\n                                    Text(if (isPlaying) \"Stop\" else \"Play\")\r\n                                }\r\n                                OutlinedButton(\r\n                                    modifier = Modifier.weight(0.4f),\r\n                                    onClick = { showReciterOptions = true },\r\n                                    enabled = playEnabled\r\n                                ) {\r\n                                    Text(\r\n                                        currentReciter.nameEnglish,\r\n                                        modifier = Modifier.basicMarquee()\r\n                                    )\r\n                                }\r\n                            }\r\n                            Spacer(Modifier.height(8.dp))\r\n                            Row(\r\n                                modifier = Modifier.fillMaxWidth(),\r\n                                horizontalArrangement = Arrangement.End,\r\n                                verticalAlignment = Alignment.CenterVertically\r\n                            ) {\r\n                                OutlinedButton(onClick = onBookmark) {\r\n                                    Icon(\r\n                                        if (isBookmarked) ImageVector.vectorResource(R.drawable.ic_bookmark_filled) else ImageVector.vectorResource(\r\n                                            R.drawable.ic_bookmark\r\n                                        ),\r\n                                        contentDescription = if (isBookmarked) stringResource(R.string.remove_bookmark) else stringResource(\r\n                                            R.string.bookmark\r\n                                        )\r\n                                    )\r\n                                }\r\n                                Spacer(Modifier.width(8.dp))\r\n                                Button(onClick = onTafsir) {\r\n                                    Text(stringResource(R.string.tafsir))\r\n                                }\r\n                            }\r\n\r\n                        }\r\n\r\n                        TafsirState.Loading -> {\r\n                            Box(\r\n                                modifier = Modifier\r\n                                    .fillMaxWidth()\r\n                                    .height(80.dp),\r\n                                contentAlignment = Alignment.Center\r\n                            ) { ContainedLoadingIndicator() }\r\n                        }\r\n\r\n                        TafsirState.NoNetwork -> {\r\n                            Spacer(Modifier.height(12.dp))\r\n                            Text(\r\n                                text = stringResource(R.string.no_internet_connection),\r\n                                style = MaterialTheme.typography.bodyMedium,\r\n                                color = MaterialTheme.colorScheme.error,\r\n                                textAlign = TextAlign.Center,\r\n                                modifier = Modifier.fillMaxWidth()\r\n                            )\r\n                        }\r\n\r\n                        is TafsirState.Error -> {\r\n                            Spacer(Modifier.height(12.dp))\r\n                            Text(\r\n                                text = tafsirState.message,\r\n                                style = MaterialTheme.typography.bodyMedium,\r\n                                color = MaterialTheme.colorScheme.error,\r\n                                textAlign = TextAlign.Center,\r\n                                modifier = Modifier.fillMaxWidth()\r\n                            )\r\n                        }\r\n\r\n                        is TafsirState.Success -> {\r\n                            HorizontalDivider(\r\n                                modifier = Modifier.padding(vertical = 12.dp),\r\n                                color = MaterialTheme.colorScheme.outlineVariant\r\n                            )\r\n                            Text(\r\n                                text = tafsirState.text,\r\n                                style = MaterialTheme.typography.bodyLarge.copy(\r\n                                    textDirection = TextDirection.Rtl,\r\n                                    lineHeight = 32.sp\r\n                                ),\r\n                                textAlign = TextAlign.Center,\r\n                                modifier = Modifier.fillMaxWidth()\r\n                            )\r\n                        }\r\n                    }\r\n                }\r\n\r\n            } else {\r\n                AyahReciterPickerSheetContent(\r\n                    selectedReciter = currentReciter,\r\n                    onDismiss = {\r\n                        showReciterOptions = false\r\n                    },\r\n                    onSelect = { onReciterSelect(it); showReciterOptions = false }\r\n                )\r\n            }\r\n        }\r\n    }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/hussein/mawaqit/presentation/quran/reader/QuranReaderScreen.kt b/app/src/main/java/com/hussein/mawaqit/presentation/quran/reader/QuranReaderScreen.kt
+--- a/app/src/main/java/com/hussein/mawaqit/presentation/quran/reader/QuranReaderScreen.kt	(revision 9c6a0d5e67ca13ed5dfd4ff74087cf23e9dc4a99)
++++ b/app/src/main/java/com/hussein/mawaqit/presentation/quran/reader/QuranReaderScreen.kt	(date 1774746733182)
+@@ -6,7 +6,6 @@
+ import androidx.compose.foundation.layout.Arrangement
+ import androidx.compose.foundation.layout.Box
+ import androidx.compose.foundation.layout.Column
+-import androidx.compose.foundation.layout.PaddingValues
+ import androidx.compose.foundation.layout.Row
+ import androidx.compose.foundation.layout.Spacer
+ import androidx.compose.foundation.layout.fillMaxSize
+@@ -16,23 +15,27 @@
+ import androidx.compose.foundation.layout.padding
+ import androidx.compose.foundation.layout.size
+ import androidx.compose.foundation.layout.width
+-import androidx.compose.foundation.lazy.LazyColumn
+-import androidx.compose.foundation.lazy.rememberLazyListState
++import androidx.compose.foundation.rememberScrollState
+ import androidx.compose.foundation.text.ClickableText
++import androidx.compose.foundation.verticalScroll
+ import androidx.compose.material3.BottomSheetDefaults
+ import androidx.compose.material3.Button
++import androidx.compose.material3.ButtonShapes
++import androidx.compose.material3.CenterAlignedTopAppBar
+ import androidx.compose.material3.ContainedLoadingIndicator
+ import androidx.compose.material3.ExperimentalMaterial3Api
+ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
++import androidx.compose.material3.FilledTonalButton
+ import androidx.compose.material3.HorizontalDivider
+ import androidx.compose.material3.Icon
+ import androidx.compose.material3.IconButton
++import androidx.compose.material3.IconButtonDefaults
+ import androidx.compose.material3.MaterialTheme
+ import androidx.compose.material3.ModalBottomSheet
+ import androidx.compose.material3.OutlinedButton
+ import androidx.compose.material3.Scaffold
+ import androidx.compose.material3.Text
+-import androidx.compose.material3.TopAppBar
++import androidx.compose.material3.TopAppBarDefaults
+ import androidx.compose.runtime.Composable
+ import androidx.compose.runtime.LaunchedEffect
+ import androidx.compose.runtime.getValue
+@@ -42,8 +45,10 @@
+ import androidx.compose.ui.Alignment
+ import androidx.compose.ui.Modifier
+ import androidx.compose.ui.graphics.vector.ImageVector
++import androidx.compose.ui.platform.LocalClipboardManager
+ import androidx.compose.ui.res.stringResource
+ import androidx.compose.ui.res.vectorResource
++import androidx.compose.ui.text.AnnotatedString
+ import androidx.compose.ui.text.SpanStyle
+ import androidx.compose.ui.text.TextLayoutResult
+ import androidx.compose.ui.text.TextStyle
+@@ -62,7 +67,6 @@
+ import com.hussein.mawaqit.data.quran.QuranData
+ import com.hussein.mawaqit.data.quran.QuranFontSize
+ import com.hussein.mawaqit.data.quran.QuranTextAlignment
+-import com.hussein.mawaqit.data.quran.Surah
+ import com.hussein.mawaqit.data.quran.recitation.Reciter
+ import com.hussein.mawaqit.presentation.quran.components.AyahReciterPickerSheetContent
+ import com.hussein.mawaqit.presentation.shared.ErrorContent
+@@ -70,8 +74,12 @@
+ import com.hussein.mawaqit.ui.theme.quranFontFamily
+ import org.koin.androidx.compose.koinViewModel
+ 
++private const val BISMILLAH = "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ"
+ 
+-@OptIn(ExperimentalMaterial3Api::class)
++// Al-Fatihah (1) already contains Bismillah; At-Tawbah (9) has none
++private fun showBismillah(surahIndex: Int) = surahIndex != 1 && surahIndex != 9
++
++@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+ @Composable
+ fun QuranReaderScreen(
+     surahIndex: Int,
+@@ -91,26 +99,12 @@
+     val playingAyah by viewModel.playingAyah.collectAsStateWithLifecycle()
+     val selectedReciter by viewModel.selectedReciter.collectAsStateWithLifecycle()
+     val hasNetwork by viewModel.networkAvailable.collectAsStateWithLifecycle()
+-
++    val topAppBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+     var showReaderOptionsDialog by remember { mutableStateOf(false) }
++    val clipBoardManager = LocalClipboardManager.current
+ 
+-    // Maps ayahNumber → (lazyItemIndex, TextLayoutResult) for scroll precision
+-    val layoutMap = remember { mutableMapOf<Int, Pair<Int, TextLayoutResult>>() }
+-    val listState = rememberLazyListState()
+ 
+-    // Scroll to bookmarked ayah once surah is loaded
+-    LaunchedEffect(scrollToAyah, readerState) {
+-        if (scrollToAyah == null) return@LaunchedEffect
+-        if (readerState !is QuranReaderUiState.Success) return@LaunchedEffect
+-        val entry = layoutMap[scrollToAyah] ?: return@LaunchedEffect
+-        val (itemIndex, layout) = entry
+-        val annotation = layout.layoutInput.text
+-            .getStringAnnotations("AYAH", 0, layout.layoutInput.text.length)
+-            .firstOrNull { it.item == scrollToAyah.toString() }
+-            ?: return@LaunchedEffect
+-        val yOffset = layout.getBoundingBox(annotation.start).top.toInt()
+-        listState.scrollToItem(itemIndex, scrollOffset = yOffset)
+-    }
++    LaunchedEffect(surahIndex) { viewModel.loadSurah(surahIndex) }
+ 
+     LifecycleResumeEffect(Unit) {
+         onPauseOrDispose {
+@@ -120,10 +114,27 @@
+         }
+     }
+ 
+-    LaunchedEffect(surahIndex) { viewModel.loadSurah(surahIndex) }
+-
+-    // Fetch tafsir when an ayah is selected
+-    // Ayah bottom sheet
++    BackHandler(enabled = recitationState is AyahRecitationState.Playing) {
++        viewModel.stopAyah()
++        onBack.invoke()
++    }
++
++    if (showReaderOptionsDialog) {
++        QuranReaderOptionsDialog(
++            selectedFontSize = fontSize,
++            selectedTextAlignment = quranTextAlignment,
++            onSelectedFontSize = {
++                viewModel.setFontSize(it)
++            },
++            onSelectedTextAlignment = {
++                viewModel.setTextAlignment(it)
++            },
++            onDismiss = {
++                showReaderOptionsDialog = false
++            }
++        )
++    }
++
+     selectedAyah?.let { ayah ->
+         val isBookmarked = bookmarks.any {
+             it.surahNumber == surahIndex && it.ayahNumber == ayah.numberInSurah
+@@ -148,31 +159,37 @@
+             },
+             onReciterSelect = { viewModel.selectReciter(it) },
+             onDismiss = { viewModel.dismissTafsir() },
+-            playEnabled = hasNetwork
+-        )
+-    }
+-
+-    BackHandler(enabled = recitationState is AyahRecitationState.Playing) {
+-        viewModel.stopAyah()
+-        onBack.invoke()
++            playEnabled = hasNetwork, onCopyAyah = {
++                clipBoardManager.setText(AnnotatedString(ayah.text))
++            }
++        )
+     }
+ 
+     Scaffold(
+         topBar = {
+-            TopAppBar(
++            CenterAlignedTopAppBar(
++                scrollBehavior = topAppBarScrollBehavior,
+                 title = {
+-                    if (readerState is QuranReaderUiState.Success) {
+-                        val surah = QuranData.surahs.getOrNull(surahIndex - 1)
+-                        Text(surah?.nameArabic ?: "")
+-                    }
++                    Text(
++                        fontFamily = quranFontFamily,
++                        text = QuranData.surahs[surahIndex -1 ].nameArabic,
++                        style = MaterialTheme.typography.headlineMedium,
++                        fontWeight = FontWeight.Bold,
++                        color = MaterialTheme.colorScheme.primary
++                    )
+                 },
+                 navigationIcon = {
+-                    IconButton(onClick = {
+-                        if (recitationState is AyahRecitationState.Playing) {
+-                            viewModel.stopAyah()
+-                        }
+-                        onBack.invoke()
+-                    }) {
++                    FilledTonalButton(
++                        onClick = {
++                            if (recitationState is AyahRecitationState.Playing) {
++                                viewModel.stopAyah()
++                            }
++                            onBack.invoke()
++                        }, shapes = ButtonShapes(
++                            shape = IconButtonDefaults.shapes().shape,
++                            pressedShape = IconButtonDefaults.shapes().pressedShape
++                        )
++                    ) {
+                         Icon(
+                             ImageVector.vectorResource(R.drawable.ic_arrow_back),
+                             contentDescription = "Back"
+@@ -180,14 +197,12 @@
+                     }
+                 },
+                 actions = {
+-                    // Font size toggle
+-
+-                    IconButton(onClick = {
+-                        showReaderOptionsDialog = true
+-                    }) {
++                    IconButton(
++                        onClick = {
++                            showReaderOptionsDialog = true
++                        }) {
+                         Icon(
+-                            modifier = Modifier.size(18.dp),
+-                            imageVector = ImageVector.vectorResource(com.hussein.mawaqit.R.drawable.ic_settings),
++                            imageVector = ImageVector.vectorResource(R.drawable.ic_settings),
+                             contentDescription = null
+                         )
+                     }
+@@ -197,58 +212,30 @@
+     ) { padding ->
+         when (val state = readerState) {
+             QuranReaderUiState.Idle,
+-            QuranReaderUiState.Loading -> {
+-                LoadingContent()
+-            }
++            QuranReaderUiState.Loading -> LoadingContent()
+ 
+-            is QuranReaderUiState.Error -> {
+-                ErrorContent(state.message)
+-            }
++            is QuranReaderUiState.Error -> ErrorContent(state.message)
+ 
+             is QuranReaderUiState.Success -> {
+-                if (showReaderOptionsDialog) {
+-                    QuranReaderOptionsDialog(
+-                        selectedFontSize = fontSize,
+-                        selectedTextAlignment = quranTextAlignment,
+-                        onSelectedFontSize = {
+-                            viewModel.setFontSize(it)
+-                        },
+-                        onSelectedTextAlignment = {
+-                            viewModel.setTextAlignment(it)
+-                        },
+-                        onDismiss = {
+-                            showReaderOptionsDialog = false
+-                        }
+-                    )
+-                }
+                 val surah = state.surah
+-                LazyColumn(
++
++                Column(
+                     modifier = Modifier
+                         .fillMaxSize()
+-                        .padding(padding),
+-                    contentPadding = PaddingValues(bottom = 32.dp, start = 4.dp, end = 4.dp)
++                        .padding(padding)
+                 ) {
+-                    item {
+-                        SurahHeader(
+-                            surah = QuranData.surahs[surahIndex - 1],
+-                        )
+-                    }
+-                    item {
+-                        FlowingAyahBlock(
+-                            ayahs = surah.ayahs,
+-                            fontSize = fontSize,
+-                            quranTextAlignment = quranTextAlignment,
+-                            bookmarks = bookmarks,
+-                            surahIndex = surahIndex, onTap = { ayah ->
+-                                viewModel.selectAyah(ayah)
+-                            }, onTextLayout = { layout ->
+-                                // Store layout for each ayah in this block
+-                                surah.ayahs.forEach { ayah ->
+-                                    layoutMap[ayah.numberInSurah] = 1 to layout
+-                                }
+-                            }
+-                        )
+-                    }
++                    FlowingAyahBlock(
++                        ayahs = surah.ayahs,
++                        fontSize = fontSize,
++                        quranTextAlignment = quranTextAlignment,
++                        bookmarks = bookmarks,
++                        surahIndex = surahIndex,
++                        onTap = { viewModel.selectAyah(ayah = it) },
++                        scrollToAyah = scrollToAyah,
++                        modifier = Modifier
++                            .fillMaxWidth()
++                            .verticalScroll(rememberScrollState())
++                    )
+                 }
+             }
+         }
+@@ -257,22 +244,21 @@
+ 
+ @Composable
+ private fun FlowingAyahBlock(
++    modifier: Modifier = Modifier,
+     ayahs: List<Ayah>,
+     fontSize: QuranFontSize,
+     quranTextAlignment: QuranTextAlignment,
+     bookmarks: List<BookmarkEntity>,
+     surahIndex: Int,
+     onTap: (Ayah) -> Unit,
+-    onTextLayout: (TextLayoutResult) -> Unit = {}
+-
++    onTextLayout: (TextLayoutResult) -> Unit = {},
++    scrollToAyah: Int?
+ ) {
+-
+     val primary = MaterialTheme.colorScheme.primary
+     val onSurface = MaterialTheme.colorScheme.onSurface
+     val bookmarkColor = MaterialTheme.colorScheme.tertiary
+     // Tag used in AnnotatedString to detect ayah taps
+     val tag = "AYAH"
+-
+     val annotated = buildAnnotatedString {
+         ayahs.forEach { ayah ->
+             val isBookmarked = bookmarks.any {
+@@ -300,12 +286,9 @@
+             pop()
+         }
+     }
+-
+     ClickableText(
+         text = annotated,
+-        modifier = Modifier
+-            .fillMaxWidth()
+-            .padding(),
++        modifier = modifier,
+         style = TextStyle(
+             fontSize = fontSize.sp.sp,
+             lineHeight = (fontSize.sp * 2.0).sp,
+@@ -324,36 +307,37 @@
+                     val ayah = ayahs.find { it.numberInSurah == ann.item.toInt() }
+                     ayah?.let { onTap(it) }
+                 }
+-        }, onTextLayout = onTextLayout
++        },
++        onTextLayout = onTextLayout,
+     )
+ }
+ 
+ 
+-@Composable
+-private fun SurahHeader(surah: Surah) {
+-    Column(
+-        modifier = Modifier
+-            .fillMaxWidth(),
+-        horizontalAlignment = Alignment.CenterHorizontally
+-    ) {
+-        Text(
+-            fontFamily = quranFontFamily,
+-            text = surah.nameArabic,
+-            style = MaterialTheme.typography.headlineMedium,
+-            fontWeight = FontWeight.Bold,
+-            color = MaterialTheme.colorScheme.primary
+-        )
+-        Text(
+-            text = surah.nameTransliterated,
+-            style = MaterialTheme.typography.bodyMedium,
+-            color = MaterialTheme.colorScheme.onSurfaceVariant
+-        )
+-        Spacer(Modifier.height(8.dp))
+-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+-    }
+-}
++//@Composable
++//private fun SurahHeader(surah: Surah) {
++//    Column(
++//        modifier = Modifier
++//            .fillMaxWidth(),
++//        horizontalAlignment = Alignment.CenterHorizontally
++//    ) {
++//        Text(
++//            fontFamily = quranFontFamily,
++//            text = surah.nameArabic,
++//            style = MaterialTheme.typography.headlineMedium,
++//            fontWeight = FontWeight.Bold,
++//            color = MaterialTheme.colorScheme.primary
++//        )
++//        Text(
++//            text = surah.nameTransliterated,
++//            style = MaterialTheme.typography.bodyMedium,
++//            color = MaterialTheme.colorScheme.onSurfaceVariant
++//        )
++//        Spacer(Modifier.height(8.dp))
++//        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
++//    }
++//}
+ 
+-private fun ayahMarker(number: Int): String {
++fun ayahMarker(number: Int): String {
+     val arabicNumber = number.toString().map { ch ->
+         if (ch.isDigit()) '٠' + (ch - '0') else ch
+     }.joinToString("")
+@@ -368,6 +352,7 @@
+     isBookmarked: Boolean,
+     onTafsir: () -> Unit,
+     onBookmark: () -> Unit,
++    onCopyAyah: () -> Unit,
+     isPlaying: Boolean,
+     onPlayPause: () -> Unit,
+     onDismiss: () -> Unit,
+@@ -435,7 +420,7 @@
+                             Spacer(Modifier.height(8.dp))
+                             Row(
+                                 modifier = Modifier.fillMaxWidth(),
+-                                horizontalArrangement = Arrangement.End,
++                                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                                 verticalAlignment = Alignment.CenterVertically
+                             ) {
+                                 OutlinedButton(onClick = onBookmark) {
+@@ -448,7 +433,12 @@
+                                         )
+                                     )
+                                 }
+-                                Spacer(Modifier.width(8.dp))
++                                OutlinedButton(onClick = { onCopyAyah() }) {
++                                    Icon(
++                                        ImageVector.vectorResource(R.drawable.ic_copy),
++                                        contentDescription = "Copy ayah"
++                                    )
++                                }
+                                 Button(onClick = onTafsir) {
+                                     Text(stringResource(R.string.tafsir))
+                                 }
+Index: app/src/main/AndroidManifest.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\r\n    xmlns:tools=\"http://schemas.android.com/tools\">\r\n\r\n    <uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\" />\r\n    <uses-permission android:name=\"android.permission.INTERNET\" />\r\n\r\n    <uses-permission android:name=\"android.permission.RECEIVE_BOOT_COMPLETED\" />\r\n    <uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\" />\r\n    <uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\" />\r\n    <uses-permission android:name=\"android.permission.POST_NOTIFICATIONS\" />\r\n\r\n    <uses-permission android:name=\"android.permission.SCHEDULE_EXACT_ALARM\" />        <!-- Android 12+ -->\r\n    <uses-permission android:name=\"android.permission.USE_EXACT_ALARM\" />             <!-- Android 13+ alternative -->\r\n    <uses-permission android:name=\"android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS\" />\r\n\r\n    <uses-permission android:name=\"android.permission.FOREGROUND_SERVICE\" />\r\n    <uses-permission android:name=\"android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK\" />\r\n    <uses-permission android:name=\"android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK\" />\r\n\r\n    <uses-permission android:name=\"android.permission.USE_FULL_SCREEN_INTENT\" />\r\n    <uses-permission android:name=\"android.permission.WAKE_LOCK\" />\r\n\r\n    <application\r\n        android:name=\".MawaqitApp\"\r\n        android:allowBackup=\"true\"\r\n        android:dataExtractionRules=\"@xml/data_extraction_rules\"\r\n        android:fullBackupContent=\"@xml/backup_rules\"\r\n        android:icon=\"@mipmap/ic_launcher\"\r\n        android:label=\"@string/app_name\"\r\n        android:roundIcon=\"@mipmap/ic_launcher_round\"\r\n        android:supportsRtl=\"true\"\r\n        android:theme=\"@style/Theme.Islamic\">\r\n        <activity\r\n            android:name=\".MainActivity\"\r\n            android:exported=\"true\"\r\n            android:label=\"@string/app_name\"\r\n            android:theme=\"@style/Theme.Islamic\">\r\n            <intent-filter>\r\n                <action android:name=\"android.intent.action.MAIN\" />\r\n\r\n                <category android:name=\"android.intent.category.LAUNCHER\" />\r\n            </intent-filter>\r\n\r\n        </activity>\r\n\r\n\r\n        <provider\r\n            android:name=\"androidx.startup.InitializationProvider\"\r\n            android:authorities=\"${applicationId}.androidx-startup\"\r\n            android:exported=\"false\"\r\n            tools:node=\"merge\">\r\n\r\n            <!-- This disables the default WorkManager initializer -->\r\n            <meta-data\r\n                android:name=\"androidx.work.WorkManagerInitializer\"\r\n                android:value=\"androidx.startup\"\r\n                tools:node=\"remove\" />\r\n        </provider>\r\n\r\n        <service\r\n            android:name=\".data.infrastructure.services.GlobalPlayerService\"\r\n            android:exported=\"true\"\r\n            android:foregroundServiceType=\"mediaPlayback\">\r\n            <intent-filter>\r\n                <action android:name=\"androidx.media3.session.MediaSessionService\" />\r\n            </intent-filter>\r\n        </service>\r\n\r\n        <receiver\r\n            android:name=\".data.infrastructure.receivers.BootReceiver\"\r\n            android:exported=\"true\">\r\n            <intent-filter>\r\n                <action android:name=\"android.intent.action.BOOT_COMPLETED\" />\r\n                <action android:name=\"android.intent.action.MY_PACKAGE_REPLACED\" />\r\n            </intent-filter>\r\n        </receiver>\r\n\r\n        <receiver\r\n            android:name=\".data.infrastructure.receivers.PrayerAlarmReceiver\"\r\n            android:exported=\"false\">\r\n            <intent-filter>\r\n                <action android:name=\"com.hussein.islamic.PRAYER_TIME\" />\r\n            </intent-filter>\r\n        </receiver>\r\n    </application>\r\n\r\n</manifest>\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+--- a/app/src/main/AndroidManifest.xml	(revision 9c6a0d5e67ca13ed5dfd4ff74087cf23e9dc4a99)
++++ b/app/src/main/AndroidManifest.xml	(date 1775003047595)
+@@ -31,10 +31,10 @@
+         android:roundIcon="@mipmap/ic_launcher_round"
+         android:supportsRtl="true"
+         android:theme="@style/Theme.Islamic">
++
+         <activity
+             android:name=".MainActivity"
+             android:exported="true"
+-            android:label="@string/app_name"
+             android:theme="@style/Theme.Islamic">
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+@@ -44,6 +44,15 @@
+ 
+         </activity>
+ 
++        <activity android:name=".AzanActivity"
++            android:exported="false"
++            android:showOnLockScreen="true"
++            android:turnScreenOn="true"
++            android:theme="@style/Theme.Islamic"
++            android:launchMode="singleInstance"
++            android:excludeFromRecents="true"
++            />
++
+ 
+         <provider
+             android:name="androidx.startup.InitializationProvider"
+Index: app/src/main/java/com/hussein/mawaqit/presentation/home/HomeScreen.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.hussein.mawaqit.presentation.home\r\n\r\nimport androidx.compose.animation.animateColorAsState\r\nimport androidx.compose.animation.core.tween\r\nimport androidx.compose.foundation.BorderStroke\r\nimport androidx.compose.foundation.background\r\nimport androidx.compose.foundation.layout.Arrangement\r\nimport androidx.compose.foundation.layout.Box\r\nimport androidx.compose.foundation.layout.Column\r\nimport androidx.compose.foundation.layout.Row\r\nimport androidx.compose.foundation.layout.Spacer\r\nimport androidx.compose.foundation.layout.fillMaxSize\r\nimport androidx.compose.foundation.layout.fillMaxWidth\r\nimport androidx.compose.foundation.layout.height\r\nimport androidx.compose.foundation.layout.padding\r\nimport androidx.compose.foundation.layout.size\r\nimport androidx.compose.foundation.layout.statusBarsPadding\r\nimport androidx.compose.foundation.rememberScrollState\r\nimport androidx.compose.foundation.shape.CircleShape\r\nimport androidx.compose.foundation.shape.RoundedCornerShape\r\nimport androidx.compose.foundation.verticalScroll\r\nimport androidx.compose.material3.Card\r\nimport androidx.compose.material3.CardDefaults\r\nimport androidx.compose.material3.CircularProgressIndicator\r\nimport androidx.compose.material3.ExperimentalMaterial3Api\r\nimport androidx.compose.material3.ExperimentalMaterial3ExpressiveApi\r\nimport androidx.compose.material3.Icon\r\nimport androidx.compose.material3.IconButton\r\nimport androidx.compose.material3.MaterialTheme\r\nimport androidx.compose.material3.Scaffold\r\nimport androidx.compose.material3.Surface\r\nimport androidx.compose.material3.Text\r\nimport androidx.compose.runtime.Composable\r\nimport androidx.compose.runtime.LaunchedEffect\r\nimport androidx.compose.runtime.getValue\r\nimport androidx.compose.ui.Alignment\r\nimport androidx.compose.ui.Modifier\r\nimport androidx.compose.ui.draw.alpha\r\nimport androidx.compose.ui.graphics.vector.ImageVector\r\nimport androidx.compose.ui.res.stringResource\r\nimport androidx.compose.ui.res.vectorResource\r\nimport androidx.compose.ui.text.font.FontWeight\r\nimport androidx.compose.ui.text.style.TextAlign\r\nimport androidx.compose.ui.text.style.TextDirection\r\nimport androidx.compose.ui.unit.dp\r\nimport androidx.compose.ui.unit.sp\r\nimport androidx.compose.ui.zIndex\r\nimport androidx.lifecycle.compose.collectAsStateWithLifecycle\r\nimport com.hussein.mawaqit.R\r\nimport com.hussein.mawaqit.data.db.models.Ayah\r\nimport com.hussein.mawaqit.presentation.home.components.PrayerArchStepper\r\nimport com.hussein.mawaqit.presentation.shared.ErrorContent\r\nimport com.hussein.mawaqit.presentation.shared.LoadingContent\r\nimport com.hussein.mawaqit.presentation.util.formatTime\r\nimport kotlinx.coroutines.delay\r\nimport kotlinx.coroutines.flow.StateFlow\r\nimport org.koin.androidx.compose.koinViewModel\r\nimport kotlin.time.ExperimentalTime\r\n\r\n@OptIn(ExperimentalMaterial3Api::class)\r\n@Composable\r\nfun HomeScreen(\r\n    onNavigateToSettings: () -> Unit,\r\n    onNavigateToAzkar: () -> Unit = {},\r\n    onNavigateToQuran: () -> Unit = {},\r\n    viewModel: HomeViewModel = koinViewModel()\r\n) {\r\n    // Collect the main state. This doesn't change every second.\r\n    val state by viewModel.uiState.collectAsStateWithLifecycle()\r\n\r\n    LaunchedEffect(Unit) {\r\n        while (true) {\r\n            viewModel.tick()\r\n            delay(60_000)\r\n        }\r\n    }\r\n\r\n    Scaffold(topBar = {\r\n        HomeTopAppBar(\r\n            cityName = state.cityName, onNavigateToSettings = onNavigateToSettings\r\n        )\r\n    }) { innerPadding ->\r\n        when {\r\n            state.isLoading -> LoadingContent(Modifier.padding(innerPadding))\r\n            state.error != null -> ErrorContent(state.error!!, Modifier.padding(innerPadding))\r\n            else -> PrayerContent(\r\n                state = state,\r\n                countdownFlow = viewModel.countdown,\r\n                modifier = Modifier.padding(innerPadding),\r\n                onNavigateToAzkar = onNavigateToAzkar,\r\n                onNavigateToQuran = onNavigateToQuran\r\n            )\r\n        }\r\n    }\r\n}\r\n\r\n@OptIn(ExperimentalMaterial3ExpressiveApi::class)\r\n@Composable\r\nprivate fun PrayerContent(\r\n    modifier: Modifier = Modifier,\r\n    state: HomeUiState,\r\n    countdownFlow: StateFlow<CountdownTime?>,\r\n    onNavigateToAzkar: () -> Unit = {},\r\n    onNavigateToQuran: () -> Unit = {}\r\n) {\r\n\r\n    Column(\r\n        modifier = Modifier\r\n            .fillMaxSize()\r\n            .verticalScroll(rememberScrollState())\r\n            .padding(start = 16.dp, end = 16.dp, bottom = 32.dp)\r\n            .then(modifier),\r\n        verticalArrangement = Arrangement.spacedBy(8.dp)\r\n    ) {\r\n        HeaderSection(state, countdownFlow = countdownFlow)\r\n        QuranAndAzkarSection(\r\n            onNavigateToQuran = onNavigateToQuran,\r\n            onNavigateToAzkar = onNavigateToAzkar\r\n        )\r\n\r\n        AyahOfTheDayCard(\r\n            ayah = state.ayahOfTheDay,\r\n            surahName = \"TODO()\",\r\n        )\r\n        Surface(\r\n            shape = RoundedCornerShape(50.dp),\r\n            color = MaterialTheme.colorScheme.surfaceContainer,\r\n        ) {\r\n            Text(\r\n                text = \"Today's Prayers\",\r\n                style = MaterialTheme.typography.titleSmall,\r\n                fontWeight = FontWeight.SemiBold,\r\n                modifier = Modifier.padding(16.dp)\r\n            )\r\n        }\r\n\r\n        state.prayers.forEach { prayer ->\r\n            HomePrayerListItem(prayer)\r\n        }\r\n\r\n    }\r\n}\r\n\r\n@OptIn(ExperimentalTime::class)\r\n@Composable\r\nprivate fun HeaderSection(state: HomeUiState, countdownFlow: StateFlow<CountdownTime?>) {\r\n    Surface(\r\n        modifier = Modifier.fillMaxWidth(),\r\n        color = MaterialTheme.colorScheme.surfaceContainer,\r\n        border = BorderStroke(1.dp, color = MaterialTheme.colorScheme.primary.copy(0.6f)),\r\n        shape = RoundedCornerShape(24.dp)\r\n    ) {\r\n        Column(\r\n            modifier = Modifier\r\n                .fillMaxWidth()\r\n                .padding(top = 16.dp, bottom = 24.dp, start = 16.dp, end = 16.dp),\r\n            horizontalAlignment = Alignment.Start\r\n        ) {\r\n            if (state.hijriDate.isNotBlank()) {\r\n                Text(\r\n                    text = state.hijriDate,\r\n                    style = MaterialTheme.typography.titleSmall.copy(textDirection = TextDirection.Rtl),\r\n                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.9f)\r\n                )\r\n                Spacer(Modifier.height(4.dp))\r\n            }\r\n            state.nextPrayer?.let { next ->\r\n                val label =\r\n                    if (next.status == PrayerStatus.CURRENT) \"Current Prayer\" else \"Next Prayer Is\"\r\n\r\n                Text(\r\n                    text = label,\r\n                    style = MaterialTheme.typography.labelLarge,\r\n                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),\r\n                    letterSpacing = 1.sp\r\n                )\r\n                Spacer(Modifier.height(8.dp))\r\n\r\n                Row(\r\n                    verticalAlignment = Alignment.CenterVertically,\r\n                ) {\r\n                    Text(\r\n                        modifier = Modifier.weight(1f),\r\n                        text = next.name,\r\n                        style = MaterialTheme.typography.displaySmall,\r\n                        fontWeight = FontWeight.Bold,\r\n                        color = MaterialTheme.colorScheme.onPrimaryContainer\r\n                    )\r\n                    if (next.status == PrayerStatus.UPCOMING) {\r\n                        // Pass the FLOW instead of the VALUE\r\n                        CountdownDisplay(countdownFlow = countdownFlow)\r\n                    }\r\n                }\r\n            }\r\n\r\n            PrayerArchStepper(\r\n                prayers = state.prayers, modifier = Modifier\r\n                    .fillMaxWidth()\r\n                    .zIndex(1f)\r\n            )\r\n        }\r\n    }\r\n}\r\n\r\n\r\n@Composable\r\nprivate fun CountdownDisplay(countdownFlow: StateFlow<CountdownTime?>) {\r\n\r\n    val countdown by countdownFlow.collectAsStateWithLifecycle()\r\n    val time = countdown ?: return\r\n\r\n    Surface(\r\n        shape = RoundedCornerShape(50),\r\n        color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.15f)\r\n    ) {\r\n        Text(\r\n            text = \"in $time\",\r\n            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),\r\n            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),\r\n            color = MaterialTheme.colorScheme.onTertiaryContainer\r\n        )\r\n    }\r\n\r\n}\r\n\r\n@Composable\r\nprivate fun HomeTopAppBar(\r\n    modifier: Modifier = Modifier, cityName: String, onNavigateToSettings: () -> Unit\r\n) {\r\n    Row(\r\n        modifier = Modifier\r\n            .statusBarsPadding()\r\n            .fillMaxWidth()\r\n            .height(64.dp)\r\n            .padding(horizontal = 16.dp)\r\n            .then(modifier),\r\n        verticalAlignment = Alignment.CenterVertically\r\n    ) {\r\n        if (cityName.isNotBlank()) {\r\n            Surface(\r\n                shape = RoundedCornerShape(50),\r\n                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)\r\n            ) {\r\n\r\n                Text(\r\n                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),\r\n                    text = \"\uD83D\uDCCD $cityName\",\r\n                    style = MaterialTheme.typography.bodyMedium,\r\n                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)\r\n                )\r\n            }\r\n        }\r\n        Spacer(Modifier.weight(1f))\r\n        IconButton(onClick = onNavigateToSettings) {\r\n            Icon(\r\n                imageVector = ImageVector.vectorResource(R.drawable.ic_settings),\r\n                contentDescription = \"com.hussein.islamic.presentation.Settings\"\r\n            )\r\n        }\r\n    }\r\n}\r\n\r\n@OptIn(ExperimentalTime::class)\r\n@Composable\r\nprivate fun HomePrayerListItem(prayer: PrayerUiModel) {\r\n    val isCurrent = prayer.status == PrayerStatus.CURRENT\r\n    val isPassed = prayer.status == PrayerStatus.PASSED\r\n\r\n\r\n    val dotColor by animateColorAsState(\r\n        targetValue = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,\r\n        animationSpec = tween(500),\r\n        label = \"dot\"\r\n    )\r\n\r\n    Surface(\r\n        color = MaterialTheme.colorScheme.surfaceContainer,\r\n        modifier = Modifier\r\n            .fillMaxWidth(),\r\n        shape = RoundedCornerShape(24.dp)\r\n    ) {\r\n        Row(\r\n            modifier = Modifier\r\n                .fillMaxWidth()\r\n                .alpha(if (isPassed) 0.4f else 1f)\r\n                .padding(16.dp),\r\n            verticalAlignment = Alignment.CenterVertically,\r\n            horizontalArrangement = Arrangement.spacedBy(16.dp)\r\n        ) {\r\n            Box(\r\n                Modifier\r\n                    .size(height = 24.dp, width = 6.dp)\r\n                    .background(dotColor, CircleShape)\r\n            )\r\n\r\n            Text(\r\n                prayer.name,\r\n                style = MaterialTheme.typography.bodyLarge,\r\n                modifier = Modifier.weight(1f)\r\n            )\r\n            Text(\r\n                prayer.time.formatTime(),\r\n                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)\r\n            )\r\n        }\r\n    }\r\n}\r\n\r\n\r\n@Composable\r\nfun QuranAndAzkarSection(onNavigateToQuran: () -> Unit, onNavigateToAzkar: () -> Unit) {\r\n\r\n    @Composable\r\n    fun Section(modifier: Modifier = Modifier, onClick: () -> Unit, title: String) {\r\n        Surface(\r\n            color = MaterialTheme.colorScheme.primaryContainer,\r\n            modifier = Modifier\r\n                .height(65.dp)\r\n                .then(modifier),\r\n            shape = RoundedCornerShape(30),\r\n            onClick = onClick\r\n        ) {\r\n            Box(contentAlignment = Alignment.Center) {\r\n                Text(title)\r\n            }\r\n        }\r\n    }\r\n\r\n    Row(\r\n        modifier = Modifier\r\n            .fillMaxWidth(),\r\n        verticalAlignment = Alignment.CenterVertically,\r\n        horizontalArrangement = Arrangement.spacedBy(2.dp)\r\n    ) {\r\n        Section(\r\n            modifier = Modifier\r\n                .weight(1f),\r\n            onClick = onNavigateToQuran,\r\n            title = stringResource(R.string.quran)\r\n        )\r\n        Section(\r\n            modifier = Modifier\r\n                .weight(1f),\r\n            onClick = onNavigateToAzkar,\r\n            title = stringResource(R.string.azakr)\r\n        )\r\n    }\r\n\r\n}\r\n\r\n@Composable\r\nfun AyahOfTheDayCard(\r\n    ayah: Ayah?,\r\n    surahName: String,\r\n    modifier: Modifier = Modifier\r\n) {\r\n    Card(\r\n        modifier = modifier\r\n            .fillMaxWidth(),\r\n        shape = RoundedCornerShape(20.dp),\r\n        colors = CardDefaults.cardColors(\r\n            containerColor = MaterialTheme.colorScheme.secondaryContainer\r\n        ),\r\n        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)\r\n    ) {\r\n        Column(\r\n            modifier = Modifier\r\n                .fillMaxWidth()\r\n                .padding(20.dp),\r\n            horizontalAlignment = Alignment.End\r\n        ) {\r\n            // Label\r\n            Text(\r\n                text = \"آية اليوم\",\r\n                style = MaterialTheme.typography.labelMedium,\r\n                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)\r\n            )\r\n\r\n            Spacer(Modifier.height(12.dp))\r\n\r\n            when {\r\n                ayah == null -> {\r\n                    Box(\r\n                        modifier = Modifier\r\n                            .fillMaxWidth()\r\n                            .height(60.dp),\r\n                        contentAlignment = Alignment.Center\r\n                    ) {\r\n                        CircularProgressIndicator(\r\n                            modifier = Modifier.size(24.dp),\r\n                            color = MaterialTheme.colorScheme.onSecondaryContainer\r\n                        )\r\n                    }\r\n                }\r\n\r\n                else -> {\r\n                    // Ayah text\r\n                    Text(\r\n                        text = ayah.text,\r\n                        style = MaterialTheme.typography.bodyLarge.copy(\r\n                            textDirection = TextDirection.Rtl,\r\n                            lineHeight = 32.sp\r\n                        ),\r\n                        fontWeight = FontWeight.Bold,\r\n                        textAlign = TextAlign.Center,\r\n                        color = MaterialTheme.colorScheme.onSecondaryContainer,\r\n                        modifier = Modifier.fillMaxWidth()\r\n                    )\r\n\r\n                    Spacer(Modifier.height(10.dp))\r\n\r\n                    // Surah name + ayah number\r\n                    Text(\r\n                        text = \"$surahName • آية ${ayah.numberInSurah}\",\r\n                        style = MaterialTheme.typography.labelSmall,\r\n                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.6f)\r\n                    )\r\n                }\r\n            }\r\n        }\r\n    }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/hussein/mawaqit/presentation/home/HomeScreen.kt b/app/src/main/java/com/hussein/mawaqit/presentation/home/HomeScreen.kt
+--- a/app/src/main/java/com/hussein/mawaqit/presentation/home/HomeScreen.kt	(revision 9c6a0d5e67ca13ed5dfd4ff74087cf23e9dc4a99)
++++ b/app/src/main/java/com/hussein/mawaqit/presentation/home/HomeScreen.kt	(date 1774850178054)
+@@ -22,10 +22,11 @@
+ import androidx.compose.material3.Card
+ import androidx.compose.material3.CardDefaults
+ import androidx.compose.material3.CircularProgressIndicator
+-import androidx.compose.material3.ExperimentalMaterial3Api
+ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
++import androidx.compose.material3.FilledTonalIconButton
+ import androidx.compose.material3.Icon
+ import androidx.compose.material3.IconButton
++import androidx.compose.material3.IconButtonDefaults
+ import androidx.compose.material3.MaterialTheme
+ import androidx.compose.material3.Scaffold
+ import androidx.compose.material3.Surface
+@@ -47,7 +48,7 @@
+ import androidx.compose.ui.zIndex
+ import androidx.lifecycle.compose.collectAsStateWithLifecycle
+ import com.hussein.mawaqit.R
+-import com.hussein.mawaqit.data.db.models.Ayah
++import com.hussein.mawaqit.data.db.models.AyahOfTheDay
+ import com.hussein.mawaqit.presentation.home.components.PrayerArchStepper
+ import com.hussein.mawaqit.presentation.shared.ErrorContent
+ import com.hussein.mawaqit.presentation.shared.LoadingContent
+@@ -57,7 +58,6 @@
+ import org.koin.androidx.compose.koinViewModel
+ import kotlin.time.ExperimentalTime
+ 
+-@OptIn(ExperimentalMaterial3Api::class)
+ @Composable
+ fun HomeScreen(
+     onNavigateToSettings: () -> Unit,
+@@ -83,7 +83,7 @@
+         when {
+             state.isLoading -> LoadingContent(Modifier.padding(innerPadding))
+             state.error != null -> ErrorContent(state.error!!, Modifier.padding(innerPadding))
+-            else -> PrayerContent(
++            else -> HomeContent(
+                 state = state,
+                 countdownFlow = viewModel.countdown,
+                 modifier = Modifier.padding(innerPadding),
+@@ -96,7 +96,7 @@
+ 
+ @OptIn(ExperimentalMaterial3ExpressiveApi::class)
+ @Composable
+-private fun PrayerContent(
++private fun HomeContent(
+     modifier: Modifier = Modifier,
+     state: HomeUiState,
+     countdownFlow: StateFlow<CountdownTime?>,
+@@ -118,12 +118,9 @@
+             onNavigateToAzkar = onNavigateToAzkar
+         )
+ 
+-        AyahOfTheDayCard(
+-            ayah = state.ayahOfTheDay,
+-            surahName = "TODO()",
+-        )
++        AyahOfTheDayCard(ayah = state.ayahOfTheDay)
+         Surface(
+-            shape = RoundedCornerShape(50.dp),
++            shape = MaterialTheme.shapes.large,
+             color = MaterialTheme.colorScheme.surfaceContainer,
+         ) {
+             Text(
+@@ -141,14 +138,14 @@
+     }
+ }
+ 
+-@OptIn(ExperimentalTime::class)
++@OptIn(ExperimentalTime::class, ExperimentalMaterial3ExpressiveApi::class)
+ @Composable
+ private fun HeaderSection(state: HomeUiState, countdownFlow: StateFlow<CountdownTime?>) {
+     Surface(
+         modifier = Modifier.fillMaxWidth(),
+         color = MaterialTheme.colorScheme.surfaceContainer,
+         border = BorderStroke(1.dp, color = MaterialTheme.colorScheme.primary.copy(0.6f)),
+-        shape = RoundedCornerShape(24.dp)
++        shape = MaterialTheme.shapes.extraLarge
+     ) {
+         Column(
+             modifier = Modifier
+@@ -203,6 +200,7 @@
+ }
+ 
+ 
++@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+ @Composable
+ private fun CountdownDisplay(countdownFlow: StateFlow<CountdownTime?>) {
+ 
+@@ -210,7 +208,7 @@
+     val time = countdown ?: return
+ 
+     Surface(
+-        shape = RoundedCornerShape(50),
++        shape = MaterialTheme.shapes.largeIncreased,
+         color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.15f)
+     ) {
+         Text(
+@@ -223,6 +221,7 @@
+ 
+ }
+ 
++@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+ @Composable
+ private fun HomeTopAppBar(
+     modifier: Modifier = Modifier, cityName: String, onNavigateToSettings: () -> Unit
+@@ -251,7 +250,7 @@
+             }
+         }
+         Spacer(Modifier.weight(1f))
+-        IconButton(onClick = onNavigateToSettings) {
++        FilledTonalIconButton(onClick = onNavigateToSettings , shapes = IconButtonDefaults.shapes()) {
+             Icon(
+                 imageVector = ImageVector.vectorResource(R.drawable.ic_settings),
+                 contentDescription = "com.hussein.islamic.presentation.Settings"
+@@ -277,7 +276,7 @@
+         color = MaterialTheme.colorScheme.surfaceContainer,
+         modifier = Modifier
+             .fillMaxWidth(),
+-        shape = RoundedCornerShape(24.dp)
++        shape = MaterialTheme.shapes.medium
+     ) {
+         Row(
+             modifier = Modifier
+@@ -307,6 +306,7 @@
+ }
+ 
+ 
++@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+ @Composable
+ fun QuranAndAzkarSection(onNavigateToQuran: () -> Unit, onNavigateToAzkar: () -> Unit) {
+ 
+@@ -317,7 +317,7 @@
+             modifier = Modifier
+                 .height(65.dp)
+                 .then(modifier),
+-            shape = RoundedCornerShape(30),
++            shape = MaterialTheme.shapes.extraLargeIncreased,
+             onClick = onClick
+         ) {
+             Box(contentAlignment = Alignment.Center) {
+@@ -350,14 +350,13 @@
+ 
+ @Composable
+ fun AyahOfTheDayCard(
+-    ayah: Ayah?,
+-    surahName: String,
++    ayah: AyahOfTheDay?,
+     modifier: Modifier = Modifier
+ ) {
+     Card(
+         modifier = modifier
+             .fillMaxWidth(),
+-        shape = RoundedCornerShape(20.dp),
++        shape = MaterialTheme.shapes.medium,
+         colors = CardDefaults.cardColors(
+             containerColor = MaterialTheme.colorScheme.secondaryContainer
+         ),
+@@ -411,8 +410,8 @@
+ 
+                     // Surah name + ayah number
+                     Text(
+-                        text = "$surahName • آية ${ayah.numberInSurah}",
+-                        style = MaterialTheme.typography.labelSmall,
++                        text = "${ayah.surahNameArabic}•${ayah.numberInSurah}",
++                        style = MaterialTheme.typography.labelSmall.copy(textDirection = TextDirection.Rtl),
+                         color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.6f)
+                     )
+                 }
+Index: app/src/main/java/com/hussein/mawaqit/presentation/onboarding/OnboardingScreen.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.hussein.mawaqit.presentation.onboarding\r\n\r\nimport android.Manifest\r\nimport android.content.Intent\r\nimport android.os.Build\r\nimport android.provider.Settings\r\nimport androidx.activity.compose.rememberLauncherForActivityResult\r\nimport androidx.activity.result.contract.ActivityResultContracts\r\nimport androidx.compose.animation.AnimatedContent\r\nimport androidx.compose.animation.fadeIn\r\nimport androidx.compose.animation.fadeOut\r\nimport androidx.compose.animation.slideInHorizontally\r\nimport androidx.compose.animation.slideOutHorizontally\r\nimport androidx.compose.animation.togetherWith\r\nimport androidx.compose.foundation.layout.Column\r\nimport androidx.compose.foundation.layout.Spacer\r\nimport androidx.compose.foundation.layout.fillMaxSize\r\nimport androidx.compose.foundation.layout.height\r\nimport androidx.compose.foundation.layout.padding\r\nimport androidx.compose.material3.MaterialTheme\r\nimport androidx.compose.material3.Surface\r\nimport androidx.compose.runtime.Composable\r\nimport androidx.compose.runtime.getValue\r\nimport androidx.compose.ui.Alignment\r\nimport androidx.compose.ui.Modifier\r\nimport androidx.compose.ui.unit.dp\r\nimport androidx.core.net.toUri\r\nimport androidx.lifecycle.compose.collectAsStateWithLifecycle\r\nimport com.hussein.mawaqit.presentation.onboarding.components.BatteryOptimizationPage\r\nimport com.hussein.mawaqit.presentation.onboarding.components.DonePage\r\nimport com.hussein.mawaqit.presentation.onboarding.components.ExactAlarmPage\r\nimport com.hussein.mawaqit.presentation.onboarding.components.FetchingLocationPage\r\nimport com.hussein.mawaqit.presentation.onboarding.components.LocationPage\r\nimport com.hussein.mawaqit.presentation.onboarding.components.NotificationPage\r\nimport com.hussein.mawaqit.presentation.onboarding.components.OnboardingActions\r\nimport com.hussein.mawaqit.presentation.onboarding.components.OnboardingPage\r\nimport com.hussein.mawaqit.presentation.onboarding.components.QuranSetupPage\r\nimport com.hussein.mawaqit.presentation.onboarding.components.StepIndicator\r\nimport com.hussein.mawaqit.presentation.onboarding.components.WelcomePage\r\nimport org.koin.compose.viewmodel.koinViewModel\r\n\r\n\r\n/**\r\n * Single onboarding screen.\r\n *\r\n * All page switching is driven by [OnboardingViewModel].\r\n * [AnimatedContent] handles the slide transition between pages.\r\n * Permission launchers live here since they need a Compose context,\r\n * but their results are forwarded straight to the ViewModel.\r\n *\r\n * @param onFinished Called when the user completes or skips all onboarding steps.\r\n */\r\n@Composable\r\nfun OnboardingScreen(\r\n    onFinished: () -> Unit,\r\n    viewModel: OnboardingViewModel = koinViewModel()\r\n) {\r\n    val state by viewModel.uiState.collectAsStateWithLifecycle()\r\n\r\n    val locationLauncher = rememberLauncherForActivityResult(\r\n        ActivityResultContracts.RequestMultiplePermissions()\r\n    ) { results ->\r\n        val granted = results[Manifest.permission.ACCESS_FINE_LOCATION] == true ||\r\n                results[Manifest.permission.ACCESS_COARSE_LOCATION] == true\r\n        viewModel.onLocationPermissionResult(granted)\r\n    }\r\n\r\n    val notificationLauncher = rememberLauncherForActivityResult(\r\n        ActivityResultContracts.RequestPermission()\r\n    ) { granted ->\r\n        viewModel.onNotificationPermissionResult(granted)\r\n    }\r\n\r\n    val exactAlarmLauncher = rememberLauncherForActivityResult(\r\n        ActivityResultContracts.StartActivityForResult()\r\n    ) { viewModel.onExactAlarmResult() }\r\n\r\n    val batteryOptLauncher = rememberLauncherForActivityResult(\r\n        ActivityResultContracts.StartActivityForResult()\r\n    ) { viewModel.onBatteryOptimizationResult() }\r\n\r\n\r\n    Surface(\r\n        modifier = Modifier.fillMaxSize(),\r\n        color = MaterialTheme.colorScheme.background\r\n    ) {\r\n        Column(\r\n            modifier = Modifier\r\n                .fillMaxSize()\r\n                .padding(horizontal = 32.dp, vertical = 48.dp),\r\n            horizontalAlignment = Alignment.CenterHorizontally\r\n        ) {\r\n\r\n            StepIndicator(currentPage = state.page)\r\n\r\n            Spacer(Modifier.height(32.dp))\r\n\r\n            AnimatedContent(\r\n                targetState = state.page,\r\n                transitionSpec = {\r\n                    (slideInHorizontally { it } + fadeIn()) togetherWith\r\n                            (slideOutHorizontally { -it } + fadeOut())\r\n                },\r\n                modifier = Modifier.weight(1f),\r\n                label = \"onboarding_page\"\r\n            ) { page ->\r\n                when (page) {\r\n                    OnboardingPage.WELCOME -> WelcomePage()\r\n                    OnboardingPage.LOCATION -> LocationPage(errorMessage = state.errorMessage)\r\n                    OnboardingPage.FETCHING_LOCATION -> FetchingLocationPage()\r\n                    OnboardingPage.NOTIFICATION -> NotificationPage(\r\n                        cityName = state.savedLocation?.cityName\r\n                    )\r\n\r\n                    OnboardingPage.DONE -> DonePage()\r\n                    OnboardingPage.EXACT_ALARM -> ExactAlarmPage()\r\n                    OnboardingPage.BATTERY_OPTIMIZATION -> BatteryOptimizationPage()\r\n                    OnboardingPage.QURAN_SETUP -> QuranSetupPage(\r\n                        progress = state.quranProgress,\r\n                        currentSurah = state.quranCurrentSurah,\r\n                        failed = state.quranPopulationFailed,\r\n                        onRetry = { viewModel.retryQuranPopulation() }\r\n                    )\r\n                }\r\n            }\r\n            OnboardingActions(\r\n                page = state.page,\r\n                onPrimaryClick = {\r\n                    when (state.page) {\r\n                        OnboardingPage.WELCOME -> viewModel.onGetStarted()\r\n                        OnboardingPage.LOCATION -> locationLauncher.launch(\r\n                            arrayOf(\r\n                                Manifest.permission.ACCESS_FINE_LOCATION,\r\n                                Manifest.permission.ACCESS_COARSE_LOCATION\r\n                            )\r\n                        )\r\n\r\n                        OnboardingPage.NOTIFICATION -> {\r\n                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {\r\n                                notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)\r\n                            } else {\r\n                                viewModel.onNotificationPermissionResult(true)\r\n                            }\r\n                        }\r\n\r\n                        OnboardingPage.EXACT_ALARM -> {\r\n                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {\r\n                                exactAlarmLauncher.launch(\r\n                                    Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {\r\n                                        data = \"package:com.hussein.islamic\".toUri()\r\n                                    }\r\n                                )\r\n                            } else {\r\n                                viewModel.onExactAlarmResult()\r\n                            }\r\n                        }\r\n\r\n                        OnboardingPage.BATTERY_OPTIMIZATION -> {\r\n                            batteryOptLauncher.launch(\r\n                                Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {\r\n                                    data = \"package:com.hussein.islamic\".toUri()\r\n                                }\r\n                            )\r\n                        }\r\n\r\n                        OnboardingPage.QURAN_SETUP -> {\r\n                            viewModel.startQuranPopulation()\r\n                        }\r\n\r\n                        OnboardingPage.DONE -> {\r\n                            viewModel.onOnboardingComplete()\r\n                            onFinished()\r\n                        }\r\n\r\n                        else -> Unit\r\n                    }\r\n                },\r\n                onSkipClick = {\r\n                    when (state.page) {\r\n                        OnboardingPage.LOCATION -> viewModel.onSkipLocation()\r\n                        OnboardingPage.NOTIFICATION -> viewModel.onSkipNotification()\r\n                        OnboardingPage.EXACT_ALARM -> viewModel.onSkipExactAlarm()\r\n                        OnboardingPage.BATTERY_OPTIMIZATION -> viewModel.onSkipBatteryOptimization()\r\n                        OnboardingPage.QURAN_SETUP -> viewModel.onSkipQuranSetup()\r\n                        else -> Unit\r\n\r\n                    }\r\n                },\r\n                primaryButtonEnabled = when {\r\n                    state.page == OnboardingPage.FETCHING_LOCATION -> false\r\n                    state.quranCurrentSurah > 0 && state.page == OnboardingPage.QURAN_SETUP -> false\r\n                    else -> true\r\n                }\r\n            )\r\n        }\r\n    }\r\n}\r\n\r\n\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/hussein/mawaqit/presentation/onboarding/OnboardingScreen.kt b/app/src/main/java/com/hussein/mawaqit/presentation/onboarding/OnboardingScreen.kt
+--- a/app/src/main/java/com/hussein/mawaqit/presentation/onboarding/OnboardingScreen.kt	(revision 9c6a0d5e67ca13ed5dfd4ff74087cf23e9dc4a99)
++++ b/app/src/main/java/com/hussein/mawaqit/presentation/onboarding/OnboardingScreen.kt	(date 1774845187440)
+@@ -39,17 +39,6 @@
+ import com.hussein.mawaqit.presentation.onboarding.components.WelcomePage
+ import org.koin.compose.viewmodel.koinViewModel
+ 
+-
+-/**
+- * Single onboarding screen.
+- *
+- * All page switching is driven by [OnboardingViewModel].
+- * [AnimatedContent] handles the slide transition between pages.
+- * Permission launchers live here since they need a Compose context,
+- * but their results are forwarded straight to the ViewModel.
+- *
+- * @param onFinished Called when the user completes or skips all onboarding steps.
+- */
+ @Composable
+ fun OnboardingScreen(
+     onFinished: () -> Unit,
+Index: app/src/main/java/com/hussein/mawaqit/MawaqitApp.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.hussein.mawaqit\r\n\r\nimport android.app.Application\r\nimport android.app.NotificationChannel\r\nimport android.app.NotificationManager\r\nimport com.hussein.coreModule\r\nimport com.hussein.mawaqit.data.infrastructure.receivers.PrayerAlarmReceiver.Companion.PRAYERS_NOTIFICATION_CHANNEL_NAME\r\nimport com.hussein.mawaqit.data.infrastructure.receivers.PrayerAlarmReceiver.Companion.PRAYER_NOTIFICATION_CHANNEL_ID\r\nimport com.hussein.mawaqit.data.infrastructure.services.AzanPlayerService.Companion.AZAN_CHANNEL_ID\r\nimport com.hussein.mawaqit.data.infrastructure.services.AzanPlayerService.Companion.AZAN_CHANNEL_NAME\r\nimport org.koin.android.ext.koin.androidContext\r\nimport org.koin.android.ext.koin.androidLogger\r\nimport org.koin.androidx.workmanager.koin.workManagerFactory\r\nimport org.koin.core.context.startKoin\r\n\r\nclass MawaqitApp : Application() {\r\n    override fun onCreate() {\r\n        super.onCreate()\r\n        startKoin {\r\n            androidLogger()\r\n            androidContext(this@MawaqitApp)\r\n            workManagerFactory()\r\n            modules(\r\n                appModule, coreModule\r\n            )\r\n        }\r\n        createPrayerNotificationChannel()\r\n        createAzanNotificationChannel()\r\n    }\r\n\r\n    private fun createPrayerNotificationChannel() {\r\n        val name = PRAYERS_NOTIFICATION_CHANNEL_NAME\r\n        val descriptionText = \"Notifications for each of the 5 daily prayer times\"\r\n        val importance = NotificationManager.IMPORTANCE_HIGH\r\n        val channel = NotificationChannel(PRAYER_NOTIFICATION_CHANNEL_ID, name, importance).apply {\r\n            description = descriptionText\r\n            enableVibration(true)\r\n        }\r\n        val notificationManager: NotificationManager =\r\n            getSystemService(NOTIFICATION_SERVICE) as NotificationManager\r\n        notificationManager.createNotificationChannel(channel)\r\n    }\r\n\r\n    private fun createAzanNotificationChannel() {\r\n        val channel = NotificationChannel(\r\n            AZAN_CHANNEL_ID,\r\n            AZAN_CHANNEL_NAME,\r\n            NotificationManager.IMPORTANCE_HIGH\r\n        ).apply {\r\n            description = \"Plays azan audio at prayer times\"\r\n            setSound(null, null) // silence the channel's own sound — we play via MediaPlayer\r\n            enableVibration(false)\r\n        }\r\n        getSystemService(NotificationManager::class.java)\r\n            .createNotificationChannel(channel)\r\n\r\n    }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/hussein/mawaqit/MawaqitApp.kt b/app/src/main/java/com/hussein/mawaqit/MawaqitApp.kt
+--- a/app/src/main/java/com/hussein/mawaqit/MawaqitApp.kt	(revision 9c6a0d5e67ca13ed5dfd4ff74087cf23e9dc4a99)
++++ b/app/src/main/java/com/hussein/mawaqit/MawaqitApp.kt	(date 1774849867091)
+@@ -6,8 +6,7 @@
+ import com.hussein.coreModule
+ import com.hussein.mawaqit.data.infrastructure.receivers.PrayerAlarmReceiver.Companion.PRAYERS_NOTIFICATION_CHANNEL_NAME
+ import com.hussein.mawaqit.data.infrastructure.receivers.PrayerAlarmReceiver.Companion.PRAYER_NOTIFICATION_CHANNEL_ID
+-import com.hussein.mawaqit.data.infrastructure.services.AzanPlayerService.Companion.AZAN_CHANNEL_ID
+-import com.hussein.mawaqit.data.infrastructure.services.AzanPlayerService.Companion.AZAN_CHANNEL_NAME
++import com.hussein.mawaqit.di.appModule
+ import org.koin.android.ext.koin.androidContext
+ import org.koin.android.ext.koin.androidLogger
+ import org.koin.androidx.workmanager.koin.workManagerFactory
+@@ -25,7 +24,7 @@
+             )
+         }
+         createPrayerNotificationChannel()
+-        createAzanNotificationChannel()
++//        createAzanNotificationChannel()
+     }
+ 
+     private fun createPrayerNotificationChannel() {
+@@ -41,7 +40,7 @@
+         notificationManager.createNotificationChannel(channel)
+     }
+ 
+-    private fun createAzanNotificationChannel() {
++/*    private fun createAzanNotificationChannel() {
+         val channel = NotificationChannel(
+             AZAN_CHANNEL_ID,
+             AZAN_CHANNEL_NAME,
+@@ -54,5 +53,5 @@
+         getSystemService(NotificationManager::class.java)
+             .createNotificationChannel(channel)
+ 
+-    }
++    }*/
+ }
+Index: app/src/main/java/com/hussein/mawaqit/presentation/quran/list_screen/BookmarksDialog.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.hussein.mawaqit.presentation.quran.list_screen\r\n\r\nimport androidx.compose.foundation.layout.Arrangement\r\nimport androidx.compose.foundation.layout.Column\r\nimport androidx.compose.foundation.layout.Row\r\nimport androidx.compose.foundation.layout.fillMaxWidth\r\nimport androidx.compose.foundation.layout.padding\r\nimport androidx.compose.foundation.layout.size\r\nimport androidx.compose.foundation.lazy.LazyColumn\r\nimport androidx.compose.foundation.lazy.items\r\nimport androidx.compose.material3.AlertDialog\r\nimport androidx.compose.material3.Icon\r\nimport androidx.compose.material3.IconButton\r\nimport androidx.compose.material3.MaterialTheme\r\nimport androidx.compose.material3.Surface\r\nimport androidx.compose.material3.Text\r\nimport androidx.compose.material3.TextButton\r\nimport androidx.compose.runtime.Composable\r\nimport androidx.compose.ui.Alignment\r\nimport androidx.compose.ui.Modifier\r\nimport androidx.compose.ui.graphics.vector.ImageVector\r\nimport androidx.compose.ui.res.vectorResource\r\nimport androidx.compose.ui.text.font.FontWeight\r\nimport androidx.compose.ui.unit.dp\r\nimport com.hussein.mawaqit.data.db.BookmarkEntity\r\nimport com.hussein.mawaqit.data.quran.QuranData\r\n\r\n\r\n@Composable\r\n fun BookmarksDialog(\r\n    bookmarks: List<BookmarkEntity>,\r\n    onNavigate: (surahNumber: Int, ayahNumber: Int) -> Unit,\r\n    onDelete: (surahNumber: Int, ayahNumber: Int) -> Unit,\r\n    onDismiss: () -> Unit\r\n) {\r\n    AlertDialog(\r\n        onDismissRequest = onDismiss,\r\n        title = {\r\n            Text(\r\n                text = \"Bookmarks\",\r\n                style = MaterialTheme.typography.titleLarge\r\n            )\r\n        },\r\n        text = {\r\n            if (bookmarks.isEmpty()) {\r\n                Text(\r\n                    text = \"Empty\",\r\n                    style = MaterialTheme.typography.bodyMedium,\r\n                    color = MaterialTheme.colorScheme.onSurfaceVariant\r\n                )\r\n            } else {\r\n                LazyColumn(\r\n                    modifier = Modifier.fillMaxWidth(),\r\n                    verticalArrangement = Arrangement.spacedBy(4.dp)\r\n                ) {\r\n                    items(bookmarks, key = { \"${it.surahNumber}_${it.ayahNumber}\" }) { bookmark ->\r\n                        val surah = QuranData.surahs.getOrNull(bookmark.surahNumber - 1)\r\n                        BookmarkItem(\r\n                            surahName = surah?.nameArabic ?: \"\",\r\n                            ayahNumber = bookmark.ayahNumber,\r\n                            onClick = { onNavigate(bookmark.surahNumber, bookmark.ayahNumber) },\r\n                            onDelete = { onDelete(bookmark.surahNumber, bookmark.ayahNumber) }\r\n                        )\r\n                    }\r\n                }\r\n            }\r\n        },\r\n        confirmButton = {\r\n            TextButton(onClick = onDismiss) { Text(\"Close\") }\r\n        }\r\n    )\r\n}\r\n\r\n@Composable\r\nprivate fun BookmarkItem(\r\n    surahName: String,\r\n    ayahNumber: Int,\r\n    onClick: () -> Unit,\r\n    onDelete: () -> Unit\r\n) {\r\n    Surface(\r\n        onClick = onClick,\r\n        shape = MaterialTheme.shapes.small,\r\n        color = MaterialTheme.colorScheme.surfaceVariant\r\n    ) {\r\n        Row(\r\n            modifier = Modifier\r\n                .fillMaxWidth()\r\n                .padding(horizontal = 12.dp, vertical = 10.dp),\r\n            verticalAlignment = Alignment.CenterVertically,\r\n            horizontalArrangement = Arrangement.SpaceBetween\r\n        ) {\r\n            // Delete button\r\n            IconButton(\r\n                onClick = onDelete,\r\n                modifier = Modifier.size(32.dp)\r\n            ) {\r\n                Icon(\r\n                    imageVector = ImageVector.vectorResource(com.hussein.mawaqit.R.drawable.ic_placeholder),\r\n                    contentDescription = \"Delete\",\r\n                    tint = MaterialTheme.colorScheme.error,\r\n                    modifier = Modifier.size(18.dp)\r\n                )\r\n            }\r\n\r\n            // Surah name + ayah number\r\n            Column(horizontalAlignment = Alignment.End) {\r\n                Text(\r\n                    text = surahName,\r\n                    style = MaterialTheme.typography.bodyMedium,\r\n                    fontWeight = FontWeight.SemiBold\r\n                )\r\n                Text(\r\n                    text = \"Ayah $ayahNumber\",\r\n                    style = MaterialTheme.typography.labelSmall,\r\n                    color = MaterialTheme.colorScheme.onSurfaceVariant\r\n                )\r\n            }\r\n        }\r\n    }\r\n}
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/hussein/mawaqit/presentation/quran/list_screen/BookmarksDialog.kt b/app/src/main/java/com/hussein/mawaqit/presentation/quran/list_screen/BookmarksDialog.kt
+--- a/app/src/main/java/com/hussein/mawaqit/presentation/quran/list_screen/BookmarksDialog.kt	(revision 9c6a0d5e67ca13ed5dfd4ff74087cf23e9dc4a99)
++++ b/app/src/main/java/com/hussein/mawaqit/presentation/quran/list_screen/BookmarksDialog.kt	(date 1774742313911)
+@@ -86,7 +86,7 @@
+         Row(
+             modifier = Modifier
+                 .fillMaxWidth()
+-                .padding(horizontal = 12.dp, vertical = 10.dp),
++                .padding(6.dp),
+             verticalAlignment = Alignment.CenterVertically,
+             horizontalArrangement = Arrangement.SpaceBetween
+         ) {
+@@ -96,7 +96,7 @@
+                 modifier = Modifier.size(32.dp)
+             ) {
+                 Icon(
+-                    imageVector = ImageVector.vectorResource(com.hussein.mawaqit.R.drawable.ic_placeholder),
++                    imageVector = ImageVector.vectorResource(com.hussein.mawaqit.R.drawable.ic_delete_forever),
+                     contentDescription = "Delete",
+                     tint = MaterialTheme.colorScheme.error,
+                     modifier = Modifier.size(18.dp)
+Index: app/src/main/res/drawable/ic_copy.xml
+===================================================================
+diff --git a/app/src/main/res/drawable/ic_copy.xml b/app/src/main/res/drawable/ic_copy.xml
+new file mode 100644
+--- /dev/null	(date 1774745342374)
++++ b/app/src/main/res/drawable/ic_copy.xml	(date 1774745342374)
+@@ -0,0 +1,9 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="24dp"
++    android:height="24dp"
++    android:viewportWidth="960"
++    android:viewportHeight="960">
++  <path
++      android:pathData="M360,720q-33,0 -56.5,-23.5T280,640v-480q0,-33 23.5,-56.5T360,80h360q33,0 56.5,23.5T800,160v480q0,33 -23.5,56.5T720,720L360,720ZM360,640h360v-480L360,160v480ZM200,880q-33,0 -56.5,-23.5T120,800v-560h80v560h440v80L200,880ZM360,640v-480,480Z"
++      android:fillColor="#e3e3e3"/>
++</vector>
+Index: app/src/main/java/com/hussein/mawaqit/AzanActivity.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.hussein.mawaqit\r\nimport androidx.media3.common.audio.AudioManagerCompat.requestAudioFocus\r\nimport android.app.KeyguardManager\r\nimport android.app.NotificationManager\r\nimport android.media.AudioAttributes\r\nimport android.media.AudioFocusRequest\r\nimport android.media.AudioManager\r\nimport android.media.MediaPlayer\r\nimport android.os.Bundle\r\nimport androidx.activity.ComponentActivity\r\nimport androidx.activity.compose.setContent\r\nimport androidx.activity.enableEdgeToEdge\r\nimport androidx.compose.foundation.layout.Arrangement\r\nimport androidx.compose.foundation.layout.Column\r\nimport androidx.compose.foundation.layout.Spacer\r\nimport androidx.compose.foundation.layout.fillMaxSize\r\nimport androidx.compose.foundation.layout.fillMaxWidth\r\nimport androidx.compose.foundation.layout.height\r\nimport androidx.compose.foundation.layout.padding\r\nimport androidx.compose.material3.Button\r\nimport androidx.compose.material3.MaterialTheme\r\nimport androidx.compose.material3.Surface\r\nimport androidx.compose.material3.Text\r\nimport androidx.compose.runtime.Composable\r\nimport androidx.compose.ui.Alignment\r\nimport androidx.compose.ui.Modifier\r\nimport androidx.compose.ui.text.font.FontWeight\r\nimport androidx.compose.ui.text.style.TextAlign\r\nimport androidx.compose.ui.unit.dp\r\nimport androidx.compose.ui.unit.sp\r\nimport androidx.media3.common.util.UnstableApi\r\nimport com.hussein.mawaqit.ui.theme.MawaqitTheme\r\n\r\n@UnstableApi\r\nclass AzanActivity : ComponentActivity() {\r\n\r\n    companion object {\r\n        const val EXTRA_PRAYER_NAME = \"extra_prayer_name\"\r\n        const val EXTRA_IS_FAJR = \"extra_is_fajr\"\r\n        const val NOTIFICATION_ID = 9001\r\n    }\r\n    private var mediaPlayer: MediaPlayer? = null\r\n    private var audioManager: AudioManager? = null\r\n    private var focusRequest: AudioFocusRequest? = null\r\n\r\n    override fun onCreate(savedInstanceState: Bundle?) {\r\n        super.onCreate(savedInstanceState)\r\n        setShowWhenLocked(true)\r\n        setTurnScreenOn(true)\r\n\r\n\r\n        // Dismiss keyguard so activity shows on top of lock screen\r\n        val keyguard = getSystemService(KeyguardManager::class.java)\r\n        keyguard.requestDismissKeyguard(this, null)\r\n\r\n        val prayerName = intent.getStringExtra(EXTRA_PRAYER_NAME) ?: \"Prayer\"\r\n        val isFajr = intent.getBooleanExtra(EXTRA_IS_FAJR, false)\r\n\r\n        audioManager = getSystemService(AudioManager::class.java)\r\n        requestAudioFocus(audioManager,focusRequest)\r\n        if () {\r\n            playAzan(isFajr)\r\n        }\r\n\r\n        enableEdgeToEdge()\r\n        setContent {\r\n            MawaqitTheme {\r\n                AzanScreen(\r\n                    prayerName = intent.getStringExtra(EXTRA_PRAYER_NAME) ?: \"Prayer\",\r\n                    onDismiss = {\r\n                        finish()\r\n                    }\r\n                )\r\n            }\r\n        }\r\n    }\r\n\r\n    private fun playAzan(isFajr: Boolean, attributes: AudioAttributes) {\r\n        // Use the isFajr flag to select the correct resource\r\n        val rawRes = if (isFajr) R.raw.azan2 else R.raw.azan2\r\n\r\n        mediaPlayer = MediaPlayer.create(this, rawRes).apply {\r\n            setAudioAttributes(attributes)\r\n            setOnCompletionListener { dismiss() }\r\n            setOnErrorListener { _, _, _ ->\r\n                dismiss()\r\n                true\r\n            }\r\n            start()\r\n        }\r\n    }\r\n    private fun releasePlayer() {\r\n        mediaPlayer?.apply { if (isPlaying) stop(); release() }\r\n        mediaPlayer = null\r\n        focusRequest?.let { audioManager?.abandonAudioFocusRequest(it) }\r\n        focusRequest = null\r\n    }\r\n    private fun dismiss() {\r\n        releasePlayer()\r\n        // Cancel the full screen notification\r\n        getSystemService(NotificationManager::class.java)\r\n            .cancel(NOTIFICATION_ID)\r\n        finish()\r\n    }\r\n    override fun onDestroy() {\r\n        releasePlayer()\r\n        super.onDestroy()\r\n    }\r\n}\r\n\r\n\r\n@Composable\r\nprivate fun AzanScreen(\r\n    prayerName: String,\r\n    onDismiss: () -> Unit\r\n) {\r\n    Surface(\r\n        modifier = Modifier.fillMaxSize(),\r\n        color = MaterialTheme.colorScheme.background\r\n    ) {\r\n        Column(\r\n            modifier = Modifier\r\n                .fillMaxSize()\r\n                .padding(40.dp),\r\n            horizontalAlignment = Alignment.CenterHorizontally,\r\n            verticalArrangement = Arrangement.Center\r\n        ) {\r\n            Text(\r\n                text = \"Prayer Time\",\r\n                style = MaterialTheme.typography.labelLarge,\r\n                color = MaterialTheme.colorScheme.primary,\r\n                letterSpacing = 2.sp\r\n            )\r\n\r\n            Spacer(Modifier.height(16.dp))\r\n\r\n            Text(\r\n                text = prayerName,\r\n                style = MaterialTheme.typography.displayMedium,\r\n                fontWeight = FontWeight.Bold,\r\n                textAlign = TextAlign.Center,\r\n                color = MaterialTheme.colorScheme.onBackground\r\n            )\r\n\r\n            Spacer(Modifier.height(60.dp))\r\n\r\n            Button(\r\n                onClick = onDismiss,\r\n                modifier = Modifier\r\n                    .fillMaxWidth()\r\n                    .height(56.dp)\r\n            ) {\r\n                Text(\r\n                    text = \"Dismiss\",\r\n                    style = MaterialTheme.typography.titleMedium\r\n                )\r\n            }\r\n        }\r\n    }\r\n}
+===================================================================
+diff --git a/app/src/main/java/com/hussein/mawaqit/AzanActivity.kt b/app/src/main/java/com/hussein/mawaqit/AzanActivity.kt
+--- a/app/src/main/java/com/hussein/mawaqit/AzanActivity.kt	(revision 9c6a0d5e67ca13ed5dfd4ff74087cf23e9dc4a99)
++++ b/app/src/main/java/com/hussein/mawaqit/AzanActivity.kt	(date 1775003047521)
+@@ -1,11 +1,10 @@
+ package com.hussein.mawaqit
+-import androidx.media3.common.audio.AudioManagerCompat.requestAudioFocus
++
+ import android.app.KeyguardManager
+ import android.app.NotificationManager
+ import android.media.AudioAttributes
+ import android.media.AudioFocusRequest
+ import android.media.AudioManager
+-import android.media.MediaPlayer
+ import android.os.Bundle
+ import androidx.activity.ComponentActivity
+ import androidx.activity.compose.setContent
+@@ -28,10 +27,12 @@
+ import androidx.compose.ui.text.style.TextAlign
+ import androidx.compose.ui.unit.dp
+ import androidx.compose.ui.unit.sp
++import androidx.core.net.toUri
++import androidx.media3.common.MediaItem
+ import androidx.media3.common.util.UnstableApi
++import androidx.media3.exoplayer.ExoPlayer
+ import com.hussein.mawaqit.ui.theme.MawaqitTheme
+ 
+-@UnstableApi
+ class AzanActivity : ComponentActivity() {
+ 
+     companion object {
+@@ -39,7 +40,8 @@
+         const val EXTRA_IS_FAJR = "extra_is_fajr"
+         const val NOTIFICATION_ID = 9001
+     }
+-    private var mediaPlayer: MediaPlayer? = null
++
++    private var exoPlayer: ExoPlayer? = null
+     private var audioManager: AudioManager? = null
+     private var focusRequest: AudioFocusRequest? = null
+ 
+@@ -47,8 +49,6 @@
+         super.onCreate(savedInstanceState)
+         setShowWhenLocked(true)
+         setTurnScreenOn(true)
+-
+-
+         // Dismiss keyguard so activity shows on top of lock screen
+         val keyguard = getSystemService(KeyguardManager::class.java)
+         keyguard.requestDismissKeyguard(this, null)
+@@ -57,44 +57,77 @@
+         val isFajr = intent.getBooleanExtra(EXTRA_IS_FAJR, false)
+ 
+         audioManager = getSystemService(AudioManager::class.java)
+-        requestAudioFocus(audioManager,focusRequest)
+-        if () {
++
++        if (requestAudioFocus()) {
+             playAzan(isFajr)
+         }
+-
+         enableEdgeToEdge()
+         setContent {
+             MawaqitTheme {
+                 AzanScreen(
+-                    prayerName = intent.getStringExtra(EXTRA_PRAYER_NAME) ?: "Prayer",
++                    prayerName = prayerName,
+                     onDismiss = {
+-                        finish()
+-                    }
+-                )
+-            }
+-        }
+-    }
+-
+-    private fun playAzan(isFajr: Boolean, attributes: AudioAttributes) {
+-        // Use the isFajr flag to select the correct resource
+-        val rawRes = if (isFajr) R.raw.azan2 else R.raw.azan2
+-
+-        mediaPlayer = MediaPlayer.create(this, rawRes).apply {
+-            setAudioAttributes(attributes)
+-            setOnCompletionListener { dismiss() }
+-            setOnErrorListener { _, _, _ ->
+-                dismiss()
+-                true
++                        dismiss()
++                    }
++                )
+             }
+-            start()
+         }
+     }
++
++    private fun requestAudioFocus(): Boolean {
++        val attrs = AudioAttributes.Builder()
++            .setUsage(AudioAttributes.USAGE_ALARM)
++            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
++            .build()
++
++        focusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
++            .setAudioAttributes(attrs)
++            .setOnAudioFocusChangeListener { change ->
++                if (change == AudioManager.AUDIOFOCUS_LOSS ||
++                    change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT
++                ) {
++                    dismiss()
++                }
++            }
++            .build()
++
++        return audioManager?.requestAudioFocus(focusRequest!!) ==
++                AudioManager.AUDIOFOCUS_REQUEST_GRANTED
++    }
++
++    private fun playAzan(isFajr: Boolean) {
++        val rawRes = R.raw.azan2
++        val uri = "android.resource://$packageName/$rawRes".toUri()
++        exoPlayer = ExoPlayer.Builder(this)
++            .setAudioAttributes(
++                androidx.media3.common.AudioAttributes.Builder()
++                    .setContentType(androidx.media3.common.C.AUDIO_CONTENT_TYPE_MUSIC)
++                    .setUsage(androidx.media3.common.C.USAGE_ALARM)
++                    .build(),
++                /* handleAudioFocus= */ false // we manage focus manually
++            )
++            .build()
++            .apply {
++                setMediaItem(MediaItem.fromUri(uri))
++                addListener(object : androidx.media3.common.Player.Listener {
++                    override fun onPlaybackStateChanged(state: Int) {
++                        if (state == androidx.media3.common.Player.STATE_ENDED) dismiss()
++                    }
++                })
++                prepare()
++                play()
++            }
++    }
++
++
++
+     private fun releasePlayer() {
+-        mediaPlayer?.apply { if (isPlaying) stop(); release() }
+-        mediaPlayer = null
++        exoPlayer?.apply { stop(); release() }
++        exoPlayer = null
+         focusRequest?.let { audioManager?.abandonAudioFocusRequest(it) }
+         focusRequest = null
+     }
++
+     private fun dismiss() {
+         releasePlayer()
+         // Cancel the full screen notification
+@@ -102,6 +135,7 @@
+             .cancel(NOTIFICATION_ID)
+         finish()
+     }
++
+     override fun onDestroy() {
+         releasePlayer()
+         super.onDestroy()

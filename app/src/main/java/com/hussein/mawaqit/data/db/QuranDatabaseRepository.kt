@@ -4,7 +4,6 @@ import com.hussein.mawaqit.data.db.models.Ayah
 import com.hussein.mawaqit.data.db.models.AyahOfTheDay
 import com.hussein.mawaqit.data.db.models.AyahWithSurah
 import com.hussein.mawaqit.data.db.models.SurahDetail
-import com.hussein.mawaqit.data.quran.Surah
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn

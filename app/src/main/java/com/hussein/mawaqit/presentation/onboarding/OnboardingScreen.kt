@@ -40,16 +40,6 @@ import com.hussein.mawaqit.presentation.onboarding.components.WelcomePage
 import org.koin.compose.viewmodel.koinViewModel
 
 
-/**
- * Single onboarding screen.
- *
- * All page switching is driven by [OnboardingViewModel].
- * [AnimatedContent] handles the slide transition between pages.
- * Permission launchers live here since they need a Compose context,
- * but their results are forwarded straight to the ViewModel.
- *
- * @param onFinished Called when the user completes or skips all onboarding steps.
- */
 @Composable
 fun OnboardingScreen(
     onFinished: () -> Unit,
