@@ -44,6 +44,15 @@
 
         </activity>
 
+        <activity
+            android:name=".AzanActivity"
+            android:exported="false"
+            android:showOnLockScreen="true"
+            android:turnScreenOn="true"
+            android:theme="@style/Theme.Islamic"
+            android:launchMode="singleInstance"
+            android:excludeFromRecents="true" />
+
 
         <provider
             android:name="androidx.startup.InitializationProvider"

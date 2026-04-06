@@ -112,7 +112,7 @@ private val greenDarkScheme = darkColorScheme(
 )
 
 @Composable
-fun IslamicTheme(
+fun MawaqitTheme(
     appTheme: AppTheme = AppTheme.SYSTEM,
     appColorScheme: AppColorScheme = AppColorScheme.DYNAMIC,
     content: @Composable () -> Unit

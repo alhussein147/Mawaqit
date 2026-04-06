@@ -93,8 +93,8 @@ dependencies {
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
 
-    implementation("androidx.media3:media3-exoplayer:1.9.2")
-    implementation("androidx.media3:media3-session:1.9.2")
+    implementation(libs.media3.exoplayer)
+    implementation(libs.androidx.media3.session)
 
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.android)

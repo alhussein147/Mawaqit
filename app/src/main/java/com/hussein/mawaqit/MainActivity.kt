@@ -9,9 +9,8 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
 import com.hussein.mawaqit.presentation.AppNavigation
-import com.hussein.mawaqit.ui.theme.IslamicTheme
+import com.hussein.mawaqit.ui.theme.MawaqitTheme
 import org.koin.android.ext.android.inject
-import org.koin.java.KoinJavaComponent.inject
 
 class MainActivity : ComponentActivity() {
 
@@ -27,7 +26,7 @@ class MainActivity : ComponentActivity() {
                 .collectAsStateWithLifecycle(initialValue = null)
 
             settings?.let { s ->
-                IslamicTheme(
+                MawaqitTheme(
                     appTheme = s.appTheme,
                     appColorScheme = s.appColorScheme
                 ) {

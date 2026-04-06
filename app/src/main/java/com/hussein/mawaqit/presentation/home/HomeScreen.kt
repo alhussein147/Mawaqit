@@ -48,6 +48,7 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.mawaqit.R
 import com.hussein.mawaqit.data.db.models.Ayah
+import com.hussein.mawaqit.data.db.models.AyahOfTheDay
 import com.hussein.mawaqit.presentation.home.components.PrayerArchStepper
 import com.hussein.mawaqit.presentation.shared.ErrorContent
 import com.hussein.mawaqit.presentation.shared.LoadingContent
@@ -65,7 +66,6 @@ fun HomeScreen(
     onNavigateToQuran: () -> Unit = {},
     viewModel: HomeViewModel = koinViewModel()
 ) {
-    // Collect the main state. This doesn't change every second.
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
@@ -350,7 +350,7 @@ fun QuranAndAzkarSection(onNavigateToQuran: () -> Unit, onNavigateToAzkar: () ->
 
 @Composable
 fun AyahOfTheDayCard(
-    ayah: Ayah?,
+    ayah: AyahOfTheDay?,
     surahName: String,
     modifier: Modifier = Modifier
 ) {
