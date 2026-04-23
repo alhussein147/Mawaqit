@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
@@ -35,6 +36,7 @@ import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 import com.hussein.core.models.Prayer as AppPrayer
@@ -168,8 +170,15 @@ class HomeViewModel(
         if (rawPrayers.isEmpty()) return
 
         val classified = classifyPrayers(rawPrayers, now)
-        val next = classified.firstOrNull { it.status == PrayerStatus.UPCOMING }
-            ?: classified.firstOrNull { it.status == PrayerStatus.CURRENT }
+
+        val ishaIsCurrent = classified.lastOrNull()?.status == PrayerStatus.CURRENT
+
+        val next = if (ishaIsCurrent) {
+            // Calculate tomorrow's Fajr
+            tomorrowFajr()
+        } else {
+            classified.firstOrNull { it.status == PrayerStatus.UPCOMING }
+        }
 
         if (classified != _uiState.value.prayers || next != _uiState.value.nextPrayer) {
             _uiState.update { it.copy(prayers = classified, nextPrayer = next) }
@@ -178,6 +187,25 @@ class HomeViewModel(
         _countdown.value = next
             ?.takeIf { it.status == PrayerStatus.UPCOMING }
             ?.let { buildCountdown(it.time, now) }
+    }
+
+    private fun tomorrowFajr(): PrayerUiModel? {
+        val location = locationRepo.locationFlow.firstOrNull() ?: return null
+        val tomorrow = Clock.System.now().plus(24.hours)
+        return try {
+            val schedule = PrayerTimeCalculator.calculate(
+                latitude  = location.latitude,
+                longitude = location.longitude,
+                instant   = tomorrow
+            )
+            schedule.prayers.firstOrNull()?.let { fajr ->
+                PrayerUiModel(
+                    name   = fajr.name,
+                    time   = fajr.time,
+                    status = PrayerStatus.UPCOMING
+                )
+            }
+        } catch (e: Exception) { null }
     }
 
     @OptIn(ExperimentalTime::class)
