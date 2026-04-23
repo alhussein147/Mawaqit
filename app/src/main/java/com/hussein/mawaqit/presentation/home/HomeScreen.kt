@@ -81,7 +81,7 @@ fun HomeScreen(
         )
     }) { innerPadding ->
         when {
-            state.isLoading -> LoadingContent(Modifier.padding(innerPadding))
+            state.isLoading -> LoadingContent(Modifier.padding(innerPadding).fillMaxSize())
             state.error != null -> ErrorContent(state.error!!, Modifier.padding(innerPadding))
             else -> PrayerContent(
                 state = state,

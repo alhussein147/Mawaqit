@@ -5,15 +5,17 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.IntOffset
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
-import com.hussein.mawaqit.presentation.azkar.AzkarListScreen
+import com.hussein.mawaqit.presentation.azkar.AzkarScreen
 import com.hussein.mawaqit.presentation.azkar.categories.AzkarCategoryScreen
 import com.hussein.mawaqit.presentation.home.HomeScreen
 import com.hussein.mawaqit.presentation.onboarding.OnboardingScreen
@@ -92,7 +94,7 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
         entryProvider = entryProvider {
 
             entry<Initializing> {
-                LoadingContent()
+                LoadingContent(modifier = Modifier.fillMaxSize())
             }
 
             entry<Onboarding> {
@@ -123,7 +125,7 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
             }
 
             entry<AzkarList> { key ->
-                AzkarListScreen(
+                AzkarScreen(
                     categoryIndex = key.categoryIndex,
                     onBack = { backStack.removeLastOrNull() }
                 )

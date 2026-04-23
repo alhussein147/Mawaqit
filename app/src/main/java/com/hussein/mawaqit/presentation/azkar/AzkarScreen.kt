@@ -66,7 +66,7 @@ fun AzkarScreen(
             }
 
             is AzkarListState.Error -> {
-                ErrorContent(message = s.message)
+                ErrorContent(message = s.message ,modifier = Modifier.fillMaxSize())
             }
 
             is AzkarListState.Success -> {

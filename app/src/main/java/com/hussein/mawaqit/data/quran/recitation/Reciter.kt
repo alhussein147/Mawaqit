@@ -7,7 +7,6 @@ enum class Reciter(
     val nameEnglish: String,
     val englishSmallName: String,
 ) {
-    MISHARY(1, "مشاري راشد العفاسي", "Mishary Rashid Al Afasy", "afs"),
     ABU_BAKR(2, "أبو بكر الشاطري", "Abu Bakr Al Shatri", "shatri"),
     NASSER(3, "ناصر القطامي", "Nasser Al Qatami", "qtm"),
     YASSER(4, "ياسر الدوسري", "Yasser Al Dosari", "yasser"),

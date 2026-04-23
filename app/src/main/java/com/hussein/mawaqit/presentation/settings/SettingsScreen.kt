@@ -138,7 +138,7 @@ fun SettingsScreen(
             })
         }) { innerPadding ->
         if (settings == null) {
-            LoadingContent()
+            LoadingContent(modifier = Modifier.fillMaxSize())
         } else {
             SettingsContent(
                 settings = settings!!,

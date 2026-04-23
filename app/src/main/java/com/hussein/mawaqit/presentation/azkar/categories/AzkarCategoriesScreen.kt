@@ -68,7 +68,7 @@ fun AzkarCategoryScreen(
             }
         ) { padding ->
             if (isLoading) {
-                LoadingContent()
+                LoadingContent(modifier = Modifier.fillMaxSize())
             } else {
                 LazyColumn(
                     modifier = Modifier

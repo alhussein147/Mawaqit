@@ -3,6 +3,7 @@ package com.hussein.mawaqit.presentation.shared
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
@@ -16,9 +17,9 @@ import androidx.compose.ui.text.style.TextAlign
 @Composable
 fun LoadingContent(modifier: Modifier = Modifier) {
     Box(
-        modifier
-            .fillMaxSize()
-            .background(color = MaterialTheme.colorScheme.background),
+        Modifier
+            .background(color = MaterialTheme.colorScheme.background).fillMaxWidth()
+            .then(modifier),
         contentAlignment = Alignment.Center
     ) { ContainedLoadingIndicator() }
 }
@@ -27,9 +28,8 @@ fun LoadingContent(modifier: Modifier = Modifier) {
 @Composable
 fun ErrorContent(message: String, modifier: Modifier = Modifier) {
     Box(
-        modifier
-            .fillMaxSize()
-            .background(color = MaterialTheme.colorScheme.background),
+        Modifier
+            .background(color = MaterialTheme.colorScheme.background).fillMaxWidth().then(modifier),
         contentAlignment = Alignment.Center
     ) {
         Text(message, color = MaterialTheme.colorScheme.error, textAlign = TextAlign.Center)
