@@ -110,7 +110,7 @@ class QuranViewModel(
     val ayahRecitationState: StateFlow<AyahRecitationState> = ayahPlayer.state
     val playingAyah: StateFlow<Int?> = ayahPlayer.playingAyah
 
-    private val _selectedReciter = MutableStateFlow(Reciter.MISHARY)
+    private val _selectedReciter = MutableStateFlow(Reciter.YASSER)
     val selectedReciter: StateFlow<Reciter> = _selectedReciter.asStateFlow()
 
 

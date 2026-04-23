@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,6 +25,7 @@ import com.hussein.mawaqit.data.quran.recitation.Reciter
 
 @Composable
 fun AyahReciterPickerSheetContent(
+    onBack: () -> Unit,
     selectedReciter: Reciter,
     onDismiss: () -> Unit,
     onSelect: (Reciter) -> Unit
@@ -35,6 +38,13 @@ fun AyahReciterPickerSheetContent(
             .navigationBarsPadding(),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
+        IconButton(onClick = onBack) {
+            Icon(
+                imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_back),
+                contentDescription = null
+            )
+        }
+
         Text(
             text = "Pick Reciter",
             style = MaterialTheme.typography.titleMedium,

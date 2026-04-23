@@ -41,8 +41,7 @@ fun QuranReaderOptionsDialog(
         },
         text = {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(

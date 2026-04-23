@@ -4,7 +4,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -21,7 +20,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
-import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
@@ -92,7 +90,7 @@ fun QuranReaderScreen(
     val selectedReciter by viewModel.selectedReciter.collectAsStateWithLifecycle()
     val hasNetwork by viewModel.networkAvailable.collectAsStateWithLifecycle()
 
-    var showReaderOptionsDialog by remember { mutableStateOf(false) }
+    var showReadingOptionsDialog by remember { mutableStateOf(false) }
 
     // Maps ayahNumber → (lazyItemIndex, TextLayoutResult) for scroll precision
     val layoutMap = remember { mutableMapOf<Int, Pair<Int, TextLayoutResult>>() }
@@ -180,14 +178,11 @@ fun QuranReaderScreen(
                     }
                 },
                 actions = {
-                    // Font size toggle
-
                     IconButton(onClick = {
-                        showReaderOptionsDialog = true
+                        showReadingOptionsDialog = true
                     }) {
                         Icon(
-                            modifier = Modifier.size(18.dp),
-                            imageVector = ImageVector.vectorResource(com.hussein.mawaqit.R.drawable.ic_settings),
+                            imageVector = ImageVector.vectorResource(R.drawable.ic_settings),
                             contentDescription = null
                         )
                     }
@@ -198,15 +193,15 @@ fun QuranReaderScreen(
         when (val state = readerState) {
             QuranReaderUiState.Idle,
             QuranReaderUiState.Loading -> {
-                LoadingContent()
+                LoadingContent(modifier = Modifier.fillMaxSize())
             }
 
             is QuranReaderUiState.Error -> {
-                ErrorContent(state.message)
+                ErrorContent(state.message, modifier = Modifier.fillMaxSize())
             }
 
             is QuranReaderUiState.Success -> {
-                if (showReaderOptionsDialog) {
+                if (showReadingOptionsDialog) {
                     QuranReaderOptionsDialog(
                         selectedFontSize = fontSize,
                         selectedTextAlignment = quranTextAlignment,
@@ -217,7 +212,7 @@ fun QuranReaderScreen(
                             viewModel.setTextAlignment(it)
                         },
                         onDismiss = {
-                            showReaderOptionsDialog = false
+                            showReadingOptionsDialog = false
                         }
                     )
                 }
@@ -380,6 +375,7 @@ private fun AyahBottomSheet(
         dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
         var showReciterOptions by remember { mutableStateOf(false) }
+
         AnimatedContent(showReciterOptions) { showReciterPicker ->
             if (!showReciterPicker) {
                 Column(
@@ -404,23 +400,29 @@ private fun AyahBottomSheet(
                     // Tafsir content
                     when (tafsirState) {
                         TafsirState.Idle -> {
-                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // bookmark button
                                 OutlinedButton(
-                                    modifier = Modifier.weight(0.6f),
-                                    onClick = onPlayPause,
-                                    enabled = playEnabled
+                                    onClick = onBookmark,
+                                    modifier = Modifier.weight(0.6f)
                                 ) {
                                     Icon(
-                                        imageVector = if (isPlaying) ImageVector.vectorResource(
-                                            R.drawable.ic_stop
-                                        )
-                                        else ImageVector.vectorResource(R.drawable.ic_play),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
+                                        ImageVector.vectorResource(if (isBookmarked) R.drawable.ic_bookmark_filled else R.drawable.ic_bookmark),
+                                        contentDescription = stringResource(if (isBookmarked) R.string.remove_bookmark else R.string.bookmark)
                                     )
-                                    Spacer(Modifier.width(4.dp))
-                                    Text(if (isPlaying) "Stop" else "Play")
                                 }
+                                // tafsir button
+                                Button(onClick = onTafsir, modifier = Modifier.weight(0.4f)) {
+                                    Text(stringResource(R.string.tafsir))
+                                }
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Row(modifier = Modifier.fillMaxWidth()) {
+                                // reciter button
                                 OutlinedButton(
                                     modifier = Modifier.weight(0.4f),
                                     onClick = { showReciterOptions = true },
@@ -431,38 +433,27 @@ private fun AyahBottomSheet(
                                         modifier = Modifier.basicMarquee()
                                     )
                                 }
-                            }
-                            Spacer(Modifier.height(8.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.End,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                OutlinedButton(onClick = onBookmark) {
+                                // ayah recitation play pause button
+                                Button(
+                                    modifier = Modifier.weight(0.6f),
+                                    onClick = onPlayPause,
+                                    enabled = playEnabled
+                                ) {
                                     Icon(
-                                        if (isBookmarked) ImageVector.vectorResource(R.drawable.ic_bookmark_filled) else ImageVector.vectorResource(
-                                            R.drawable.ic_bookmark
+                                        imageVector = ImageVector.vectorResource(
+                                            if (isPlaying) R.drawable.ic_stop else R.drawable.ic_play
                                         ),
-                                        contentDescription = if (isBookmarked) stringResource(R.string.remove_bookmark) else stringResource(
-                                            R.string.bookmark
-                                        )
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
                                     )
-                                }
-                                Spacer(Modifier.width(8.dp))
-                                Button(onClick = onTafsir) {
-                                    Text(stringResource(R.string.tafsir))
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(if (isPlaying) "Stop" else "Play")
                                 }
                             }
-
                         }
 
                         TafsirState.Loading -> {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(80.dp),
-                                contentAlignment = Alignment.Center
-                            ) { ContainedLoadingIndicator() }
+                            LoadingContent(modifier = Modifier.size(100.dp))
                         }
 
                         TafsirState.NoNetwork -> {
@@ -477,13 +468,9 @@ private fun AyahBottomSheet(
                         }
 
                         is TafsirState.Error -> {
-                            Spacer(Modifier.height(12.dp))
-                            Text(
-                                text = tafsirState.message,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.error,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
+                            ErrorContent(
+                                message = tafsirState.message,
+                                modifier = Modifier.size(100.dp)
                             )
                         }
 
@@ -511,7 +498,8 @@ private fun AyahBottomSheet(
                     onDismiss = {
                         showReciterOptions = false
                     },
-                    onSelect = { onReciterSelect(it); showReciterOptions = false }
+                    onSelect = { onReciterSelect(it); showReciterOptions = false },
+                    onBack = { showReciterOptions = false }
                 )
             }
         }
