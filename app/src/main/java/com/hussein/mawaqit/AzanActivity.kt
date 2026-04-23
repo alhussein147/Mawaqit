@@ -41,20 +41,12 @@ class AzanActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         // Show over lock screen
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-            setShowWhenLocked(true)
-            setTurnScreenOn(true)
-        } else {
-            @Suppress("DEPRECATION") window.addFlags(
-                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-            )
-        }
+        setShowWhenLocked(true)
+        setTurnScreenOn(true)
 
         // Dismiss keyguard so activity shows on top of lock screen
         val keyguard = getSystemService(KeyguardManager::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            keyguard.requestDismissKeyguard(this, null)
-        }
+        keyguard.requestDismissKeyguard(this, null)
 
         val prayerName = intent.getStringExtra(EXTRA_PRAYER_NAME) ?: "Prayer"
         val isFajr = intent.getBooleanExtra(EXTRA_IS_FAJR, false)

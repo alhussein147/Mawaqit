@@ -23,11 +23,14 @@ import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.WhileSubscribed
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
@@ -66,10 +69,7 @@ data class CountdownTime(val hours: Long, val minutes: Long) {
         else "%d Min".format(minutes)
 }
 
-
 enum class PrayerStatus { PASSED, CURRENT, UPCOMING }
-
-
 
 @OptIn(ExperimentalTime::class)
 class HomeViewModel(
@@ -85,6 +85,11 @@ class HomeViewModel(
     val countdown: StateFlow<CountdownTime?> = _countdown.asStateFlow()
     private var tickerJob: Job? = null
     private var lastKnownDate: LocalDate? = null
+    private val userLocation = locationRepo.locationFlow.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = null
+    )
 
     private val reloadTrigger = MutableSharedFlow<Unit>(replay = 1).also {
         it.tryEmit(Unit) // seed so combine emits immediately on start
@@ -94,14 +99,13 @@ class HomeViewModel(
         viewModelScope.launch {
             // Combine all sources: location, settings, and manual/daily reloads
             combine(
-                locationRepo.locationFlow,
                 settingsRepository.settingsFlow,
                 reloadTrigger
-            ) { location, settings, _ ->
+            ) {settings, _ ->
                 // Extract the data needed for loadPrayers
-                location to settings.calculationMethod
-            }.collectLatest { (location, method) ->
-                loadPrayers(location, method)
+                settings.calculationMethod
+            }.collectLatest { method ->
+                loadPrayers(userLocation.value, method)
             }
         }
         viewModelScope.launch {
@@ -190,7 +194,7 @@ class HomeViewModel(
     }
 
     private fun tomorrowFajr(): PrayerUiModel? {
-        val location = locationRepo.locationFlow.firstOrNull() ?: return null
+        val location = userLocation.value ?: return null
         val tomorrow = Clock.System.now().plus(24.hours)
         return try {
             val schedule = PrayerTimeCalculator.calculate(
