@@ -58,7 +58,7 @@ class SettingsRepository(private val context: Context) {
                 prefs[CALCULATION_METHOD] ?: CalculationMethod.MUSLIM_WORLD_LEAGUE.name
             ),
             notificationSound = NotificationSound.valueOf(
-                prefs[NOTIFICATION_SOUND] ?: NotificationSound.ADHAN.name
+                prefs[NOTIFICATION_SOUND] ?: NotificationSound.NOTIFICATION.name
             ),
             appTheme = AppTheme.valueOf(
                 prefs[APP_THEME] ?: AppTheme.SYSTEM.name
