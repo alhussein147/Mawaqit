@@ -26,14 +26,16 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.mawaqit.presentation.azkar.categories.ZikrItem
+import com.hussein.mawaqit.presentation.shared.ErrorContent
 import com.hussein.mawaqit.presentation.shared.LoadingContent
+import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AzkarListScreen(
+fun AzkarScreen(
     categoryIndex: Int,
     onBack: () -> Unit,
-    viewModel: AzkarViewModel = org.koin.compose.viewmodel.koinViewModel()
+    viewModel: AzkarViewModel = koinViewModel()
 ) {
     val listState by viewModel.listState.collectAsStateWithLifecycle()
 
@@ -44,7 +46,7 @@ fun AzkarListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (listState is AzkarListState.Success) (listState as AzkarListState.Success).category.category else "") },
+                title = { Text(if (listState is AzkarListState.Success) (listState as AzkarListState.Success).category.title else "") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -64,7 +66,7 @@ fun AzkarListScreen(
             }
 
             is AzkarListState.Error -> {
-                LoadingContent()
+                ErrorContent(message = s.message)
             }
 
             is AzkarListState.Success -> {

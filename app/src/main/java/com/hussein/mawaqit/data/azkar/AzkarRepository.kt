@@ -11,17 +11,17 @@ import kotlin.collections.getOrNull
 
 @Serializable
 data class AzkarCategory(
-    val id: Int,
-    val category: String,
-    @SerialName("array")
+    val title: String,
+    @SerialName("content")
     val content: List<Zikr>
 )
 
 @Serializable
 data class Zikr(
-    val id: Int,
+    @SerialName("zekr")
     val text: String,
-    val count: Int
+    val repeat: Int,
+    val bless: String
 )
 
 @Serializable

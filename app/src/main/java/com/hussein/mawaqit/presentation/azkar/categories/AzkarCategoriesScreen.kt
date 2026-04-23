@@ -2,6 +2,7 @@ package com.hussein.mawaqit.presentation.azkar.categories
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -72,7 +73,7 @@ fun AzkarCategoryScreen(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(padding)
+                        .padding(padding) , verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     itemsIndexed(categories) { index, category ->
                         CategoryCard(
@@ -155,10 +156,10 @@ fun ZikrItem(index: Int, zikr: Zikr) {
         )
 
         // Repeat count — only show if > 1
-        if (zikr.count > 1) {
+        if (zikr.repeat > 1) {
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "Repeat ${zikr.count}",
+                text = "Repeat ${zikr.repeat}",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.fillMaxWidth(),
