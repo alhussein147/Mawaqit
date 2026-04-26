@@ -96,7 +96,7 @@ private fun BookmarkItem(
                 modifier = Modifier.size(32.dp)
             ) {
                 Icon(
-                    imageVector = ImageVector.vectorResource(com.hussein.mawaqit.R.drawable.ic_placeholder),
+                    imageVector = ImageVector.vectorResource(com.hussein.mawaqit.R.drawable.ic_delete_forever),
                     contentDescription = "Delete",
                     tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(18.dp)

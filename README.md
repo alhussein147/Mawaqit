@@ -77,7 +77,7 @@ The app follows a unidirectional data flow pattern with a clear separation of co
 
 ## Screenshots
 
-  <img src="screenshots/main_screen.png" width="250"/> | <img src="screenshots/azkar_screen.png" width="250"/> | <img src="screenshots/azkar_list_screen.png" width="250"/> | <img src="screenshots/onboarding1.png" width="250"/> | <img src="screenshots/onboarding2.png" width="250"/> | <img src="screenshots/onboarding3.png" width="250"/> | <img src="screenshots/setting_screen.png" width="250"/> | <img src="screenshots/quran_list_screen.png" width="250"/> | <img src="screenshots/quran_reader_screen.png" width="250"/>
+  <img src="screenshots/main.png" width="250"/> | <img src="screenshots/azkar_categories.png" width="250"/> | <img src="screenshots/azkar.png" width="250"/> | <img src="screenshots/onboarding1.png" width="250"/> | <img src="screenshots/onboarding2.png" width="250"/> | <img src="screenshots/onboarding3.png" width="250"/> | <img src="screenshots/setting_screen.png" width="250"/> | <img src="screenshots/quran_list.png" width="250"/> | <img src="screenshots/quran_reading.png" width="250"/> | <img src="screenshots/quran_search.png" width="250"/> | <img src="screenshots/bookmarks.png" width="250"/>
 
 ---
 
