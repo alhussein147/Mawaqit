@@ -1,8 +1,9 @@
 package com.hussein.mawaqit.presentation.azkar.categories
 
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -46,13 +47,20 @@ import org.koin.androidx.compose.koinViewModel
 fun AzkarCategoryScreen(
     onCategorySelected: (index: Int) -> Unit,
     onBack: () -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope,
     viewModel: AzkarViewModel = koinViewModel()
 ) {
     val categories by viewModel.categoryTitles.collectAsStateWithLifecycle()
     val isLoading = categories.isEmpty()
 
-
+    with(sharedTransitionScope) {
         Scaffold(
+            modifier = Modifier.sharedBounds(
+                placeholderSize = SharedTransitionScope.PlaceholderSize.AnimatedSize,
+                sharedContentState = rememberSharedContentState("azkar_section"),
+                animatedVisibilityScope = animatedContentScope,
+            ),
             topBar = {
                 TopAppBar(
                     title = { Text("Azkar") },
@@ -73,7 +81,7 @@ fun AzkarCategoryScreen(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(padding) , verticalArrangement = Arrangement.spacedBy(4.dp)
+                        .padding(padding), verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     itemsIndexed(categories) { index, category ->
                         CategoryCard(
@@ -84,8 +92,9 @@ fun AzkarCategoryScreen(
                 }
             }
         }
-    }
 
+    }
+}
 
 
 @Composable

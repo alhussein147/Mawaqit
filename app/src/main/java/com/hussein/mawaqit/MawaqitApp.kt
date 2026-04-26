@@ -4,6 +4,7 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import com.hussein.coreModule
+import com.hussein.mawaqit.di.appModule
 import com.hussein.mawaqit.data.infrastructure.receivers.PrayerAlarmReceiver.Companion.PRAYERS_NOTIFICATION_CHANNEL_NAME
 import com.hussein.mawaqit.data.infrastructure.receivers.PrayerAlarmReceiver.Companion.PRAYER_NOTIFICATION_CHANNEL_ID
 import com.hussein.mawaqit.data.infrastructure.services.AzanPlayerService.Companion.AZAN_CHANNEL_ID

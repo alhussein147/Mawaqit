@@ -8,8 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
-import androidx.core.content.ContextCompat
-import com.hussein.mawaqit.AzanActivity
+import com.hussein.mawaqit.presentation.azan.AzanActivity
 import com.hussein.mawaqit.R
 import com.hussein.mawaqit.data.infrastructure.settings.NotificationSound
 import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository

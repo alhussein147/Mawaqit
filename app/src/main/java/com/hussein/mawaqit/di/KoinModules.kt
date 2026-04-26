@@ -1,4 +1,4 @@
-package com.hussein.mawaqit
+package com.hussein.mawaqit.di
 
 import CurrentLocationFetcher
 import androidx.work.WorkManager

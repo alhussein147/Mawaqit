@@ -29,9 +29,9 @@ object HijriDateCalculator {
                 (l / 5670) * ((43 * l) / 15238)
         l = l - ((30 - j) / 15) * ((17719 * j) / 50) -
                 (j / 16) * ((15238 * j) / 43) + 29
-        val hYear = 30 * n + j - 30
+        val hYear = (30 * n + j - 30).toArabicDigits()
         val hMonth = (24 * l) / 709
-        val hDay = l - (709 * hMonth) / 24
+        val hDay = (l - (709 * hMonth) / 24).toArabicDigits()
 
         val monthNames = listOf(
             "محرم", "صفر", "ربيع الأول", "ربيع الثاني",
@@ -40,6 +40,17 @@ object HijriDateCalculator {
         )
         val monthName = monthNames.getOrElse(hMonth - 1) { "" }
         return "$hDay $monthName $hYear"
+    }
+
+    fun Int.toArabicDigits(): String {
+        val englishNumbers = listOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9")
+        val arabicNumbers = listOf("٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩")
+
+        var numString = this.toString()
+        for (i in 0..9) {
+            numString = numString.replace(englishNumbers[i], arabicNumbers[i])
+        }
+        return numString
     }
 
 }

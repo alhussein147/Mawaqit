@@ -45,7 +45,7 @@
         </activity>
 
         <activity
-            android:name=".AzanActivity"
+            android:name=".presentation.azan.AzanActivity"
             android:exported="false"
             android:showOnLockScreen="true"
             android:turnScreenOn="true"

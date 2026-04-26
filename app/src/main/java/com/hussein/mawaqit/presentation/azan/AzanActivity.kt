@@ -1,4 +1,4 @@
-package com.hussein.mawaqit
+package com.hussein.mawaqit.presentation.azan
 
 import android.app.KeyguardManager
 import android.app.NotificationManager
@@ -31,6 +31,7 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import com.hussein.mawaqit.R
 
 class AzanActivity : ComponentActivity() {
 

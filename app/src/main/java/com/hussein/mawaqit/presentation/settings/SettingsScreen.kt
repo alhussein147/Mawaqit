@@ -7,7 +7,9 @@ import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -76,7 +78,10 @@ import org.koin.androidx.compose.koinViewModel
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SettingsScreen(
-    onBack: () -> Unit, viewModel: SettingsViewModel = koinViewModel()
+    onBack: () -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope,
+    viewModel: SettingsViewModel = koinViewModel()
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val locationState by viewModel.locationState.collectAsStateWithLifecycle()
@@ -125,35 +130,45 @@ fun SettingsScreen(
             Toast.makeText(context, "Error updating location", Toast.LENGTH_SHORT).show()
         }
     }
+    with(sharedTransitionScope) {
+        Scaffold(
+            modifier = Modifier.sharedBounds(
+                sharedContentState = rememberSharedContentState("settings"),
+                animatedVisibilityScope = animatedContentScope,
+                clipInOverlayDuringTransition = OverlayClip(
+                    RoundedCornerShape(20)                )
 
-    Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("Settings") }, navigationIcon = {
-                FilledTonalIconButton(onClick = onBack) {
-                    Icon(
-                        imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_back),
-                        contentDescription = "Back"
-                    )
-                }
-            })
-        }) { innerPadding ->
-        if (settings == null) {
-            LoadingContent(modifier = Modifier.fillMaxSize())
-        } else {
-            SettingsContent(
-                settings = settings!!,
-                locationState = locationState,
-                savedLocation = savedLocation,
-                onUpdateLocationTapped = ::onUpdateLocationTapped,
-                onLocationErrorDismissed = { viewModel.resetLocationState() },
-                onPrayerToggled = viewModel::onPrayerNotificationToggled,
-                onMethodChanged = viewModel::onCalculationMethodChanged,
-                onSoundChanged = viewModel::onNotificationSoundChanged,
-                onThemeChanged = viewModel::onAppThemeChanged,
-                onColorSchemeChanged = viewModel::onAppColorSchemeChanged,
-                modifier = Modifier.padding(innerPadding)
-            )
+
+            ),
+            topBar = {
+                TopAppBar(title = { Text("Settings") }, navigationIcon = {
+                    FilledTonalIconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_back),
+                            contentDescription = "Back"
+                        )
+                    }
+                })
+            }) { innerPadding ->
+            if (settings == null) {
+                LoadingContent(modifier = Modifier.fillMaxSize())
+            } else {
+                SettingsContent(
+                    settings = settings!!,
+                    locationState = locationState,
+                    savedLocation = savedLocation,
+                    onUpdateLocationTapped = ::onUpdateLocationTapped,
+                    onLocationErrorDismissed = { viewModel.resetLocationState() },
+                    onPrayerToggled = viewModel::onPrayerNotificationToggled,
+                    onMethodChanged = viewModel::onCalculationMethodChanged,
+                    onSoundChanged = viewModel::onNotificationSoundChanged,
+                    onThemeChanged = viewModel::onAppThemeChanged,
+                    onColorSchemeChanged = viewModel::onAppColorSchemeChanged,
+                    modifier = Modifier.padding(innerPadding)
+                )
+            }
         }
+
     }
     when (pendingAction) {
 
