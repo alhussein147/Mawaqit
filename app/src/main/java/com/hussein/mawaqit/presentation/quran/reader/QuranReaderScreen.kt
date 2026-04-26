@@ -2,6 +2,8 @@ package com.hussein.mawaqit.presentation.quran.reader
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -31,6 +33,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -39,7 +42,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.SpanStyle
@@ -66,6 +71,7 @@ import com.hussein.mawaqit.presentation.quran.components.AyahReciterPickerSheetC
 import com.hussein.mawaqit.presentation.shared.ErrorContent
 import com.hussein.mawaqit.presentation.shared.LoadingContent
 import com.hussein.mawaqit.ui.theme.quranFontFamily
+import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 
 
@@ -74,8 +80,10 @@ import org.koin.androidx.compose.koinViewModel
 fun QuranReaderScreen(
     surahIndex: Int,
     onBack: () -> Unit,
-    viewModel: QuranViewModel = koinViewModel(),
     scrollToAyah: Int? = null,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope,
+    viewModel: QuranViewModel = koinViewModel(),
 ) {
     val readerState by viewModel.readerState.collectAsStateWithLifecycle()
     val fontSize by viewModel.fontSize.collectAsStateWithLifecycle()
@@ -92,22 +100,41 @@ fun QuranReaderScreen(
 
     var showReadingOptionsDialog by remember { mutableStateOf(false) }
 
-    // Maps ayahNumber → (lazyItemIndex, TextLayoutResult) for scroll precision
-    val layoutMap = remember { mutableMapOf<Int, Pair<Int, TextLayoutResult>>() }
-    val listState = rememberLazyListState()
+    val topAppBarScrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
-    // Scroll to bookmarked ayah once surah is loaded
-    LaunchedEffect(scrollToAyah, readerState) {
-        if (scrollToAyah == null) return@LaunchedEffect
-        if (readerState !is QuranReaderUiState.Success) return@LaunchedEffect
-        val entry = layoutMap[scrollToAyah] ?: return@LaunchedEffect
-        val (itemIndex, layout) = entry
-        val annotation = layout.layoutInput.text
-            .getStringAnnotations("AYAH", 0, layout.layoutInput.text.length)
-            .firstOrNull { it.item == scrollToAyah.toString() }
-            ?: return@LaunchedEffect
-        val yOffset = layout.getBoundingBox(annotation.start).top.toInt()
-        listState.scrollToItem(itemIndex, scrollOffset = yOffset)
+    var highlightedAyah by remember { mutableStateOf<Int?>(null) }
+
+    val listState = rememberLazyListState()
+    var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
+    var lastScrolledAyah by remember(surahIndex) { mutableStateOf<Int?>(null) }
+
+    LaunchedEffect(readerState, scrollToAyah, textLayoutResult) {
+        if (scrollToAyah != null &&
+            scrollToAyah != lastScrolledAyah &&
+            readerState is QuranReaderUiState.Success &&
+            textLayoutResult != null
+        ) {
+            val layout = textLayoutResult!!
+            val annotatedString = layout.layoutInput.text
+            val annotation = annotatedString.getStringAnnotations("AYAH", 0, annotatedString.length)
+                .find { it.item == scrollToAyah.toString() }
+
+            annotation?.let {
+                val line = layout.getLineForOffset(it.start)
+                val top = layout.getLineTop(line)
+                // index 1 is FlowingAyahBlock, scrollOffset puts the specific line at the top
+                listState.animateScrollToItem(index = 1, scrollOffset = top.toInt())
+                lastScrolledAyah = scrollToAyah
+            }
+        }
+    }
+
+    LaunchedEffect(scrollToAyah) {
+        if (scrollToAyah != null) {
+            highlightedAyah = scrollToAyah
+            delay(3000)
+            highlightedAyah = null
+        }
     }
 
     LifecycleResumeEffect(Unit) {
@@ -120,8 +147,6 @@ fun QuranReaderScreen(
 
     LaunchedEffect(surahIndex) { viewModel.loadSurah(surahIndex) }
 
-    // Fetch tafsir when an ayah is selected
-    // Ayah bottom sheet
     selectedAyah?.let { ayah ->
         val isBookmarked = bookmarks.any {
             it.surahNumber == surahIndex && it.ayahNumber == ayah.numberInSurah
@@ -154,95 +179,105 @@ fun QuranReaderScreen(
         viewModel.stopAyah()
         onBack.invoke()
     }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    if (readerState is QuranReaderUiState.Success) {
-                        val surah = QuranData.surahs.getOrNull(surahIndex - 1)
-                        Text(surah?.nameArabic ?: "")
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = {
-                        if (recitationState is AyahRecitationState.Playing) {
-                            viewModel.stopAyah()
-                        }
-                        onBack.invoke()
-                    }) {
-                        Icon(
-                            ImageVector.vectorResource(R.drawable.ic_arrow_back),
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = {
-                        showReadingOptionsDialog = true
-                    }) {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(R.drawable.ic_settings),
-                            contentDescription = null
-                        )
-                    }
-                }
-            )
-        }
-    ) { padding ->
-        when (val state = readerState) {
-            QuranReaderUiState.Idle,
-            QuranReaderUiState.Loading -> {
-                LoadingContent(modifier = Modifier.fillMaxSize())
-            }
-
-            is QuranReaderUiState.Error -> {
-                ErrorContent(state.message, modifier = Modifier.fillMaxSize())
-            }
-
-            is QuranReaderUiState.Success -> {
-                if (showReadingOptionsDialog) {
-                    QuranReaderOptionsDialog(
-                        selectedFontSize = fontSize,
-                        selectedTextAlignment = quranTextAlignment,
-                        onSelectedFontSize = {
-                            viewModel.setFontSize(it)
+    with(sharedTransitionScope) {
+        Scaffold(
+            modifier = Modifier
+                .sharedBounds(
+                    placeholderSize = SharedTransitionScope.PlaceholderSize.ContentSize,
+                    sharedContentState = rememberSharedContentState("surah_${surahIndex}"),
+                    animatedVisibilityScope = animatedContentScope,
+                    resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()
+                )
+                .skipToLookaheadSize(),
+            topBar = {
+                if (readerState is QuranReaderUiState.Success) {
+                    TopAppBar(
+                        scrollBehavior = topAppBarScrollBehavior,
+                        title = {
+                            val surah = QuranData.surahs.getOrNull(surahIndex - 1)
+                            Text(surah?.nameArabic ?: "")
                         },
-                        onSelectedTextAlignment = {
-                            viewModel.setTextAlignment(it)
+                        navigationIcon = {
+                            IconButton(onClick = {
+                                if (recitationState is AyahRecitationState.Playing) {
+                                    viewModel.stopAyah()
+                                }
+                                onBack.invoke()
+                            }) {
+                                Icon(
+                                    ImageVector.vectorResource(R.drawable.ic_arrow_back),
+                                    contentDescription = "Back"
+                                )
+                            }
                         },
-                        onDismiss = {
-                            showReadingOptionsDialog = false
+                        actions = {
+                            IconButton(onClick = {
+                                showReadingOptionsDialog = true
+                            }) {
+                                Icon(
+                                    imageVector = ImageVector.vectorResource(R.drawable.ic_settings),
+                                    contentDescription = null
+                                )
+                            }
                         }
                     )
                 }
-                val surah = state.surah
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding),
-                    contentPadding = PaddingValues(bottom = 32.dp, start = 4.dp, end = 4.dp)
-                ) {
-                    item {
-                        SurahHeader(
-                            surah = QuranData.surahs[surahIndex - 1],
-                        )
-                    }
-                    item {
-                        FlowingAyahBlock(
-                            ayahs = surah.ayahs,
-                            fontSize = fontSize,
-                            quranTextAlignment = quranTextAlignment,
-                            bookmarks = bookmarks,
-                            surahIndex = surahIndex, onTap = { ayah ->
-                                viewModel.selectAyah(ayah)
-                            }, onTextLayout = { layout ->
-                                // Store layout for each ayah in this block
-                                surah.ayahs.forEach { ayah ->
-                                    layoutMap[ayah.numberInSurah] = 1 to layout
-                                }
+            }
+        ) { padding ->
+            when (val state = readerState) {
+                QuranReaderUiState.Idle,
+                QuranReaderUiState.Loading -> {
+                    LoadingContent(modifier = Modifier.fillMaxSize())
+                }
+
+                is QuranReaderUiState.Error -> {
+                    ErrorContent(state.message, modifier = Modifier.fillMaxSize())
+                }
+
+                is QuranReaderUiState.Success -> {
+                    if (showReadingOptionsDialog) {
+                        QuranReaderOptionsDialog(
+                            selectedFontSize = fontSize,
+                            selectedTextAlignment = quranTextAlignment,
+                            onSelectedFontSize = {
+                                viewModel.setFontSize(it)
+                            },
+                            onSelectedTextAlignment = {
+                                viewModel.setTextAlignment(it)
+                            },
+                            onDismiss = {
+                                showReadingOptionsDialog = false
                             }
                         )
+                    }
+                    val surah = state.surah
+
+                    LazyColumn(
+                        modifier = Modifier
+                            .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
+                            .fillMaxSize()
+                            .padding(padding),
+                        contentPadding = PaddingValues(bottom = 32.dp, start = 4.dp, end = 4.dp),
+                        state = listState
+                    ) {
+                        item {
+                            SurahHeader(
+                                surah = QuranData.surahs[surahIndex - 1],
+                            )
+                        }
+                        item {
+                            FlowingAyahBlock(
+                                ayahs = surah.ayahs,
+                                fontSize = fontSize,
+                                quranTextAlignment = quranTextAlignment,
+                                bookmarks = bookmarks,
+                                surahIndex = surahIndex,
+                                onTap = { ayah ->
+                                    viewModel.selectAyah(ayah)
+                                }, onTextLayout = { layout -> textLayoutResult = layout },
+                                highlightedAyah = highlightedAyah
+                            )
+                        }
                     }
                 }
             }
@@ -258,14 +293,14 @@ private fun FlowingAyahBlock(
     bookmarks: List<BookmarkEntity>,
     surahIndex: Int,
     onTap: (Ayah) -> Unit,
-    onTextLayout: (TextLayoutResult) -> Unit = {}
-
+    onTextLayout: (TextLayoutResult) -> Unit = {},
+    highlightedAyah: Int? = null,
 ) {
 
     val primary = MaterialTheme.colorScheme.primary
     val onSurface = MaterialTheme.colorScheme.onSurface
     val bookmarkColor = MaterialTheme.colorScheme.tertiary
-    // Tag used in AnnotatedString to detect ayah taps
+    val highlightColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
     val tag = "AYAH"
 
     val annotated = buildAnnotatedString {
@@ -273,16 +308,17 @@ private fun FlowingAyahBlock(
             val isBookmarked = bookmarks.any {
                 it.surahNumber == surahIndex && it.ayahNumber == ayah.numberInSurah
             }// Ayah text
+            val isHighlighted = ayah.numberInSurah == highlightedAyah
             pushStringAnnotation(tag, ayah.numberInSurah.toString())
             withStyle(
                 SpanStyle(
                     color = if (isBookmarked) bookmarkColor else onSurface,
-                    fontSize = fontSize.sp.sp
+                    fontSize = fontSize.sp.sp,
+                    background = if (isHighlighted) highlightColor else Color.Transparent // Apply background
                 )
             ) {
                 append(ayah.text)
             }
-            // Ayah number marker ۝N
             withStyle(
                 SpanStyle(
                     color = primary,
@@ -319,7 +355,8 @@ private fun FlowingAyahBlock(
                     val ayah = ayahs.find { it.numberInSurah == ann.item.toInt() }
                     ayah?.let { onTap(it) }
                 }
-        }, onTextLayout = onTextLayout
+        },
+        onTextLayout = onTextLayout
     )
 }
 
@@ -369,7 +406,8 @@ private fun AyahBottomSheet(
     playEnabled: Boolean,
     currentReciter: Reciter,
     onReciterSelect: (Reciter) -> Unit,
-) {
+
+    ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         dragHandle = { BottomSheetDefaults.DragHandle() }
