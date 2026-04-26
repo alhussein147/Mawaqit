@@ -16,19 +16,17 @@ A clean, modern Islamic companion app for Android built with Kotlin and Jetpack 
 
 ### 📿 Azan
 
-- Azan playback via a **foreground MediaPlayer service** at the exact prayer time
+- Azan playback via a **Full screen notification** at the exact prayer time
 - Separate Fajr azan support
 - Smart screen detection — silent notification if the user is already active on their device
-- Volume key and audio focus handling to stop playback naturally
 - Respects per-prayer notification preferences
 
-### 📖 Quran Reader *(in progress)*
+### 📖 Quran Reader
 
-- Full **Madinah Mushaf** (Hafs 'an 'Asim) — 604 pages rendered as high-quality WebP images
-- Horizontal swipe navigation mimicking a real Mushaf
-- Surah index with page ranges for all 114 surahs
-- Last-read page persistence
+- Full Ayah and surah search support
+- Per ayah tafisr and recitation support with multiple reciters
 - Bookmark support
+- Full surah recitation with download support
 
 ### 🌙 Azkar
 
@@ -57,21 +55,8 @@ A clean, modern Islamic companion app for Android built with Kotlin and Jetpack 
 | Background Work    | WorkManager                  |
 | Date & Time        | kotlinx.datetime             |
 | Serialization      | kotlinx.serialization        |
-| Image Loading      | Coil                         |
-| Minimum SDK        | 28 (Android 8.0)             |
-
----
-
-## Architecture
-
-The app follows a unidirectional data flow pattern with a clear separation of concerns:
-
-- **Repository layer** — DataStore-backed repositories for settings, location, and Quran state
-- **ViewModel layer** — exposes `StateFlow` to the UI; no business logic in composables
-- **Composable layer** — stateless where possible, lifecycle-aware effects for tickers and
-  foreground detection
-- **Service layer** — foreground `MediaSessionCompat` service for azan playback with proper audio
-  focus management
+| Cache              | Room database                |
+| Minimum SDK        | 29 (Android 9.0)             |
 
 ---
 
