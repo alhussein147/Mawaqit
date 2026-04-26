@@ -1,6 +1,7 @@
 package com.hussein.mawaqit.presentation.quran.reader
 
 import android.util.Log
+import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hussein.mawaqit.data.db.QuranDatabaseRepository
@@ -20,14 +21,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-
+@Stable
 sealed interface AyahRecitationState {
     data object Idle : AyahRecitationState
     data object Buffering : AyahRecitationState
     data object Playing : AyahRecitationState
 }
 
-
+@Stable
 sealed interface TafsirState {
     data object Idle : TafsirState
     data object Loading : TafsirState
@@ -35,7 +36,7 @@ sealed interface TafsirState {
     data class Error(val message: String) : TafsirState
     data object NoNetwork : TafsirState
 }
-
+@Stable
 sealed interface QuranReaderUiState {
     data object Idle : QuranReaderUiState
     data object Loading : QuranReaderUiState
