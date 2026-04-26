@@ -53,12 +53,14 @@ interface AyahDao {
     fun searchAyahs(query: String): Flow<List<AyahEntity>>
 
     // Ayah of the day joined with its surah in a single query
-    @Query("""SELECT ayahs.surahNumber, ayahs.numberInSurah, ayahs.text,
+    @Query(
+        """SELECT ayahs.surahNumber, ayahs.numberInSurah, ayahs.text,
               surahs.nameArabic AS surahNameArabic, surahs.nameTransliterated AS surahTranslit
        FROM ayahs
        JOIN surahs ON ayahs.surahNumber = surahs.number
-       ORDER BY ((ayahs.surahNumber * 1000 + ayahs.numberInSurah) * :seed) % (SELECT COUNT(*) FROM ayahs)
-       LIMIT 1""")
+       LIMIT 1
+       OFFSET (ABS((:seed * 1664525 + 1013904223) & 2147483647) % (SELECT COUNT(*) FROM ayahs))"""
+    )
     suspend fun getAyahOfTheDay(seed: Long): AyahWithSurah?
     // Deterministic random for today using date as seed
 
