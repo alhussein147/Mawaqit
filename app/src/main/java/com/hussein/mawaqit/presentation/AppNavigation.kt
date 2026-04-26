@@ -1,18 +1,16 @@
 package com.hussein.mawaqit.presentation
 
-import androidx.compose.animation.core.FastOutLinearInEasing
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.IntOffset
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import androidx.navigation3.ui.NavDisplay
 import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
 import com.hussein.mawaqit.presentation.azkar.AzkarScreen
@@ -61,7 +59,7 @@ data class QuranReader(val surahIndex: Int, val scrollToAyah: Int? = null) : Scr
 @Composable
 fun AppNavigation(settingsRepository: SettingsRepository) {
 
-    val slideSpec = tween<IntOffset>(durationMillis = 300, easing = FastOutLinearInEasing)
+
     val backStack = rememberNavBackStack(Initializing)
 
     LaunchedEffect(Unit) {
@@ -73,101 +71,102 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
             backStack.add(Onboarding)
         }
     }
-    NavDisplay(
-        transitionSpec = {
-            // Slide in from right when navigating forward
-            slideInHorizontally(slideSpec) { it } togetherWith
-                    slideOutHorizontally(slideSpec) { -it }
-        },
-        popTransitionSpec = {
-            // Slide in from left when navigating back
-            slideInHorizontally(slideSpec) { -it } togetherWith
-                    slideOutHorizontally(slideSpec) { it }
-        },
-        predictivePopTransitionSpec = {
-            // Slide in from left when navigating back
-            slideInHorizontally(slideSpec) { -it } togetherWith
-                    slideOutHorizontally(slideSpec) { it }
-        },
-        backStack = backStack,
-        onBack = { backStack.removeLastOrNull() },
-        entryProvider = entryProvider {
 
-            entry<Initializing> {
-                LoadingContent(modifier = Modifier.fillMaxSize())
-            }
+    SharedTransitionLayout {
+        NavDisplay(
+            modifier = Modifier.background(MaterialTheme.colorScheme.background) ,
+            backStack = backStack,
+            onBack = { backStack.removeLastOrNull() },
+            entryProvider = entryProvider {
 
-            entry<Onboarding> {
-                OnboardingScreen(
-                    onFinished = {
-                        backStack.clear()
-                        backStack.add(Home)
-                    }
-                )
-            }
+                entry<Initializing> {
+                    LoadingContent(modifier = Modifier.fillMaxSize())
+                }
 
-            entry<Home> {
-                HomeScreen(
-                    onNavigateToSettings = { backStack.add(Settings) },
-                    onNavigateToAzkar = {
-                        backStack.add(
-                            AzkarCategories
-                        )
-                    }, onNavigateToQuran = { backStack.add(QuranSurahList) }
-                )
-            }
-
-            entry<AzkarCategories> {
-                AzkarCategoryScreen(
-                    onCategorySelected = { index -> backStack.add(AzkarList(index)) },
-                    onBack = { backStack.removeLastOrNull() }
-                )
-            }
-
-            entry<AzkarList> { key ->
-                AzkarScreen(
-                    categoryIndex = key.categoryIndex,
-                    onBack = { backStack.removeLastOrNull() }
-                )
-            }
-
-            entry<QuranSurahList> {
-                SurahListScreen(
-                    onSurahSelected = { index, scrollToAyah ->
-                        backStack.add(QuranReader(index, scrollToAyah))
-                    },
-                    onBack = { backStack.removeLastOrNull() },
-                    onNavigateToSearch = {
-                        backStack.add(QuranSearch)
-                    }
-                )
-            }
-
-            entry<QuranReader> { key ->
-                QuranReaderScreen(
-                    scrollToAyah = key.scrollToAyah,
-                    surahIndex = key.surahIndex,
-                    onBack = { backStack.removeLastOrNull() },
-                )
-            }
-            entry<QuranSearch> {
-                QuranSearchScreen(
-                    onSurahSelected = { surahIndex ->
-                        backStack.add(QuranReader(surahIndex))
-                    },
-                    onAyahSelected = { surahIndex, ayahNumber ->
-                        backStack.add(QuranReader(surahIndex, ayahNumber))
-                    },
-                    onBack = { backStack.removeLastOrNull() },
-
+                entry<Onboarding> {
+                    OnboardingScreen(
+                        onFinished = {
+                            backStack.clear()
+                            backStack.add(Home)
+                        }
                     )
-            }
+                }
 
-            entry<Settings> {
-                SettingsScreen(
-                    onBack = { backStack.removeLastOrNull() }
-                )
+                entry<Home> {
+                    HomeScreen(
+                        onNavigateToSettings = { backStack.add(Settings) },
+                        onNavigateToAzkar = {
+                            backStack.add(
+                                AzkarCategories
+                            )
+                        },
+                        onNavigateToQuran = { backStack.add(QuranSurahList) },
+                        sharedElementTransitionScope = this@SharedTransitionLayout,
+                        animatedContentScope = LocalNavAnimatedContentScope.current
+                    )
+                }
+
+                entry<AzkarCategories> {
+                    AzkarCategoryScreen(
+                        onCategorySelected = { index -> backStack.add(AzkarList(index)) },
+                        onBack = { backStack.removeLastOrNull() },
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        animatedContentScope = LocalNavAnimatedContentScope.current,
+                    )
+                }
+
+                entry<AzkarList> { key ->
+                    AzkarScreen(
+                        categoryIndex = key.categoryIndex,
+                        onBack = { backStack.removeLastOrNull() }
+                    )
+                }
+
+                entry<QuranSurahList> {
+                    SurahListScreen(
+                        onSurahSelected = { index, scrollToAyah ->
+                            backStack.add(QuranReader(index, scrollToAyah))
+                        },
+                        onBack = { backStack.removeLastOrNull() },
+                        onNavigateToSearch = {
+                            backStack.add(QuranSearch)
+                        },
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        animatedContentScope = LocalNavAnimatedContentScope.current,
+                    )
+                }
+
+                entry<QuranReader> { key ->
+                    QuranReaderScreen(
+                        scrollToAyah = key.scrollToAyah,
+                        surahIndex = key.surahIndex,
+                        onBack = { backStack.removeLastOrNull() },
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        animatedContentScope = LocalNavAnimatedContentScope.current,
+                    )
+                }
+
+                entry<QuranSearch> {
+                    QuranSearchScreen(
+                        onSurahSelected = { surahIndex ->
+                            backStack.add(QuranReader(surahIndex))
+                        },
+                        onAyahSelected = { surahIndex, ayahNumber ->
+                            backStack.add(QuranReader(surahIndex, ayahNumber))
+                        },
+                        onBack = { backStack.removeLastOrNull() },
+
+                        )
+                }
+
+                entry<Settings> {
+                    SettingsScreen(
+                        onBack = { backStack.removeLastOrNull() },
+                        sharedTransitionScope = this@SharedTransitionLayout,
+                        animatedContentScope = LocalNavAnimatedContentScope.current,
+                    )
+                }
             }
-        }
-    )
+        )
+    }
 }

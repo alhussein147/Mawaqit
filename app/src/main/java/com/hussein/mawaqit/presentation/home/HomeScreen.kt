@@ -1,5 +1,7 @@
 package com.hussein.mawaqit.presentation.home
 
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -24,8 +26,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -44,12 +46,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.hussein.core.utils.HijriDateCalculator.toArabicDigits
 import com.hussein.mawaqit.R
-import com.hussein.mawaqit.data.db.models.Ayah
 import com.hussein.mawaqit.data.db.models.AyahOfTheDay
-import com.hussein.mawaqit.presentation.home.components.PrayerArchStepper
 import com.hussein.mawaqit.presentation.shared.ErrorContent
 import com.hussein.mawaqit.presentation.shared.LoadingContent
 import com.hussein.mawaqit.presentation.util.formatTime
@@ -64,9 +64,13 @@ fun HomeScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToAzkar: () -> Unit = {},
     onNavigateToQuran: () -> Unit = {},
-    viewModel: HomeViewModel = koinViewModel()
+    viewModel: HomeViewModel = koinViewModel(),
+    animatedContentScope: AnimatedContentScope,
+    sharedElementTransitionScope: SharedTransitionScope
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -77,18 +81,28 @@ fun HomeScreen(
 
     Scaffold(topBar = {
         HomeTopAppBar(
-            cityName = state.cityName, onNavigateToSettings = onNavigateToSettings
+            cityName = state.cityName,
+            onNavigateToSettings = onNavigateToSettings,
+            sharedTransitionScope = sharedElementTransitionScope,
+            animatedContentScope = animatedContentScope
         )
     }) { innerPadding ->
         when {
-            state.isLoading -> LoadingContent(Modifier.padding(innerPadding).fillMaxSize())
+            state.isLoading -> LoadingContent(
+                Modifier
+                    .padding(innerPadding)
+                    .fillMaxSize()
+            )
+
             state.error != null -> ErrorContent(state.error!!, Modifier.padding(innerPadding))
             else -> PrayerContent(
                 state = state,
                 countdownFlow = viewModel.countdown,
                 modifier = Modifier.padding(innerPadding),
                 onNavigateToAzkar = onNavigateToAzkar,
-                onNavigateToQuran = onNavigateToQuran
+                onNavigateToQuran = onNavigateToQuran,
+                sharedElementTransitionScope = sharedElementTransitionScope,
+                animatedContentScope = animatedContentScope
             )
         }
     }
@@ -101,7 +115,9 @@ private fun PrayerContent(
     state: HomeUiState,
     countdownFlow: StateFlow<CountdownTime?>,
     onNavigateToAzkar: () -> Unit = {},
-    onNavigateToQuran: () -> Unit = {}
+    onNavigateToQuran: () -> Unit = {},
+    sharedElementTransitionScope: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope
 ) {
 
     Column(
@@ -115,13 +131,13 @@ private fun PrayerContent(
         HeaderSection(state, countdownFlow = countdownFlow)
         QuranAndAzkarSection(
             onNavigateToQuran = onNavigateToQuran,
-            onNavigateToAzkar = onNavigateToAzkar
+            onNavigateToAzkar = onNavigateToAzkar,
+            sharedElementTransitionScope = sharedElementTransitionScope,
+            animatedContentScope = animatedContentScope,
         )
 
-        AyahOfTheDayCard(
-            ayah = state.ayahOfTheDay,
-            surahName = "TODO()",
-        )
+        AyahOfTheDayCard(ayah = state.ayahOfTheDay)
+
         Surface(
             shape = RoundedCornerShape(50.dp),
             color = MaterialTheme.colorScheme.surfaceContainer,
@@ -192,12 +208,6 @@ private fun HeaderSection(state: HomeUiState, countdownFlow: StateFlow<Countdown
                     }
                 }
             }
-
-            PrayerArchStepper(
-                prayers = state.prayers, modifier = Modifier
-                    .fillMaxWidth()
-                    .zIndex(1f)
-            )
         }
     }
 }
@@ -225,37 +235,53 @@ private fun CountdownDisplay(countdownFlow: StateFlow<CountdownTime?>) {
 
 @Composable
 private fun HomeTopAppBar(
-    modifier: Modifier = Modifier, cityName: String, onNavigateToSettings: () -> Unit
+    modifier: Modifier = Modifier,
+    cityName: String,
+    onNavigateToSettings: () -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope
 ) {
-    Row(
-        modifier = Modifier
-            .statusBarsPadding()
-            .fillMaxWidth()
-            .height(64.dp)
-            .padding(horizontal = 16.dp)
-            .then(modifier),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (cityName.isNotBlank()) {
-            Surface(
-                shape = RoundedCornerShape(50),
-                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
-            ) {
+    with(sharedTransitionScope) {
+        Row(
+            modifier = Modifier
+                .statusBarsPadding()
+                .fillMaxWidth()
+                .height(64.dp)
+                .padding(horizontal = 16.dp)
+                .then(modifier),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (cityName.isNotBlank()) {
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
+                ) {
 
-                Text(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                    text = "📍 $cityName",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                    Text(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                        text = "📍 $cityName",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                    )
+                }
+            }
+            Spacer(Modifier.weight(1f))
+            FilledTonalButton(
+                modifier = Modifier.sharedBounds(
+                    sharedContentState = rememberSharedContentState("settings"),
+                    animatedVisibilityScope = animatedContentScope,
+                    clipInOverlayDuringTransition = OverlayClip(
+                        RoundedCornerShape(10)
+                    )
+
+                ),
+                onClick = onNavigateToSettings
+            ) {
+                Icon(
+                    imageVector = ImageVector.vectorResource(R.drawable.ic_settings),
+                    contentDescription = "com.hussein.islamic.presentation.Settings"
                 )
             }
-        }
-        Spacer(Modifier.weight(1f))
-        IconButton(onClick = onNavigateToSettings) {
-            Icon(
-                imageVector = ImageVector.vectorResource(R.drawable.ic_settings),
-                contentDescription = "com.hussein.islamic.presentation.Settings"
-            )
         }
     }
 }
@@ -308,7 +334,12 @@ private fun HomePrayerListItem(prayer: PrayerUiModel) {
 
 
 @Composable
-fun QuranAndAzkarSection(onNavigateToQuran: () -> Unit, onNavigateToAzkar: () -> Unit) {
+fun QuranAndAzkarSection(
+    onNavigateToQuran: () -> Unit,
+    onNavigateToAzkar: () -> Unit,
+    sharedElementTransitionScope: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope
+) {
 
     @Composable
     fun Section(modifier: Modifier = Modifier, onClick: () -> Unit, title: String) {
@@ -326,24 +357,42 @@ fun QuranAndAzkarSection(onNavigateToQuran: () -> Unit, onNavigateToAzkar: () ->
         }
     }
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(2.dp)
-    ) {
-        Section(
+    with(sharedElementTransitionScope) {
+
+        Row(
             modifier = Modifier
-                .weight(1f),
-            onClick = onNavigateToQuran,
-            title = stringResource(R.string.quran)
-        )
-        Section(
-            modifier = Modifier
-                .weight(1f),
-            onClick = onNavigateToAzkar,
-            title = stringResource(R.string.azakr)
-        )
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Section(
+                modifier = Modifier
+                    .sharedBounds(
+                        placeholderSize = SharedTransitionScope.PlaceholderSize.AnimatedSize,
+                        sharedContentState = rememberSharedContentState("quran_section"),
+                        animatedVisibilityScope = animatedContentScope,
+                        clipInOverlayDuringTransition = OverlayClip(
+                            RoundedCornerShape(10)
+                        ),
+                    )
+                    .weight(1f),
+                onClick = onNavigateToQuran,
+                title = stringResource(R.string.quran)
+            )
+            Section(
+                modifier = Modifier
+                    .sharedBounds(
+                        placeholderSize = SharedTransitionScope.PlaceholderSize.AnimatedSize,
+                        sharedContentState = rememberSharedContentState("azkar_section"),
+                        animatedVisibilityScope = animatedContentScope,
+                        resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(),
+                    )
+
+                    .weight(1f),
+                onClick = onNavigateToAzkar,
+                title = stringResource(R.string.azakr)
+            )
+        }
     }
 
 }
@@ -351,7 +400,6 @@ fun QuranAndAzkarSection(onNavigateToQuran: () -> Unit, onNavigateToAzkar: () ->
 @Composable
 fun AyahOfTheDayCard(
     ayah: AyahOfTheDay?,
-    surahName: String,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -366,7 +414,7 @@ fun AyahOfTheDayCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
+                .padding(16.dp),
             horizontalAlignment = Alignment.End
         ) {
             // Label
@@ -411,7 +459,7 @@ fun AyahOfTheDayCard(
 
                     // Surah name + ayah number
                     Text(
-                        text = "$surahName • آية ${ayah.numberInSurah}",
+                        text = "${ayah.surahNameArabic} • آية ${ayah.numberInSurah.toArabicDigits()}",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.6f)
                     )
