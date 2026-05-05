@@ -101,6 +101,9 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
                             )
                         },
                         onNavigateToQuran = { backStack.add(QuranSurahList) },
+                        onNavigateToReader = { index, ayahIndex ->
+                            backStack.add(QuranReader(index, ayahIndex))
+                        },
                         sharedElementTransitionScope = this@SharedTransitionLayout,
                         animatedContentScope = LocalNavAnimatedContentScope.current
                     )

@@ -64,13 +64,12 @@ fun HomeScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToAzkar: () -> Unit = {},
     onNavigateToQuran: () -> Unit = {},
+    onNavigateToReader: (surahIndex: Int, ayahIndex: Int) -> Unit,
     viewModel: HomeViewModel = koinViewModel(),
     animatedContentScope: AnimatedContentScope,
     sharedElementTransitionScope: SharedTransitionScope
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-
-
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -102,7 +101,8 @@ fun HomeScreen(
                 onNavigateToAzkar = onNavigateToAzkar,
                 onNavigateToQuran = onNavigateToQuran,
                 sharedElementTransitionScope = sharedElementTransitionScope,
-                animatedContentScope = animatedContentScope
+                animatedContentScope = animatedContentScope,
+                onNavigateToReader = onNavigateToReader
             )
         }
     }
@@ -116,6 +116,7 @@ private fun PrayerContent(
     countdownFlow: StateFlow<CountdownTime?>,
     onNavigateToAzkar: () -> Unit = {},
     onNavigateToQuran: () -> Unit = {},
+    onNavigateToReader: (surahIndex: Int, ayahIndex: Int) -> Unit,
     sharedElementTransitionScope: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope
 ) {
@@ -136,7 +137,12 @@ private fun PrayerContent(
             animatedContentScope = animatedContentScope,
         )
 
-        AyahOfTheDayCard(ayah = state.ayahOfTheDay)
+        AyahOfTheDayCard(
+            ayah = state.ayahOfTheDay,
+            onClick = onNavigateToReader,
+            sharedElementTransitionScope = sharedElementTransitionScope,
+            animatedContentScope = animatedContentScope
+        )
 
         Surface(
             shape = RoundedCornerShape(50.dp),
@@ -400,71 +406,91 @@ fun QuranAndAzkarSection(
 @Composable
 fun AyahOfTheDayCard(
     ayah: AyahOfTheDay?,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: (surahIndex: Int, ayahIndex: Int) -> Unit,
+    sharedElementTransitionScope: SharedTransitionScope,
+    animatedContentScope: AnimatedContentScope
 ) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.End
+    with(sharedElementTransitionScope) {
+        Card(
+            modifier = modifier
+                .sharedBounds(
+                    placeholderSize = SharedTransitionScope.PlaceholderSize.ContentSize,
+                    sharedContentState = rememberSharedContentState("surah_${ayah?.surahIndex}"),
+                    animatedVisibilityScope = animatedContentScope,
+                    resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(),
+                    clipInOverlayDuringTransition = OverlayClip(
+                        RoundedCornerShape(10)
+                    )
+                )
+                .fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            onClick = {
+                ayah?.let {
+                    onClick(it.surahIndex, it.numberInSurah)
+                }
+            }
         ) {
-            // Label
-            Text(
-                text = "آية اليوم",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.End
+            ) {
+                // Label
+                Text(
+                    text = "آية اليوم",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+                )
 
-            Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(12.dp))
 
-            when {
-                ayah == null -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(60.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                when {
+                    ayah == null -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(60.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                    }
+
+                    else -> {
+                        // Ayah text
+                        Text(
+                            text = ayah.text,
+                            style = MaterialTheme.typography.bodyLarge.copy(
+                                textDirection = TextDirection.Rtl,
+                                lineHeight = 32.sp
+                            ),
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(Modifier.height(10.dp))
+
+                        // Surah name + ayah number
+                        Text(
+                            text = "${ayah.surahNameArabic} • آية ${ayah.numberInSurah.toArabicDigits()}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.6f)
                         )
                     }
                 }
-
-                else -> {
-                    // Ayah text
-                    Text(
-                        text = ayah.text,
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            textDirection = TextDirection.Rtl,
-                            lineHeight = 32.sp
-                        ),
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Spacer(Modifier.height(10.dp))
-
-                    // Surah name + ayah number
-                    Text(
-                        text = "${ayah.surahNameArabic} • آية ${ayah.numberInSurah.toArabicDigits()}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.6f)
-                    )
-                }
             }
         }
+
     }
 }

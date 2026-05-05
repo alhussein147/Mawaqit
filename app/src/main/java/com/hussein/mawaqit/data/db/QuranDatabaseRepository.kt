@@ -78,7 +78,8 @@ class QuranDatabaseRepository(
             numberInSurah = this.numberInSurah,
             text = this.text,
             surahNameArabic = this.surahNameArabic,
-            surahTranslit = this.surahTranslit
+            surahTranslit = this.surahTranslit ,
+            surahIndex = this.surahNumber
         )
     }
 
