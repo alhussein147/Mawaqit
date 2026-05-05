@@ -8,10 +8,11 @@ import android.content.Context
 import android.content.Intent
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
-import com.hussein.mawaqit.presentation.azan.AzanActivity
+import com.hussein.mawaqit.MainActivity
 import com.hussein.mawaqit.R
 import com.hussein.mawaqit.data.infrastructure.settings.NotificationSound
 import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
+import com.hussein.mawaqit.presentation.azan.AzanActivity
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 
@@ -52,9 +53,20 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         val notificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
+        val mainIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val contentPendingIntent = PendingIntent.getActivity(
+            context,
+            prayerName.hashCode(),
+            mainIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
         val notification = NotificationCompat.Builder(context, PRAYER_NOTIFICATION_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_placeholder)
             .setContentTitle("🕌 $prayerName")
+            .setContentIntent(contentPendingIntent)
             .setContentText("It's time for $prayerName prayer")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
@@ -67,9 +79,9 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
     }
 
     private fun showFullScreenNotification(
-        context    : Context,
-        prayerName : String,
-        isFajr     : Boolean
+        context: Context,
+        prayerName: String,
+        isFajr: Boolean
     ) {
         val manager = context.getSystemService(NotificationManager::class.java)
         ensureChannelExists(manager)
