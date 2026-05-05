@@ -9,23 +9,6 @@ import com.hussein.mawaqit.data.infrastructure.services.AzanPlayerService
 object NotificationUtils {
 
 
-    private fun ensureChannelExists(
-        manager: NotificationManager,
-        channelId: String,
-        channelName: String,
-        channelDescription: String
-    ) {
-        val channel = NotificationChannel(
-            channelId,
-            channelName,
-            NotificationManager.IMPORTANCE_HIGH
-        ).apply {
-            description = channelDescription
-            setSound(null, null) // sound is handled by AzanPlayerService, not the channel
-            enableVibration(true)
-        }
-        manager.createNotificationChannel(channel)
-    }
 
 
     /**

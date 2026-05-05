@@ -66,9 +66,6 @@ class PrayerAlarmManager(private val context: Context) {
         }
     }
 
-    fun canScheduleExactAlarms(): Boolean =
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) alarmManager.canScheduleExactAlarms()
-        else true
 
     private fun buildPendingIntent(prayerName: String, requestCode: Int): PendingIntent {
         val intent = Intent(context, PrayerAlarmReceiver::class.java).apply {
