@@ -6,6 +6,7 @@ import com.hussein.mawaqit.data.db.models.AyahWithSurah
 import com.hussein.mawaqit.data.db.models.SurahDetail
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
 import kotlinx.datetime.todayIn
 import kotlin.time.ExperimentalTime
 
@@ -40,7 +41,7 @@ class QuranDatabaseRepository(
     @OptIn(ExperimentalTime::class)
     suspend fun getAyahOfTheDay(): AyahOfTheDay? {
         val today = kotlin.time.Clock.System.todayIn(TimeZone.currentSystemDefault())
-        val seed = (today.year * 10000L + today.monthNumber * 100 + today.dayOfMonth)
+        val seed = (today.year * 10000L + today.month.number * 100 + today.day)
         return ayahDao.getAyahOfTheDay(seed)?.toAyahOfTheDay()
     }
 

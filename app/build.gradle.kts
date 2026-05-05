@@ -22,13 +22,28 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled   = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
         }
     }
+
+//    signingConfigs {
+//        create("release") {
+//            storeFile     = file("mawaqit.keystore")
+//            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
+//            keyAlias      = "mawaqit"
+//            keyPassword   = System.getenv("KEY_PASSWORD") ?: ""
+//        }
+//    }
+//    buildTypes {
+//        release {
+//            signingConfig = signingConfigs.getByName("release")
+//        }
+//    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
