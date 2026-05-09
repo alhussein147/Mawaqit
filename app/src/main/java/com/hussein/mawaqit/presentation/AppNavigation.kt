@@ -20,6 +20,7 @@ import com.hussein.mawaqit.presentation.onboarding.OnboardingScreen
 import com.hussein.mawaqit.presentation.quran.list_screen.SurahListScreen
 import com.hussein.mawaqit.presentation.quran.reader.QuranReaderScreen
 import com.hussein.mawaqit.presentation.quran.search.QuranSearchScreen
+import com.hussein.mawaqit.presentation.radio.RadioChannelListScreen
 import com.hussein.mawaqit.presentation.settings.SettingsScreen
 import com.hussein.mawaqit.presentation.shared.LoadingContent
 import kotlinx.serialization.Serializable
@@ -53,6 +54,9 @@ data object QuranSearch : Screen
 
 @Serializable
 data class QuranReader(val surahIndex: Int, val scrollToAyah: Int? = null) : Screen
+
+@Serializable
+data object RadioChannels : Screen
 
 
 @OptIn(KoinExperimentalAPI::class)
@@ -101,6 +105,7 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
                             )
                         },
                         onNavigateToQuran = { backStack.add(QuranSurahList) },
+                        onNavigateToRadio = { backStack.add(RadioChannels) },
                         onNavigateToReader = { index, ayahIndex ->
                             backStack.add(QuranReader(index, ayahIndex))
                         },
@@ -160,6 +165,12 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
                         onBack = { backStack.removeLastOrNull() },
 
                         )
+                }
+
+                entry<RadioChannels> {
+                    RadioChannelListScreen(
+                        onBack = { backStack.removeLastOrNull() }
+                    )
                 }
 
                 entry<Settings> {

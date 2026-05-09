@@ -54,6 +54,7 @@ import com.hussein.mawaqit.presentation.quran.components.SurahReciterPickerSheet
 import com.hussein.mawaqit.presentation.util.GlobalPlayerViewModel
 import com.hussein.mawaqit.presentation.util.SurahItemState
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -65,7 +66,7 @@ fun SurahListScreen(
     sharedTransitionScope: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope,
     surahListViewModel: SurahListViewModel = koinViewModel(),
-    globalPlayerViewModel: GlobalPlayerViewModel = koinViewModel()
+    globalPlayerViewModel: GlobalPlayerViewModel = koinInject()
 
 ) {
 

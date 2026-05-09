@@ -72,6 +72,12 @@ class GlobalPlayerViewModel(
     private var mediaController: MediaController? = null
     private var pendingMediaItem: Pair<PlaybackSource, MediaItem>? = null
 
+    private val controllerListener = object : MediaController.Listener {
+        override fun onDisconnected(controller: MediaController) {
+            releaseMediaController(resetPlayback = true)
+        }
+    }
+
     private val playerListener = object : Player.Listener {
         override fun onIsPlayingChanged(isPlaying: Boolean) {
             _isPlaying.value = isPlaying
@@ -111,7 +117,9 @@ class GlobalPlayerViewModel(
 
     private fun initMediaController(context: Context) {
         val token = SessionToken(context, ComponentName(context, GlobalPlayerService::class.java))
-        val future = MediaController.Builder(context, token).buildAsync()
+        val future = MediaController.Builder(context, token)
+            .setListener(controllerListener)
+            .buildAsync()
         future.addListener(
             {
                 runCatching { future.get() }
@@ -318,10 +326,25 @@ class GlobalPlayerViewModel(
         }
     }
 
-    override fun onCleared() {
-        mediaController?.removeListener(playerListener)
-        mediaController?.release()
+    private fun releaseMediaController(resetPlayback: Boolean) {
+        val controller = mediaController ?: return
+        val previousSource = _source.value
+
         mediaController = null
+        pendingMediaItem = null
+        controller.removeListener(playerListener)
+        controller.release()
+
+        if (resetPlayback) {
+            _source.value = PlaybackSource.None
+            _isPlaying.value = false
+            _playbackState.value = GlobalPlaybackUiState(isControllerReady = false)
+            clearSourceState(previousSource)
+        }
+    }
+
+    override fun onCleared() {
+        releaseMediaController(resetPlayback = false)
         super.onCleared()
     }
 }

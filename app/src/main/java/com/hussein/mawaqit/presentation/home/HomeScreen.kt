@@ -64,6 +64,7 @@ fun HomeScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToAzkar: () -> Unit = {},
     onNavigateToQuran: () -> Unit = {},
+    onNavigateToRadio: () -> Unit = {},
     onNavigateToReader: (surahIndex: Int, ayahIndex: Int) -> Unit,
     viewModel: HomeViewModel = koinViewModel(),
     animatedContentScope: AnimatedContentScope,
@@ -100,6 +101,7 @@ fun HomeScreen(
                 modifier = Modifier.padding(innerPadding),
                 onNavigateToAzkar = onNavigateToAzkar,
                 onNavigateToQuran = onNavigateToQuran,
+                onNavigateToRadio = onNavigateToRadio,
                 sharedElementTransitionScope = sharedElementTransitionScope,
                 animatedContentScope = animatedContentScope,
                 onNavigateToReader = onNavigateToReader
@@ -116,6 +118,7 @@ private fun PrayerContent(
     countdownFlow: StateFlow<CountdownTime?>,
     onNavigateToAzkar: () -> Unit = {},
     onNavigateToQuran: () -> Unit = {},
+    onNavigateToRadio: () -> Unit = {},
     onNavigateToReader: (surahIndex: Int, ayahIndex: Int) -> Unit,
     sharedElementTransitionScope: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope
@@ -130,9 +133,10 @@ private fun PrayerContent(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         HeaderSection(state, countdownFlow = countdownFlow)
-        QuranAndAzkarSection(
+        HomeQuickActionsSection(
             onNavigateToQuran = onNavigateToQuran,
             onNavigateToAzkar = onNavigateToAzkar,
+            onNavigateToRadio = onNavigateToRadio,
             sharedElementTransitionScope = sharedElementTransitionScope,
             animatedContentScope = animatedContentScope,
         )
@@ -340,9 +344,10 @@ private fun HomePrayerListItem(prayer: PrayerUiModel) {
 
 
 @Composable
-fun QuranAndAzkarSection(
+fun HomeQuickActionsSection(
     onNavigateToQuran: () -> Unit,
     onNavigateToAzkar: () -> Unit,
+    onNavigateToRadio: () -> Unit,
     sharedElementTransitionScope: SharedTransitionScope,
     animatedContentScope: AnimatedContentScope
 ) {
@@ -365,38 +370,50 @@ fun QuranAndAzkarSection(
 
     with(sharedElementTransitionScope) {
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Section(
+                    modifier = Modifier
+                        .sharedBounds(
+                            placeholderSize = SharedTransitionScope.PlaceholderSize.AnimatedSize,
+                            sharedContentState = rememberSharedContentState("quran_section"),
+                            animatedVisibilityScope = animatedContentScope,
+                            clipInOverlayDuringTransition = OverlayClip(
+                                RoundedCornerShape(10)
+                            ),
+                        )
+                        .weight(1f),
+                    onClick = onNavigateToQuran,
+                    title = stringResource(R.string.quran)
+                )
+                Section(
+                    modifier = Modifier
+                        .sharedBounds(
+                            placeholderSize = SharedTransitionScope.PlaceholderSize.AnimatedSize,
+                            sharedContentState = rememberSharedContentState("azkar_section"),
+                            animatedVisibilityScope = animatedContentScope,
+                            resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(),
+                        )
+                        .weight(1f),
+                    onClick = onNavigateToAzkar,
+                    title = stringResource(R.string.azakr)
+                )
+            }
             Section(
                 modifier = Modifier
                     .sharedBounds(
                         placeholderSize = SharedTransitionScope.PlaceholderSize.AnimatedSize,
-                        sharedContentState = rememberSharedContentState("quran_section"),
-                        animatedVisibilityScope = animatedContentScope,
-                        clipInOverlayDuringTransition = OverlayClip(
-                            RoundedCornerShape(10)
-                        ),
-                    )
-                    .weight(1f),
-                onClick = onNavigateToQuran,
-                title = stringResource(R.string.quran)
-            )
-            Section(
-                modifier = Modifier
-                    .sharedBounds(
-                        placeholderSize = SharedTransitionScope.PlaceholderSize.AnimatedSize,
-                        sharedContentState = rememberSharedContentState("azkar_section"),
+                        sharedContentState = rememberSharedContentState("radio_section"),
                         animatedVisibilityScope = animatedContentScope,
                         resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(),
                     )
-
-                    .weight(1f),
-                onClick = onNavigateToAzkar,
-                title = stringResource(R.string.azakr)
+                    .fillMaxWidth(),
+                onClick = onNavigateToRadio,
+                title = "Radio"
             )
         }
     }
