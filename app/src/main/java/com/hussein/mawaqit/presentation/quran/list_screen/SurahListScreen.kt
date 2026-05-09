@@ -175,10 +175,12 @@ fun SurahListScreen(
                         surah = surah,
                         itemState = itemState,
                         onPlayPause = {
-                            if (globalPlayerViewModel.isPlaying.value) {
-                                globalPlayerViewModel.togglePlayPause()
-                            } else {
-                                globalPlayerViewModel.playSurah(surah.number)
+                            when (itemState) {
+                                SurahItemState.Playing,
+                                SurahItemState.Paused -> globalPlayerViewModel.togglePlayPause()
+
+                                SurahItemState.Downloaded -> globalPlayerViewModel.playSurah(surah.number)
+                                else -> Unit
                             }
                         },
                         onDownload = {

@@ -1,5 +1,7 @@
 package com.hussein.mawaqit.presentation.quran.reader
 
+import android.R.attr.text
+import android.content.ClipData
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentScope
@@ -45,8 +47,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.semantics.setText
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
@@ -107,6 +114,8 @@ fun QuranReaderScreen(
     val listState = rememberLazyListState()
     var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
     var lastScrolledAyah by remember(surahIndex) { mutableStateOf<Int?>(null) }
+
+    val clipboardManager = LocalClipboardManager.current
 
     LaunchedEffect(readerState, scrollToAyah, textLayoutResult) {
         if (scrollToAyah != null &&
@@ -171,7 +180,9 @@ fun QuranReaderScreen(
             },
             onReciterSelect = { viewModel.selectReciter(it) },
             onDismiss = { viewModel.dismissTafsir() },
-            playEnabled = hasNetwork
+            playEnabled = hasNetwork, onAyahCopy = {
+                clipboardManager.setText(AnnotatedString(it))
+            }
         )
     }
 
@@ -406,8 +417,9 @@ private fun AyahBottomSheet(
     playEnabled: Boolean,
     currentReciter: Reciter,
     onReciterSelect: (Reciter) -> Unit,
+    onAyahCopy: (String) -> Unit
 
-    ) {
+) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         dragHandle = { BottomSheetDefaults.DragHandle() }
@@ -446,15 +458,24 @@ private fun AyahBottomSheet(
                                 // bookmark button
                                 OutlinedButton(
                                     onClick = onBookmark,
-                                    modifier = Modifier.weight(0.6f)
+                                    modifier = Modifier.weight(0.4f)
                                 ) {
                                     Icon(
                                         ImageVector.vectorResource(if (isBookmarked) R.drawable.ic_bookmark_filled else R.drawable.ic_bookmark),
                                         contentDescription = stringResource(if (isBookmarked) R.string.remove_bookmark else R.string.bookmark)
                                     )
                                 }
+                                OutlinedButton(
+                                    onClick = { onAyahCopy(ayah.text) },
+                                    modifier = Modifier.weight(0.3f)
+                                ) {
+                                    Icon(
+                                        ImageVector.vectorResource(R.drawable.ic_copy),
+                                        contentDescription = "Copy ayah to clipboard"
+                                    )
+                                }
                                 // tafsir button
-                                Button(onClick = onTafsir, modifier = Modifier.weight(0.4f)) {
+                                Button(onClick = onTafsir, modifier = Modifier.weight(0.3f)) {
                                     Text(stringResource(R.string.tafsir))
                                 }
                             }
