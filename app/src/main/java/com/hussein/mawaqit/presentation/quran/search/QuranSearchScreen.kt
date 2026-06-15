@@ -32,8 +32,8 @@ import kotlin.collections.isNotEmpty
 fun QuranSearchScreen(
     onSurahSelected: (surahNumber: Int) -> Unit,
     onAyahSelected: (surahNumber: Int, ayahNumber: Int) -> Unit,
-    onBack: () -> Unit,
-    viewModel: QuranSearchViewModel = koinViewModel()
+    viewModel: QuranSearchViewModel = koinViewModel(),
+    onBack: () -> Unit
 ) {
     val query by viewModel.query.collectAsStateWithLifecycle()
     val state by viewModel.state.collectAsStateWithLifecycle()

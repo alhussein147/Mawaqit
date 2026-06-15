@@ -1,6 +1,6 @@
-package com.hussein.mawaqit.presentation
+package com.hussein.mawaqit.presentation.navigation
 
-import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -10,7 +10,6 @@ import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
-import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import androidx.navigation3.ui.NavDisplay
 import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
 import com.hussein.mawaqit.presentation.azkar.AzkarScreen
@@ -63,7 +62,6 @@ data object RadioChannels : Screen
 @Composable
 fun AppNavigation(settingsRepository: SettingsRepository) {
 
-
     val backStack = rememberNavBackStack(Initializing)
 
     LaunchedEffect(Unit) {
@@ -76,8 +74,17 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
         }
     }
 
-    SharedTransitionLayout {
         NavDisplay(
+            transitionSpec = {
+                enterTransition() togetherWith exitTransition()
+            },
+            popTransitionSpec = {
+                popEnterTransition() togetherWith popExitTransition()
+            },
+            predictivePopTransitionSpec = {
+                popEnterTransition() togetherWith popExitTransition()
+            },
+
             modifier = Modifier.background(MaterialTheme.colorScheme.background) ,
             backStack = backStack,
             onBack = { backStack.removeLastOrNull() },
@@ -109,8 +116,6 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
                         onNavigateToReader = { index, ayahIndex ->
                             backStack.add(QuranReader(index, ayahIndex))
                         },
-                        sharedElementTransitionScope = this@SharedTransitionLayout,
-                        animatedContentScope = LocalNavAnimatedContentScope.current
                     )
                 }
 
@@ -118,8 +123,6 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
                     AzkarCategoryScreen(
                         onCategorySelected = { index -> backStack.add(AzkarList(index)) },
                         onBack = { backStack.removeLastOrNull() },
-                        sharedTransitionScope = this@SharedTransitionLayout,
-                        animatedContentScope = LocalNavAnimatedContentScope.current,
                     )
                 }
 
@@ -138,9 +141,7 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
                         onBack = { backStack.removeLastOrNull() },
                         onNavigateToSearch = {
                             backStack.add(QuranSearch)
-                        },
-                        sharedTransitionScope = this@SharedTransitionLayout,
-                        animatedContentScope = LocalNavAnimatedContentScope.current,
+                        }
                     )
                 }
 
@@ -149,8 +150,6 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
                         scrollToAyah = key.scrollToAyah,
                         surahIndex = key.surahIndex,
                         onBack = { backStack.removeLastOrNull() },
-                        sharedTransitionScope = this@SharedTransitionLayout,
-                        animatedContentScope = LocalNavAnimatedContentScope.current,
                     )
                 }
 
@@ -176,11 +175,9 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
                 entry<Settings> {
                     SettingsScreen(
                         onBack = { backStack.removeLastOrNull() },
-                        sharedTransitionScope = this@SharedTransitionLayout,
-                        animatedContentScope = LocalNavAnimatedContentScope.current,
                     )
                 }
             }
         )
     }
-}
+

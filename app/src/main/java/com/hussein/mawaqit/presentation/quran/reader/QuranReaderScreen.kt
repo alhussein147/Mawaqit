@@ -1,11 +1,8 @@
 package com.hussein.mawaqit.presentation.quran.reader
 
-import android.R.attr.text
-import android.content.ClipData
 import androidx.activity.compose.BackHandler
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedContentScope
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
@@ -33,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -47,12 +46,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.ClipEntry
-import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.semantics.setText
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
@@ -61,6 +57,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -88,8 +85,6 @@ fun QuranReaderScreen(
     surahIndex: Int,
     onBack: () -> Unit,
     scrollToAyah: Int? = null,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedContentScope: AnimatedContentScope,
     viewModel: QuranViewModel = koinViewModel(),
 ) {
     val readerState by viewModel.readerState.collectAsStateWithLifecycle()
@@ -190,110 +185,102 @@ fun QuranReaderScreen(
         viewModel.stopAyah()
         onBack.invoke()
     }
-    with(sharedTransitionScope) {
-        Scaffold(
-            modifier = Modifier
-                .sharedBounds(
-                    placeholderSize = SharedTransitionScope.PlaceholderSize.ContentSize,
-                    sharedContentState = rememberSharedContentState("surah_${surahIndex}"),
-                    animatedVisibilityScope = animatedContentScope,
-                    resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()
+    Scaffold(
+        modifier = Modifier,
+        topBar = {
+            if (readerState is QuranReaderUiState.Success) {
+                TopAppBar(
+                    scrollBehavior = topAppBarScrollBehavior,
+                    title = {
+                        val surah = QuranData.surahs.getOrNull(surahIndex - 1)
+                        Text(surah?.nameArabic ?: "")
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = {
+                            if (recitationState is AyahRecitationState.Playing) {
+                                viewModel.stopAyah()
+                            }
+                            onBack.invoke()
+                        }) {
+                            Icon(
+                                ImageVector.vectorResource(R.drawable.ic_arrow_back),
+                                contentDescription = "Back"
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = {
+                            showReadingOptionsDialog = true
+                        }) {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(R.drawable.ic_settings),
+                                contentDescription = null
+                            )
+                        }
+                    }
                 )
-                .skipToLookaheadSize(),
-            topBar = {
-                if (readerState is QuranReaderUiState.Success) {
-                    TopAppBar(
-                        scrollBehavior = topAppBarScrollBehavior,
-                        title = {
-                            val surah = QuranData.surahs.getOrNull(surahIndex - 1)
-                            Text(surah?.nameArabic ?: "")
+            }
+        }
+    ) { padding ->
+        when (val state = readerState) {
+            QuranReaderUiState.Idle,
+            QuranReaderUiState.Loading -> {
+                LoadingContent(modifier = Modifier.fillMaxSize())
+            }
+
+            is QuranReaderUiState.Error -> {
+                ErrorContent(state.message, modifier = Modifier.fillMaxSize())
+            }
+
+            is QuranReaderUiState.Success -> {
+                if (showReadingOptionsDialog) {
+                    QuranReaderOptionsDialog(
+                        selectedFontSize = fontSize,
+                        selectedTextAlignment = quranTextAlignment,
+                        onSelectedFontSize = {
+                            viewModel.setFontSize(it)
                         },
-                        navigationIcon = {
-                            IconButton(onClick = {
-                                if (recitationState is AyahRecitationState.Playing) {
-                                    viewModel.stopAyah()
-                                }
-                                onBack.invoke()
-                            }) {
-                                Icon(
-                                    ImageVector.vectorResource(R.drawable.ic_arrow_back),
-                                    contentDescription = "Back"
-                                )
-                            }
+                        onSelectedTextAlignment = {
+                            viewModel.setTextAlignment(it)
                         },
-                        actions = {
-                            IconButton(onClick = {
-                                showReadingOptionsDialog = true
-                            }) {
-                                Icon(
-                                    imageVector = ImageVector.vectorResource(R.drawable.ic_settings),
-                                    contentDescription = null
-                                )
-                            }
+                        onDismiss = {
+                            showReadingOptionsDialog = false
                         }
                     )
                 }
-            }
-        ) { padding ->
-            when (val state = readerState) {
-                QuranReaderUiState.Idle,
-                QuranReaderUiState.Loading -> {
-                    LoadingContent(modifier = Modifier.fillMaxSize())
-                }
+                val surah = state.surah
 
-                is QuranReaderUiState.Error -> {
-                    ErrorContent(state.message, modifier = Modifier.fillMaxSize())
-                }
-
-                is QuranReaderUiState.Success -> {
-                    if (showReadingOptionsDialog) {
-                        QuranReaderOptionsDialog(
-                            selectedFontSize = fontSize,
-                            selectedTextAlignment = quranTextAlignment,
-                            onSelectedFontSize = {
-                                viewModel.setFontSize(it)
-                            },
-                            onSelectedTextAlignment = {
-                                viewModel.setTextAlignment(it)
-                            },
-                            onDismiss = {
-                                showReadingOptionsDialog = false
-                            }
+                LazyColumn(
+                    modifier = Modifier
+                        .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentPadding = PaddingValues(bottom = 32.dp, start = 4.dp, end = 4.dp),
+                    state = listState
+                ) {
+                    item {
+                        SurahHeader(
+                            surah = QuranData.surahs[surahIndex - 1],
                         )
                     }
-                    val surah = state.surah
-
-                    LazyColumn(
-                        modifier = Modifier
-                            .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
-                            .fillMaxSize()
-                            .padding(padding),
-                        contentPadding = PaddingValues(bottom = 32.dp, start = 4.dp, end = 4.dp),
-                        state = listState
-                    ) {
-                        item {
-                            SurahHeader(
-                                surah = QuranData.surahs[surahIndex - 1],
-                            )
-                        }
-                        item {
-                            FlowingAyahBlock(
-                                ayahs = surah.ayahs,
-                                fontSize = fontSize,
-                                quranTextAlignment = quranTextAlignment,
-                                bookmarks = bookmarks,
-                                surahIndex = surahIndex,
-                                onTap = { ayah ->
-                                    viewModel.selectAyah(ayah)
-                                }, onTextLayout = { layout -> textLayoutResult = layout },
-                                highlightedAyah = highlightedAyah
-                            )
-                        }
+                    item {
+                        FlowingAyahBlock(
+                            ayahs = surah.ayahs,
+                            fontSize = fontSize,
+                            quranTextAlignment = quranTextAlignment,
+                            bookmarks = bookmarks,
+                            surahIndex = surahIndex,
+                            onTap = { ayah ->
+                                viewModel.selectAyah(ayah)
+                            }, onTextLayout = { layout -> textLayoutResult = layout },
+                            highlightedAyah = highlightedAyah
+                        )
                     }
                 }
             }
         }
     }
+
 }
 
 @Composable
@@ -424,6 +411,36 @@ private fun AyahBottomSheet(
         onDismissRequest = onDismiss,
         dragHandle = { BottomSheetDefaults.DragHandle() }
     ) {
+
+        @Composable
+        fun BottomSheetButton(
+            modifier: Modifier,
+            onClick: () -> Unit,
+            @DrawableRes icon: Int,
+            title: String
+        ) {
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                modifier = Modifier
+                    .then(modifier)
+                    .height(96.dp), shape = RoundedCornerShape(24.dp),
+                onClick = onClick
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.SpaceAround,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(imageVector = ImageVector.vectorResource(icon), contentDescription = null)
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.titleSmall,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+
         var showReciterOptions by remember { mutableStateOf(false) }
 
         AnimatedContent(showReciterOptions) { showReciterPicker ->
@@ -452,32 +469,32 @@ private fun AyahBottomSheet(
                         TafsirState.Idle -> {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.End,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                // copy button
+                                BottomSheetButton(
+                                    modifier = Modifier.weight(1f),
+                                    icon = R.drawable.ic_copy,
+                                    title = "Copy Ayah",
+                                    onClick = {
+                                        onAyahCopy(ayah.text)
+                                        onDismiss()
+                                    }
+                                )
                                 // bookmark button
-                                OutlinedButton(
-                                    onClick = onBookmark,
-                                    modifier = Modifier.weight(0.4f)
-                                ) {
-                                    Icon(
-                                        ImageVector.vectorResource(if (isBookmarked) R.drawable.ic_bookmark_filled else R.drawable.ic_bookmark),
-                                        contentDescription = stringResource(if (isBookmarked) R.string.remove_bookmark else R.string.bookmark)
-                                    )
-                                }
-                                OutlinedButton(
-                                    onClick = { onAyahCopy(ayah.text) },
-                                    modifier = Modifier.weight(0.3f)
-                                ) {
-                                    Icon(
-                                        ImageVector.vectorResource(R.drawable.ic_copy),
-                                        contentDescription = "Copy ayah to clipboard"
-                                    )
-                                }
+                                BottomSheetButton(
+                                    modifier = Modifier.weight(1f),
+                                    icon = if (isBookmarked) R.drawable.ic_bookmark_filled else R.drawable.ic_bookmark,
+                                    title = if (isBookmarked) "Remove bookmark" else "Bookmark",
+                                    onClick = onBookmark
+                                )
                                 // tafsir button
-                                Button(onClick = onTafsir, modifier = Modifier.weight(0.3f)) {
-                                    Text(stringResource(R.string.tafsir))
-                                }
+                                BottomSheetButton(
+                                    modifier = Modifier.weight(1f),
+                                    icon = R.drawable.ic_placeholder,
+                                    title = "Tafsir", onClick = onTafsir
+                                )
                             }
                             Spacer(Modifier.height(8.dp))
                             Row(modifier = Modifier.fillMaxWidth()) {

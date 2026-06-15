@@ -28,7 +28,6 @@ fun QuranReaderOptionsDialog(
     onSelectedFontSize: (QuranFontSize) -> Unit,
     onSelectedTextAlignment: (QuranTextAlignment) -> Unit,
     onDismiss: () -> Unit
-
 ) {
 
     AlertDialog(

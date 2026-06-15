@@ -67,8 +67,6 @@ fun HomeScreen(
     onNavigateToRadio: () -> Unit = {},
     onNavigateToReader: (surahIndex: Int, ayahIndex: Int) -> Unit,
     viewModel: HomeViewModel = koinViewModel(),
-    animatedContentScope: AnimatedContentScope,
-    sharedElementTransitionScope: SharedTransitionScope
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -83,8 +81,6 @@ fun HomeScreen(
         HomeTopAppBar(
             cityName = state.cityName,
             onNavigateToSettings = onNavigateToSettings,
-            sharedTransitionScope = sharedElementTransitionScope,
-            animatedContentScope = animatedContentScope
         )
     }) { innerPadding ->
         when {
@@ -102,8 +98,6 @@ fun HomeScreen(
                 onNavigateToAzkar = onNavigateToAzkar,
                 onNavigateToQuran = onNavigateToQuran,
                 onNavigateToRadio = onNavigateToRadio,
-                sharedElementTransitionScope = sharedElementTransitionScope,
-                animatedContentScope = animatedContentScope,
                 onNavigateToReader = onNavigateToReader
             )
         }
@@ -120,8 +114,6 @@ private fun PrayerContent(
     onNavigateToQuran: () -> Unit = {},
     onNavigateToRadio: () -> Unit = {},
     onNavigateToReader: (surahIndex: Int, ayahIndex: Int) -> Unit,
-    sharedElementTransitionScope: SharedTransitionScope,
-    animatedContentScope: AnimatedContentScope
 ) {
 
     Column(
@@ -137,15 +129,11 @@ private fun PrayerContent(
             onNavigateToQuran = onNavigateToQuran,
             onNavigateToAzkar = onNavigateToAzkar,
             onNavigateToRadio = onNavigateToRadio,
-            sharedElementTransitionScope = sharedElementTransitionScope,
-            animatedContentScope = animatedContentScope,
         )
 
         AyahOfTheDayCard(
             ayah = state.ayahOfTheDay,
             onClick = onNavigateToReader,
-            sharedElementTransitionScope = sharedElementTransitionScope,
-            animatedContentScope = animatedContentScope
         )
 
         Surface(
@@ -247,51 +235,37 @@ private fun CountdownDisplay(countdownFlow: StateFlow<CountdownTime?>) {
 private fun HomeTopAppBar(
     modifier: Modifier = Modifier,
     cityName: String,
-    onNavigateToSettings: () -> Unit,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedContentScope: AnimatedContentScope
+    onNavigateToSettings: () -> Unit
 ) {
-    with(sharedTransitionScope) {
-        Row(
-            modifier = Modifier
-                .statusBarsPadding()
-                .fillMaxWidth()
-                .height(64.dp)
-                .padding(horizontal = 16.dp)
-                .then(modifier),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (cityName.isNotBlank()) {
-                Surface(
-                    shape = RoundedCornerShape(50),
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
-                ) {
-
-                    Text(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        text = "📍 $cityName",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                    )
-                }
-            }
-            Spacer(Modifier.weight(1f))
-            FilledTonalButton(
-                modifier = Modifier.sharedBounds(
-                    sharedContentState = rememberSharedContentState("settings"),
-                    animatedVisibilityScope = animatedContentScope,
-                    clipInOverlayDuringTransition = OverlayClip(
-                        RoundedCornerShape(10)
-                    )
-
-                ),
-                onClick = onNavigateToSettings
+    Row(
+        modifier = Modifier
+            .statusBarsPadding()
+            .fillMaxWidth()
+            .height(64.dp)
+            .padding(horizontal = 16.dp)
+            .then(modifier),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (cityName.isNotBlank()) {
+            Surface(
+                shape = RoundedCornerShape(50),
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
             ) {
-                Icon(
-                    imageVector = ImageVector.vectorResource(R.drawable.ic_settings),
-                    contentDescription = "com.hussein.islamic.presentation.Settings"
+
+                Text(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    text = "📍 $cityName",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                 )
             }
+        }
+        Spacer(Modifier.weight(1f))
+        FilledTonalButton(onClick = onNavigateToSettings) {
+            Icon(
+                imageVector = ImageVector.vectorResource(R.drawable.ic_settings),
+                contentDescription = "com.hussein.islamic.presentation.Settings"
+            )
         }
     }
 }
@@ -348,8 +322,6 @@ fun HomeQuickActionsSection(
     onNavigateToQuran: () -> Unit,
     onNavigateToAzkar: () -> Unit,
     onNavigateToRadio: () -> Unit,
-    sharedElementTransitionScope: SharedTransitionScope,
-    animatedContentScope: AnimatedContentScope
 ) {
 
     @Composable
@@ -359,7 +331,7 @@ fun HomeQuickActionsSection(
             modifier = Modifier
                 .height(65.dp)
                 .then(modifier),
-            shape = RoundedCornerShape(30),
+            shape = RoundedCornerShape(40),
             onClick = onClick
         ) {
             Box(contentAlignment = Alignment.Center) {
@@ -368,54 +340,29 @@ fun HomeQuickActionsSection(
         }
     }
 
-    with(sharedElementTransitionScope) {
-
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Section(
-                    modifier = Modifier
-                        .sharedBounds(
-                            placeholderSize = SharedTransitionScope.PlaceholderSize.AnimatedSize,
-                            sharedContentState = rememberSharedContentState("quran_section"),
-                            animatedVisibilityScope = animatedContentScope,
-                            clipInOverlayDuringTransition = OverlayClip(
-                                RoundedCornerShape(10)
-                            ),
-                        )
-                        .weight(1f),
-                    onClick = onNavigateToQuran,
-                    title = stringResource(R.string.quran)
-                )
-                Section(
-                    modifier = Modifier
-                        .sharedBounds(
-                            placeholderSize = SharedTransitionScope.PlaceholderSize.AnimatedSize,
-                            sharedContentState = rememberSharedContentState("azkar_section"),
-                            animatedVisibilityScope = animatedContentScope,
-                            resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(),
-                        )
-                        .weight(1f),
-                    onClick = onNavigateToAzkar,
-                    title = stringResource(R.string.azakr)
-                )
-            }
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
             Section(
-                modifier = Modifier
-                    .sharedBounds(
-                        placeholderSize = SharedTransitionScope.PlaceholderSize.AnimatedSize,
-                        sharedContentState = rememberSharedContentState("radio_section"),
-                        animatedVisibilityScope = animatedContentScope,
-                        resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(),
-                    )
-                    .fillMaxWidth(),
+                modifier = Modifier.weight(1f),
                 onClick = onNavigateToRadio,
                 title = "Radio"
             )
+            Section(
+                modifier = Modifier.weight(1f),
+                onClick = onNavigateToAzkar,
+                title = stringResource(R.string.azakr)
+            )
         }
+
+        Section(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = onNavigateToQuran,
+            title = stringResource(R.string.quran)
+        )
     }
 
 }
@@ -424,90 +371,77 @@ fun HomeQuickActionsSection(
 fun AyahOfTheDayCard(
     ayah: AyahOfTheDay?,
     modifier: Modifier = Modifier,
-    onClick: (surahIndex: Int, ayahIndex: Int) -> Unit,
-    sharedElementTransitionScope: SharedTransitionScope,
-    animatedContentScope: AnimatedContentScope
-) {
-    with(sharedElementTransitionScope) {
-        Card(
-            modifier = modifier
-                .sharedBounds(
-                    placeholderSize = SharedTransitionScope.PlaceholderSize.ContentSize,
-                    sharedContentState = rememberSharedContentState("surah_${ayah?.surahIndex}"),
-                    animatedVisibilityScope = animatedContentScope,
-                    resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(),
-                    clipInOverlayDuringTransition = OverlayClip(
-                        RoundedCornerShape(10)
-                    )
-                )
-                .fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            onClick = {
-                ayah?.let {
-                    onClick(it.surahIndex, it.numberInSurah)
-                }
+    onClick: (surahIndex: Int, ayahIndex: Int) -> Unit) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        onClick = {
+            ayah?.let {
+                onClick(it.surahIndex, it.numberInSurah)
             }
+        }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.End
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.End
-            ) {
-                // Label
-                Text(
-                    text = "آية اليوم",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
-                )
+            // Label
+            Text(
+                text = "آية اليوم",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+            )
 
-                Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(12.dp))
 
-                when {
-                    ayah == null -> {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(60.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                        }
-                    }
-
-                    else -> {
-                        // Ayah text
-                        Text(
-                            text = ayah.text,
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                textDirection = TextDirection.Rtl,
-                                lineHeight = 32.sp
-                            ),
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        Spacer(Modifier.height(10.dp))
-
-                        // Surah name + ayah number
-                        Text(
-                            text = "${ayah.surahNameArabic} • آية ${ayah.numberInSurah.toArabicDigits()}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.6f)
+            when {
+                ayah == null -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(60.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
                         )
                     }
+                }
+
+                else -> {
+                    // Ayah text
+                    Text(
+                        text = ayah.text,
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            textDirection = TextDirection.Rtl,
+                            lineHeight = 32.sp
+                        ),
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(Modifier.height(10.dp))
+
+                    // Surah name + ayah number
+                    Text(
+                        text = "${ayah.surahNameArabic} • آية ${ayah.numberInSurah.toArabicDigits()}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.6f)
+                    )
                 }
             }
         }
-
     }
+
 }
+

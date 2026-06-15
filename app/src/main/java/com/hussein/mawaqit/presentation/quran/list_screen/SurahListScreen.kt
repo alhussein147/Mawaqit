@@ -62,12 +62,9 @@ import java.util.UUID
 fun SurahListScreen(
     onSurahSelected: (surahIndex: Int, scrollToAyah: Int?) -> Unit,
     onNavigateToSearch: () -> Unit,
-    onBack: () -> Unit,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedContentScope: AnimatedContentScope,
     surahListViewModel: SurahListViewModel = koinViewModel(),
-    globalPlayerViewModel: GlobalPlayerViewModel = koinInject()
-
+    globalPlayerViewModel: GlobalPlayerViewModel = koinInject(),
+    onBack: () -> Unit
 ) {
 
     val surahStates by globalPlayerViewModel.surahStates.collectAsStateWithLifecycle()
@@ -108,94 +105,75 @@ fun SurahListScreen(
         )
     }
 
-    with(sharedTransitionScope) {
-        Scaffold(
-            modifier = Modifier.sharedBounds(
-                placeholderSize = SharedTransitionScope.PlaceholderSize.AnimatedSize,
-                sharedContentState = rememberSharedContentState("quran_section"),
-                animatedVisibilityScope = animatedContentScope, clipInOverlayDuringTransition = OverlayClip(
-                    RoundedCornerShape(20)                )
-            ),
-            topBar = {
-                with(animatedContentScope) {
-                    LargeTopAppBar(
-                        modifier = Modifier.animateEnterExit(
-                            enter = slideInVertically(),
-                            exit = slideOutVertically()
-                        ),
-                        scrollBehavior = scrollBehavior,
-                        title = { Text("Quran") },
-                        navigationIcon = {
-                            FilledTonalButton(
-                                onClick = onBack, shapes = ButtonShapes(
-                                    shape = IconButtonDefaults.shapes().shape,
-                                    pressedShape = IconButtonDefaults.shapes().pressedShape
-                                )
-                            ) {
-                                Icon(
-                                    imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_back),
-                                    contentDescription = null
-                                )
-                            }
-                        },
-                        actions = {
-                            IconButton(onClick = { showBookmarksDialog = true }) {
-                                Icon(
-                                    imageVector = ImageVector.vectorResource(R.drawable.ic_bookmark),
-                                    contentDescription = null
-                                )
-                            }
-                            IconButton(onClick = onNavigateToSearch) {
-                                Icon(
-                                    imageVector = ImageVector.vectorResource(R.drawable.ic_search),
-                                    contentDescription = null
-                                )
-                            }
-                        })
-                }
-            }) { padding ->
-            LazyColumn(
-                modifier = Modifier
+    Scaffold(
+        modifier = Modifier,
+        topBar = {
+            LargeTopAppBar(
+                scrollBehavior = scrollBehavior,
+                title = { Text("Quran") },
+                navigationIcon = {
+                    FilledTonalButton(
+                        onClick = onBack, shapes = ButtonShapes(
+                            shape = IconButtonDefaults.shapes().shape,
+                            pressedShape = IconButtonDefaults.shapes().pressedShape
+                        )
+                    ) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_back),
+                            contentDescription = null
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { showBookmarksDialog = true }) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.ic_bookmark),
+                            contentDescription = null
+                        )
+                    }
+                    IconButton(onClick = onNavigateToSearch) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.ic_search),
+                            contentDescription = null
+                        )
+                    }
+                })
+        }) { padding ->
+        LazyColumn(
+            modifier = Modifier
 
-                    .fillMaxSize()
-                    .padding(padding)
-                    .nestedScroll(scrollBehavior.nestedScrollConnection)
-            ) {
-                itemsIndexed(QuranData.surahs, key = { _, surah -> surah.number }) { _, surah ->
-                    val itemState = surahStates[surah.number] ?: SurahItemState.NotDownloaded
-                    SurahRow(
-                        modifier = Modifier
-                            .sharedBounds(
-                                placeholderSize = SharedTransitionScope.PlaceholderSize.ContentSize,
-                                sharedContentState = rememberSharedContentState("surah_${surah.number}"),
-                                animatedVisibilityScope = animatedContentScope,
-                                resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()
-                            )
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 14.dp),
-                        surah = surah,
-                        itemState = itemState,
-                        onPlayPause = {
-                            when (itemState) {
-                                SurahItemState.Playing,
-                                SurahItemState.Paused -> globalPlayerViewModel.togglePlayPause()
+                .fillMaxSize()
+                .padding(padding)
+                .nestedScroll(scrollBehavior.nestedScrollConnection)
+        ) {
+            itemsIndexed(QuranData.surahs, key = { _, surah -> surah.number }) { _, surah ->
+                val itemState = surahStates[surah.number] ?: SurahItemState.NotDownloaded
+                SurahRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 14.dp),
+                    surah = surah,
+                    itemState = itemState,
+                    onPlayPause = {
+                        when (itemState) {
+                            SurahItemState.Playing,
+                            SurahItemState.Paused -> globalPlayerViewModel.togglePlayPause()
 
-                                SurahItemState.Downloaded -> globalPlayerViewModel.playSurah(surah.number)
-                                else -> Unit
-                            }
-                        },
-                        onDownload = {
-                            surahToDownload = surah.number
-                            showReciterPicker = true
-                        },
-                        onCancel = { workId -> globalPlayerViewModel.cancelDownload(workId) },
-                        onClick = { onSurahSelected(surah.number, null) },
-                    )
-                    HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = 20.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                    )
-                }
+                            SurahItemState.Downloaded -> globalPlayerViewModel.playSurah(surah.number)
+                            else -> Unit
+                        }
+                    },
+                    onDownload = {
+                        surahToDownload = surah.number
+                        showReciterPicker = true
+                    },
+                    onCancel = { workId -> globalPlayerViewModel.cancelDownload(workId) },
+                    onClick = { onSurahSelected(surah.number, null) },
+                )
+                HorizontalDivider(
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                )
             }
         }
     }

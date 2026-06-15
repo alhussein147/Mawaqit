@@ -79,8 +79,6 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedContentScope: AnimatedContentScope,
     viewModel: SettingsViewModel = koinViewModel()
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -130,46 +128,37 @@ fun SettingsScreen(
             Toast.makeText(context, "Error updating location", Toast.LENGTH_SHORT).show()
         }
     }
-    with(sharedTransitionScope) {
-        Scaffold(
-            modifier = Modifier.sharedBounds(
-                sharedContentState = rememberSharedContentState("settings"),
-                animatedVisibilityScope = animatedContentScope,
-                clipInOverlayDuringTransition = OverlayClip(
-                    RoundedCornerShape(20)                )
-
-
-            ),
-            topBar = {
-                TopAppBar(title = { Text("Settings") }, navigationIcon = {
-                    FilledTonalIconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_back),
-                            contentDescription = "Back"
-                        )
-                    }
-                })
-            }) { innerPadding ->
-            if (settings == null) {
-                LoadingContent(modifier = Modifier.fillMaxSize())
-            } else {
-                SettingsContent(
-                    settings = settings!!,
-                    locationState = locationState,
-                    savedLocation = savedLocation,
-                    onUpdateLocationTapped = ::onUpdateLocationTapped,
-                    onLocationErrorDismissed = { viewModel.resetLocationState() },
-                    onPrayerToggled = viewModel::onPrayerNotificationToggled,
-                    onMethodChanged = viewModel::onCalculationMethodChanged,
-                    onSoundChanged = viewModel::onNotificationSoundChanged,
-                    onThemeChanged = viewModel::onAppThemeChanged,
-                    onColorSchemeChanged = viewModel::onAppColorSchemeChanged,
-                    modifier = Modifier.padding(innerPadding)
-                )
-            }
+    Scaffold(
+        modifier = Modifier,
+        topBar = {
+            TopAppBar(title = { Text("Settings") }, navigationIcon = {
+                FilledTonalIconButton(onClick = onBack) {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_back),
+                        contentDescription = "Back"
+                    )
+                }
+            })
+        }) { innerPadding ->
+        if (settings == null) {
+            LoadingContent(modifier = Modifier.fillMaxSize())
+        } else {
+            SettingsContent(
+                settings = settings!!,
+                locationState = locationState,
+                savedLocation = savedLocation,
+                onUpdateLocationTapped = ::onUpdateLocationTapped,
+                onLocationErrorDismissed = { viewModel.resetLocationState() },
+                onPrayerToggled = viewModel::onPrayerNotificationToggled,
+                onMethodChanged = viewModel::onCalculationMethodChanged,
+                onSoundChanged = viewModel::onNotificationSoundChanged,
+                onThemeChanged = viewModel::onAppThemeChanged,
+                onColorSchemeChanged = viewModel::onAppColorSchemeChanged,
+                modifier = Modifier.padding(innerPadding)
+            )
         }
-
     }
+
     when (pendingAction) {
 
         LocationAction.ShowGpsDialog -> {

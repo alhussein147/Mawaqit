@@ -8,7 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
-import com.hussein.mawaqit.presentation.AppNavigation
+import com.hussein.mawaqit.presentation.navigation.AppNavigation
 import com.hussein.mawaqit.ui.theme.MawaqitTheme
 import org.koin.android.ext.android.inject
 

@@ -46,53 +46,44 @@ import org.koin.androidx.compose.koinViewModel
 @Composable
 fun AzkarCategoryScreen(
     onCategorySelected: (index: Int) -> Unit,
-    onBack: () -> Unit,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedContentScope: AnimatedContentScope,
-    viewModel: AzkarViewModel = koinViewModel()
+    viewModel: AzkarViewModel = koinViewModel(),
+    onBack: () -> Unit
 ) {
     val categories by viewModel.categoryTitles.collectAsStateWithLifecycle()
     val isLoading = categories.isEmpty()
 
-    with(sharedTransitionScope) {
-        Scaffold(
-            modifier = Modifier.sharedBounds(
-                placeholderSize = SharedTransitionScope.PlaceholderSize.AnimatedSize,
-                sharedContentState = rememberSharedContentState("azkar_section"),
-                animatedVisibilityScope = animatedContentScope,
-            ),
-            topBar = {
-                TopAppBar(
-                    title = { Text("Azkar") },
-                    navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(
-                                imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_back),
-                                contentDescription = null
-                            )
-                        }
-                    }
-                )
-            }
-        ) { padding ->
-            if (isLoading) {
-                LoadingContent(modifier = Modifier.fillMaxSize())
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding), verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    itemsIndexed(categories) { index, category ->
-                        CategoryCard(
-                            title = category,
-                            onClick = { onCategorySelected(index) }
+    Scaffold(
+        modifier = Modifier,
+        topBar = {
+            TopAppBar(
+                title = { Text("Azkar") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_back),
+                            contentDescription = null
                         )
                     }
                 }
+            )
+        }
+    ) { padding ->
+        if (isLoading) {
+            LoadingContent(modifier = Modifier.fillMaxSize())
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding), verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                itemsIndexed(categories) { index, category ->
+                    CategoryCard(
+                        title = category,
+                        onClick = { onCategorySelected(index) }
+                    )
+                }
             }
         }
-
     }
 }
 
