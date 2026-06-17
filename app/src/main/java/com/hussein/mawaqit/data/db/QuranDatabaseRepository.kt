@@ -4,6 +4,7 @@ import com.hussein.mawaqit.data.db.models.Ayah
 import com.hussein.mawaqit.data.db.models.AyahOfTheDay
 import com.hussein.mawaqit.data.db.models.AyahWithSurah
 import com.hussein.mawaqit.data.db.models.SurahDetail
+import com.hussein.mawaqit.data.quran.ArabicSearchNormalizer
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.number
@@ -31,10 +32,16 @@ class QuranDatabaseRepository(
     }    // ── Search ────────────────────────────────────────────────────────────────
 
     fun searchAyahs(query: String): Flow<List<AyahEntity>> =
-        ayahDao.searchAyahs(query)
+        ayahDao.searchAyahs(
+            rawQuery = query.trim(),
+            normalizedQuery = ArabicSearchNormalizer.normalize(query)
+        )
 
     fun searchSurahs(query: String) =
-        surahDao.searchSurahs(query)
+        surahDao.searchSurahs(
+            rawQuery = query.trim(),
+            normalizedQuery = ArabicSearchNormalizer.normalize(query)
+        )
 
     // ── Ayah of the day ───────────────────────────────────────────────────────
 

@@ -25,8 +25,14 @@ interface SurahDao {
     @Query("SELECT * FROM surahs WHERE number = :number LIMIT 1")
     suspend fun getSurahWithAyahs(number: Int): SurahWithAyahs?
 
-    @Query("SELECT * FROM surahs WHERE nameArabic LIKE '%' || :query || '%' OR nameTransliterated LIKE '%' || :query || '%'")
-    fun searchSurahs(query: String): Flow<List<SurahEntity>>
+    @Query(
+        """SELECT * FROM surahs
+           WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(nameArabic, 'ٱ', 'ا'), 'أ', 'ا'), 'إ', 'ا'), 'آ', 'ا'), 'ى', 'ي'), 'ؤ', 'و'), 'ئ', 'ي'), 'ة', 'ه'), 'ـ', '') LIKE '%' || :normalizedQuery || '%'
+              OR LOWER(nameTransliterated) LIKE '%' || :normalizedQuery || '%'
+              OR nameArabic LIKE '%' || :rawQuery || '%'
+           ORDER BY number"""
+    )
+    fun searchSurahs(rawQuery: String, normalizedQuery: String): Flow<List<SurahEntity>>
 
     @Query("SELECT COUNT(*) FROM surahs")
     suspend fun count(): Int
@@ -49,8 +55,14 @@ interface AyahDao {
     @Query("SELECT * FROM ayahs WHERE surahNumber = :surahNumber ORDER BY numberInSurah")
     suspend fun getAyahsForSurah(surahNumber: Int): List<AyahEntity>
 
-    @Query("SELECT * FROM ayahs WHERE normalizedText LIKE '%' || :query || '%' OR text LIKE '%' || :query || '%'")
-    fun searchAyahs(query: String): Flow<List<AyahEntity>>
+    @Query(
+        """SELECT * FROM ayahs
+           WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(normalizedText, 'ٱ', 'ا'), 'أ', 'ا'), 'إ', 'ا'), 'آ', 'ا'), 'ى', 'ي'), 'ؤ', 'و'), 'ئ', 'ي'), 'ة', 'ه'), 'ـ', '') LIKE '%' || :normalizedQuery || '%'
+              OR REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(text, 'ٱ', 'ا'), 'أ', 'ا'), 'إ', 'ا'), 'آ', 'ا'), 'ى', 'ي'), 'ؤ', 'و'), 'ئ', 'ي'), 'ة', 'ه'), 'ـ', '') LIKE '%' || :normalizedQuery || '%'
+              OR text LIKE '%' || :rawQuery || '%'
+           ORDER BY surahNumber, numberInSurah"""
+    )
+    fun searchAyahs(rawQuery: String, normalizedQuery: String): Flow<List<AyahEntity>>
 
     // Ayah of the day joined with its surah in a single query
     @Query(
