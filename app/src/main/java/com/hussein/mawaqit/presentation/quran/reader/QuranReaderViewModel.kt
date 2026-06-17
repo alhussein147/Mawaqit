@@ -99,9 +99,6 @@ class QuranViewModel(
     val bookmarks = quranDatabaseRepository.getAllBookmarks()
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    fun isBookmarked(surahNumber: Int, ayahNumber: Int) =
-        quranDatabaseRepository.isBookmarked(surahNumber, ayahNumber)
-
     fun toggleBookmark(surahNumber: Int, ayahNumber: Int) {
         viewModelScope.launch { quranDatabaseRepository.toggleBookmark(surahNumber, ayahNumber) }
     }

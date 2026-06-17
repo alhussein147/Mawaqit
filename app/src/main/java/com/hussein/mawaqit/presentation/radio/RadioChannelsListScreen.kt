@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.mawaqit.R
 import com.hussein.mawaqit.data.infrastructure.services.PlaybackSource
+import com.hussein.mawaqit.presentation.shared.BackButton
 import com.hussein.mawaqit.presentation.util.GlobalPlayerViewModel
 import org.koin.compose.koinInject
 
@@ -73,18 +74,7 @@ fun RadioChannelListScreen(
                 scrollBehavior = scrollBehavior,
                 title = { Text("Radio") },
                 navigationIcon = {
-                    FilledTonalButton(
-                        onClick = onBack,
-                        shapes = ButtonShapes(
-                            shape = IconButtonDefaults.shapes().shape,
-                            pressedShape = IconButtonDefaults.shapes().pressedShape
-                        )
-                    ) {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_back),
-                            contentDescription = "Back"
-                        )
-                    }
+                    BackButton(onClick = onBack)
                 },
                 actions = {
                     if (playbackState.source is PlaybackSource.Radio) {
@@ -118,7 +108,7 @@ fun RadioChannelListScreen(
                     onPlayPause = {
                         when {
                             isPlaying || isSelected -> globalPlayerViewModel.togglePlayPause()
-                            else -> globalPlayerViewModel.playRadio(channel.streamUrl)
+                            else -> globalPlayerViewModel.playRadio(stationUrl = channel.streamUrl, title = channel.displayName)
                         }
                     }
                 )

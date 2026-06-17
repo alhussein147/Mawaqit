@@ -1,16 +1,33 @@
 package com.hussein.mawaqit.presentation.navigation
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import com.hussein.mawaqit.R
 import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
 import com.hussein.mawaqit.presentation.azkar.AzkarScreen
 import com.hussein.mawaqit.presentation.azkar.categories.AzkarCategoryScreen
@@ -57,12 +74,34 @@ data class QuranReader(val surahIndex: Int, val scrollToAyah: Int? = null) : Scr
 @Serializable
 data object RadioChannels : Screen
 
+private data class TopLevelDestination(
+    val screen: Screen,
+    val label: String,
+    val icon: Int
+)
+
+private val topLevelDestinations = listOf(
+    TopLevelDestination(Home, "Home", R.drawable.ic_placeholder),
+    TopLevelDestination(QuranSurahList, "Quran", R.drawable.ic_placeholder),
+    TopLevelDestination(Settings, "Settings", R.drawable.ic_settings)
+)
+
+private fun NavKey.topLevelIndex(): Int = topLevelDestinations.indexOfFirst { it.screen == this }
+
+private fun NavKey.navBarIndex(): Int = when (this) {
+    Home -> 0
+    QuranSurahList, is QuranReader, QuranSearch -> 1
+    Settings -> 2
+    else -> -1
+}
+
 
 @OptIn(KoinExperimentalAPI::class)
 @Composable
 fun AppNavigation(settingsRepository: SettingsRepository) {
 
     val backStack = rememberNavBackStack(Initializing)
+    val navDirection = remember { mutableIntStateOf(1) }
 
     LaunchedEffect(Unit) {
         if (settingsRepository.isOnboardingDone()) {
@@ -74,9 +113,41 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
         }
     }
 
+    val currentScreen = backStack.lastOrNull()
+    val selectedTopLevel = currentScreen?.topLevelIndex()?.takeIf { it >= 0 }
+
+    fun navigateToTopLevel(destination: Screen) {
+        val current = backStack.lastOrNull()
+        if (current == destination) return
+
+        val currentIndex = current?.navBarIndex()?.takeIf { it >= 0 } ?: Home.navBarIndex()
+        val destinationIndex = destination.topLevelIndex()
+        navDirection.intValue = destinationIndex.compareTo(currentIndex).takeIf { it != 0 } ?: 1
+
+        backStack.clear()
+        backStack.add(destination)
+    }
+
+    Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        bottomBar = {
+            AnimatedVisibility(
+                visible = selectedTopLevel != null,
+                enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut()
+            ) {
+                if (selectedTopLevel != null) {
+                    MawaqitNavigationBar(
+                        selectedIndex = selectedTopLevel,
+                        onDestinationSelected = { navigateToTopLevel(topLevelDestinations[it].screen) }
+                    )
+                }
+            }
+        }
+    ) { innerPadding ->
         NavDisplay(
             transitionSpec = {
-                enterTransition() togetherWith exitTransition()
+                enterTransition(navDirection.intValue) togetherWith exitTransition(navDirection.intValue)
             },
             popTransitionSpec = {
                 popEnterTransition() togetherWith popExitTransition()
@@ -84,34 +155,27 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
             predictivePopTransitionSpec = {
                 popEnterTransition() togetherWith popExitTransition()
             },
-
-            modifier = Modifier.background(MaterialTheme.colorScheme.background) ,
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(innerPadding),
             backStack = backStack,
-            onBack = { backStack.removeLastOrNull() },
+            onBack = {
+                if (backStack.lastOrNull()?.topLevelIndex()?.takeIf { it >= 0 } != null) {
+                    navigateToTopLevel(Home)
+                } else {
+                    backStack.removeLastOrNull()
+                }
+            },
             entryProvider = entryProvider {
-
-                entry<Initializing> {
-                    LoadingContent(modifier = Modifier.fillMaxSize())
-                }
-
-                entry<Onboarding> {
-                    OnboardingScreen(
-                        onFinished = {
-                            backStack.clear()
-                            backStack.add(Home)
-                        }
-                    )
-                }
 
                 entry<Home> {
                     HomeScreen(
-                        onNavigateToSettings = { backStack.add(Settings) },
                         onNavigateToAzkar = {
                             backStack.add(
                                 AzkarCategories
                             )
                         },
-                        onNavigateToQuran = { backStack.add(QuranSurahList) },
                         onNavigateToRadio = { backStack.add(RadioChannels) },
                         onNavigateToReader = { index, ayahIndex ->
                             backStack.add(QuranReader(index, ayahIndex))
@@ -119,18 +183,8 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
                     )
                 }
 
-                entry<AzkarCategories> {
-                    AzkarCategoryScreen(
-                        onCategorySelected = { index -> backStack.add(AzkarList(index)) },
-                        onBack = { backStack.removeLastOrNull() },
-                    )
-                }
-
-                entry<AzkarList> { key ->
-                    AzkarScreen(
-                        categoryIndex = key.categoryIndex,
-                        onBack = { backStack.removeLastOrNull() }
-                    )
+                entry<Settings> {
+                    SettingsScreen()
                 }
 
                 entry<QuranSurahList> {
@@ -138,7 +192,6 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
                         onSurahSelected = { index, scrollToAyah ->
                             backStack.add(QuranReader(index, scrollToAyah))
                         },
-                        onBack = { backStack.removeLastOrNull() },
                         onNavigateToSearch = {
                             backStack.add(QuranSearch)
                         }
@@ -166,18 +219,65 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
                         )
                 }
 
+                entry<AzkarCategories> {
+                    AzkarCategoryScreen(
+                        onCategorySelected = { index -> backStack.add(AzkarList(index)) },
+                        onBack = { backStack.removeLastOrNull() },
+                    )
+                }
+
+                entry<AzkarList> { key ->
+                    AzkarScreen(
+                        categoryIndex = key.categoryIndex,
+                        onBack = { backStack.removeLastOrNull() }
+                    )
+                }
+
+
+
                 entry<RadioChannels> {
                     RadioChannelListScreen(
                         onBack = { backStack.removeLastOrNull() }
                     )
                 }
 
-                entry<Settings> {
-                    SettingsScreen(
-                        onBack = { backStack.removeLastOrNull() },
+                entry<Initializing> {
+                    LoadingContent(modifier = Modifier.fillMaxSize())
+                }
+
+                entry<Onboarding> {
+                    OnboardingScreen(
+                        onFinished = {
+                            backStack.clear()
+                            backStack.add(Home)
+                        }
                     )
                 }
+
             }
         )
     }
+}
+
+@Composable
+private fun MawaqitNavigationBar(
+    selectedIndex: Int,
+    onDestinationSelected: (Int) -> Unit
+) {
+    NavigationBar {
+        topLevelDestinations.forEachIndexed { index, destination ->
+            NavigationBarItem(
+                selected = selectedIndex == index,
+                onClick = { onDestinationSelected(index) },
+                icon = {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(destination.icon),
+                        contentDescription = destination.label
+                    )
+                },
+                label = { Text(destination.label) }
+            )
+        }
+    }
+}
 

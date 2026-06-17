@@ -1,9 +1,5 @@
 package com.hussein.mawaqit.presentation.quran.list_screen
 
-import androidx.compose.animation.AnimatedContentScope
-import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,20 +12,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ButtonShapes
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Shapes
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -51,6 +41,7 @@ import com.hussein.mawaqit.R
 import com.hussein.mawaqit.data.quran.QuranData
 import com.hussein.mawaqit.data.quran.Surah
 import com.hussein.mawaqit.presentation.quran.components.SurahReciterPickerSheet
+import com.hussein.mawaqit.presentation.shared.ScreenWrapper
 import com.hussein.mawaqit.presentation.util.GlobalPlayerViewModel
 import com.hussein.mawaqit.presentation.util.SurahItemState
 import org.koin.androidx.compose.koinViewModel
@@ -64,7 +55,6 @@ fun SurahListScreen(
     onNavigateToSearch: () -> Unit,
     surahListViewModel: SurahListViewModel = koinViewModel(),
     globalPlayerViewModel: GlobalPlayerViewModel = koinInject(),
-    onBack: () -> Unit
 ) {
 
     val surahStates by globalPlayerViewModel.surahStates.collectAsStateWithLifecycle()
@@ -73,10 +63,9 @@ fun SurahListScreen(
     var showReciterPicker by remember { mutableStateOf(false) }
     var surahToDownload by remember { mutableStateOf<Int?>(null) }
 
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-
     var showBookmarksDialog by remember { mutableStateOf(false) }
 
+    val topAppBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     if (showReciterPicker) {
         SurahReciterPickerSheet(
             current = selectedReciter,
@@ -105,25 +94,11 @@ fun SurahListScreen(
         )
     }
 
-    Scaffold(
-        modifier = Modifier,
-        topBar = {
+    ScreenWrapper(
+        topAppBar = {
             LargeTopAppBar(
-                scrollBehavior = scrollBehavior,
+                scrollBehavior =topAppBarScrollBehavior ,
                 title = { Text("Quran") },
-                navigationIcon = {
-                    FilledTonalButton(
-                        onClick = onBack, shapes = ButtonShapes(
-                            shape = IconButtonDefaults.shapes().shape,
-                            pressedShape = IconButtonDefaults.shapes().pressedShape
-                        )
-                    ) {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_back),
-                            contentDescription = null
-                        )
-                    }
-                },
                 actions = {
                     IconButton(onClick = { showBookmarksDialog = true }) {
                         Icon(
@@ -138,46 +113,48 @@ fun SurahListScreen(
                         )
                     }
                 })
-        }) { padding ->
-        LazyColumn(
-            modifier = Modifier
+        },
+        content = {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
+            ) {
+                itemsIndexed(QuranData.surahs, key = { _, surah -> surah.number }) { _, surah ->
+                    val itemState = surahStates[surah.number] ?: SurahItemState.NotDownloaded
+                    SurahRow(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 14.dp),
+                        surah = surah,
+                        itemState = itemState,
+                        onPlayPause = {
+                            when (itemState) {
+                                SurahItemState.Playing,
+                                SurahItemState.Paused -> globalPlayerViewModel.togglePlayPause()
 
-                .fillMaxSize()
-                .padding(padding)
-                .nestedScroll(scrollBehavior.nestedScrollConnection)
-        ) {
-            itemsIndexed(QuranData.surahs, key = { _, surah -> surah.number }) { _, surah ->
-                val itemState = surahStates[surah.number] ?: SurahItemState.NotDownloaded
-                SurahRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 14.dp),
-                    surah = surah,
-                    itemState = itemState,
-                    onPlayPause = {
-                        when (itemState) {
-                            SurahItemState.Playing,
-                            SurahItemState.Paused -> globalPlayerViewModel.togglePlayPause()
-
-                            SurahItemState.Downloaded -> globalPlayerViewModel.playSurah(surah.number)
-                            else -> Unit
-                        }
-                    },
-                    onDownload = {
-                        surahToDownload = surah.number
-                        showReciterPicker = true
-                    },
-                    onCancel = { workId -> globalPlayerViewModel.cancelDownload(workId) },
-                    onClick = { onSurahSelected(surah.number, null) },
-                )
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = 20.dp),
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                )
+                                SurahItemState.Downloaded -> globalPlayerViewModel.playSurah(surah.number)
+                                else -> Unit
+                            }
+                        },
+                        onDownload = {
+                            surahToDownload = surah.number
+                            showReciterPicker = true
+                        },
+                        onCancel = { workId -> globalPlayerViewModel.cancelDownload(workId) },
+                        onClick = { onSurahSelected(surah.number, null) },
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 20.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                    )
+                }
             }
+
         }
-    }
+    )
 }
+
 
 @Composable
 private fun SurahRow(

@@ -1,7 +1,5 @@
 package com.hussein.mawaqit.presentation.azkar.categories
 
-import androidx.compose.animation.AnimatedContentScope
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,8 +15,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -28,16 +24,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.hussein.mawaqit.R
 import com.hussein.mawaqit.data.azkar.Zikr
 import com.hussein.mawaqit.presentation.azkar.AzkarViewModel
+import com.hussein.mawaqit.presentation.shared.BackButton
 import com.hussein.mawaqit.presentation.shared.LoadingContent
 import com.hussein.mawaqit.ui.theme.quranFontFamily
 import org.koin.androidx.compose.koinViewModel
@@ -58,12 +52,7 @@ fun AzkarCategoryScreen(
             TopAppBar(
                 title = { Text("Azkar") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_back),
-                            contentDescription = null
-                        )
-                    }
+                    BackButton(onClick = onBack)
                 }
             )
         }

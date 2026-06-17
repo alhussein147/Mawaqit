@@ -1,9 +1,5 @@
 package com.hussein.mawaqit.presentation.home
 
-import androidx.compose.animation.AnimatedContentScope
-import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -26,10 +22,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,6 +33,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
@@ -52,18 +48,18 @@ import com.hussein.mawaqit.R
 import com.hussein.mawaqit.data.db.models.AyahOfTheDay
 import com.hussein.mawaqit.presentation.shared.ErrorContent
 import com.hussein.mawaqit.presentation.shared.LoadingContent
+import com.hussein.mawaqit.presentation.shared.ScreenWrapper
 import com.hussein.mawaqit.presentation.util.formatTime
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import org.koin.androidx.compose.koinViewModel
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    onNavigateToSettings: () -> Unit,
     onNavigateToAzkar: () -> Unit = {},
-    onNavigateToQuran: () -> Unit = {},
     onNavigateToRadio: () -> Unit = {},
     onNavigateToReader: (surahIndex: Int, ayahIndex: Int) -> Unit,
     viewModel: HomeViewModel = koinViewModel(),
@@ -73,35 +69,39 @@ fun HomeScreen(
     LaunchedEffect(Unit) {
         while (true) {
             viewModel.tick()
-            delay(60_000)
+            delay(60_000.milliseconds)
         }
     }
 
-    Scaffold(topBar = {
-        HomeTopAppBar(
-            cityName = state.cityName,
-            onNavigateToSettings = onNavigateToSettings,
-        )
-    }) { innerPadding ->
-        when {
-            state.isLoading -> LoadingContent(
-                Modifier
-                    .padding(innerPadding)
-                    .fillMaxSize()
+    ScreenWrapper(
+        topAppBar = {
+            HomeTopAppBar(
+                cityName = state.cityName,
             )
 
-            state.error != null -> ErrorContent(state.error!!, Modifier.padding(innerPadding))
-            else -> PrayerContent(
-                state = state,
-                countdownFlow = viewModel.countdown,
-                modifier = Modifier.padding(innerPadding),
-                onNavigateToAzkar = onNavigateToAzkar,
-                onNavigateToQuran = onNavigateToQuran,
-                onNavigateToRadio = onNavigateToRadio,
-                onNavigateToReader = onNavigateToReader
-            )
+        },
+        content = {
+            when {
+                state.isLoading -> LoadingContent(
+                    Modifier.fillMaxSize()
+                )
+
+                state.error != null -> ErrorContent(
+                    modifier = Modifier.fillMaxSize(),
+                    message = state.error!!
+                )
+
+                else -> PrayerContent(
+                    state = state,
+                    countdownFlow = viewModel.countdown,
+                    onNavigateToAzkar = onNavigateToAzkar,
+                    onNavigateToRadio = onNavigateToRadio,
+                    onNavigateToReader = onNavigateToReader
+                )
+            }
+
         }
-    }
+    )
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -111,7 +111,6 @@ private fun PrayerContent(
     state: HomeUiState,
     countdownFlow: StateFlow<CountdownTime?>,
     onNavigateToAzkar: () -> Unit = {},
-    onNavigateToQuran: () -> Unit = {},
     onNavigateToRadio: () -> Unit = {},
     onNavigateToReader: (surahIndex: Int, ayahIndex: Int) -> Unit,
 ) {
@@ -125,8 +124,8 @@ private fun PrayerContent(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         HeaderSection(state, countdownFlow = countdownFlow)
+        TodaysPrayersSection(prayers = state.prayers)
         HomeQuickActionsSection(
-            onNavigateToQuran = onNavigateToQuran,
             onNavigateToAzkar = onNavigateToAzkar,
             onNavigateToRadio = onNavigateToRadio,
         )
@@ -135,23 +134,6 @@ private fun PrayerContent(
             ayah = state.ayahOfTheDay,
             onClick = onNavigateToReader,
         )
-
-        Surface(
-            shape = RoundedCornerShape(50.dp),
-            color = MaterialTheme.colorScheme.surfaceContainer,
-        ) {
-            Text(
-                text = "Today's Prayers",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(16.dp)
-            )
-        }
-
-        state.prayers.forEach { prayer ->
-            HomePrayerListItem(prayer)
-        }
-
     }
 }
 
@@ -206,6 +188,7 @@ private fun HeaderSection(state: HomeUiState, countdownFlow: StateFlow<Countdown
                     }
                 }
             }
+
         }
     }
 }
@@ -231,11 +214,197 @@ private fun CountdownDisplay(countdownFlow: StateFlow<CountdownTime?>) {
 
 }
 
+@OptIn(ExperimentalTime::class)
+@Composable
+private fun TodaysPrayersSection(
+    prayers: List<PrayerUiModel>,
+    modifier: Modifier = Modifier
+) {
+    if (prayers.isEmpty()) return
+
+    val completedCount = prayers.count { it.status == PrayerStatus.PASSED }
+
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Today's prayers",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "$completedCount of ${prayers.size} completed",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                val activePrayer = prayers.firstOrNull { it.status == PrayerStatus.CURRENT }
+                    ?: prayers.firstOrNull { it.status == PrayerStatus.UPCOMING }
+                activePrayer?.let { prayer ->
+                    Surface(
+                        shape = RoundedCornerShape(50.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                    ) {
+                        Text(
+                            text = prayer.time.formatTime(),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+            }
+
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
+            )
+
+            Column() {
+                prayers.forEachIndexed { index, prayer ->
+                    PrayerScheduleRow(
+                        prayer = prayer,
+                        isFirst = index == 0,
+                        isLast = index == prayers.lastIndex
+                    )
+                }
+
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalTime::class)
+@Composable
+private fun PrayerScheduleRow(
+    prayer: PrayerUiModel,
+    isFirst: Boolean,
+    isLast: Boolean
+) {
+    val isCurrent = prayer.status == PrayerStatus.CURRENT
+    val isPassed = prayer.status == PrayerStatus.PASSED
+    val contentAlpha = if (isPassed) 0.48f else 1f
+    val indicatorColor = when (prayer.status) {
+        PrayerStatus.CURRENT -> MaterialTheme.colorScheme.primary
+        PrayerStatus.PASSED -> MaterialTheme.colorScheme.outline
+        PrayerStatus.UPCOMING -> MaterialTheme.colorScheme.secondary
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(56.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        PrayerStepIndicator(
+            color = indicatorColor,
+            isCurrent = isCurrent,
+            isFirst = isFirst,
+            isLast = isLast
+        )
+
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 14.dp)
+                .alpha(contentAlpha),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = prayer.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = if (isCurrent) FontWeight.SemiBold else FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                if (isCurrent) {
+                    Text(
+                        text = "Current prayer",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+            Text(
+                text = prayer.time.formatTime(),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = if (isCurrent) FontWeight.SemiBold else FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun PrayerStepIndicator(
+    color: Color,
+    isCurrent: Boolean,
+    isFirst: Boolean,
+    isLast: Boolean
+) {
+    val connectorColor = MaterialTheme.colorScheme.outlineVariant
+
+    Box(
+        modifier = Modifier.size(width = 28.dp, height = 56.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        if (!isFirst) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .size(width = 2.dp, height = 28.dp)
+                    .background(connectorColor, RoundedCornerShape(50.dp))
+            )
+        }
+        if (!isLast) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .size(width = 2.dp, height = 28.dp)
+                    .background(connectorColor, RoundedCornerShape(50.dp))
+            )
+        }
+
+        Surface(
+            modifier = Modifier.size(if (isCurrent) 20.dp else 14.dp),
+            shape = CircleShape,
+            color = if (isCurrent) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainer,
+            border = BorderStroke(2.dp, color)
+        ) {
+            if (isCurrent) {
+                Box(
+                    modifier = Modifier
+                        .padding(5.dp)
+                        .background(color, CircleShape)
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun HomeTopAppBar(
     modifier: Modifier = Modifier,
-    cityName: String,
-    onNavigateToSettings: () -> Unit
+    cityName: String
 ) {
     Row(
         modifier = Modifier
@@ -261,117 +430,97 @@ private fun HomeTopAppBar(
             }
         }
         Spacer(Modifier.weight(1f))
-        FilledTonalButton(onClick = onNavigateToSettings) {
-            Icon(
-                imageVector = ImageVector.vectorResource(R.drawable.ic_settings),
-                contentDescription = "com.hussein.islamic.presentation.Settings"
-            )
-        }
     }
 }
-
-@OptIn(ExperimentalTime::class)
-@Composable
-private fun HomePrayerListItem(prayer: PrayerUiModel) {
-    val isCurrent = prayer.status == PrayerStatus.CURRENT
-    val isPassed = prayer.status == PrayerStatus.PASSED
-
-
-    val dotColor by animateColorAsState(
-        targetValue = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-        animationSpec = tween(500),
-        label = "dot"
-    )
-
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        modifier = Modifier
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .alpha(if (isPassed) 0.4f else 1f)
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Box(
-                Modifier
-                    .size(height = 24.dp, width = 6.dp)
-                    .background(dotColor, CircleShape)
-            )
-
-            Text(
-                prayer.name,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.weight(1f)
-            )
-            Text(
-                prayer.time.formatTime(),
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium)
-            )
-        }
-    }
-}
-
 
 @Composable
 fun HomeQuickActionsSection(
-    onNavigateToQuran: () -> Unit,
     onNavigateToAzkar: () -> Unit,
     onNavigateToRadio: () -> Unit,
 ) {
 
     @Composable
-    fun Section(modifier: Modifier = Modifier, onClick: () -> Unit, title: String) {
+    fun ActionTile(
+        modifier: Modifier = Modifier,
+        onClick: () -> Unit,
+        title: String,
+        subtitle: String,
+        icon: Int
+    ) {
         Surface(
-            color = MaterialTheme.colorScheme.primaryContainer,
             modifier = Modifier
-                .height(65.dp)
+                .height(88.dp)
                 .then(modifier),
-            shape = RoundedCornerShape(40),
+            shape = RoundedCornerShape(22.dp),
+            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f),
             onClick = onClick
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(title)
+            Row(
+                modifier = Modifier.padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Surface(
+                    modifier = Modifier.size(42.dp),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.42f)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(icon),
+                            contentDescription = title,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.68f)
+                    )
+                }
             }
         }
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            Section(
-                modifier = Modifier.weight(1f),
-                onClick = onNavigateToRadio,
-                title = "Radio"
-            )
-            Section(
-                modifier = Modifier.weight(1f),
-                onClick = onNavigateToAzkar,
-                title = stringResource(R.string.azakr)
-            )
-        }
-
-        Section(
-            modifier = Modifier.fillMaxWidth(),
-            onClick = onNavigateToQuran,
-            title = stringResource(R.string.quran)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        ActionTile(
+            modifier = Modifier.weight(1f),
+            onClick = onNavigateToAzkar,
+            title = stringResource(R.string.azakr),
+            subtitle = "Daily dhikr",
+            icon = R.drawable.ic_placeholder
+        )
+        ActionTile(
+            modifier = Modifier.weight(1f),
+            onClick = onNavigateToRadio,
+            title = "Radio",
+            subtitle = "Quran audio",
+            icon = R.drawable.ic_radio
         )
     }
-
 }
 
 @Composable
 fun AyahOfTheDayCard(
     ayah: AyahOfTheDay?,
     modifier: Modifier = Modifier,
-    onClick: (surahIndex: Int, ayahIndex: Int) -> Unit) {
+    onClick: (surahIndex: Int, ayahIndex: Int) -> Unit
+) {
     Card(
         modifier = modifier
             .fillMaxWidth(),

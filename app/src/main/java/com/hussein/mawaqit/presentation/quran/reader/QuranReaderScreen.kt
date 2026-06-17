@@ -72,6 +72,7 @@ import com.hussein.mawaqit.data.quran.QuranTextAlignment
 import com.hussein.mawaqit.data.quran.Surah
 import com.hussein.mawaqit.data.quran.recitation.Reciter
 import com.hussein.mawaqit.presentation.quran.components.AyahReciterPickerSheetContent
+import com.hussein.mawaqit.presentation.shared.BackButton
 import com.hussein.mawaqit.presentation.shared.ErrorContent
 import com.hussein.mawaqit.presentation.shared.LoadingContent
 import com.hussein.mawaqit.ui.theme.quranFontFamily
@@ -196,17 +197,10 @@ fun QuranReaderScreen(
                         Text(surah?.nameArabic ?: "")
                     },
                     navigationIcon = {
-                        IconButton(onClick = {
-                            if (recitationState is AyahRecitationState.Playing) {
-                                viewModel.stopAyah()
-                            }
+                        BackButton(onClick = {
+                            if (recitationState is AyahRecitationState.Playing) viewModel.stopAyah()
                             onBack.invoke()
-                        }) {
-                            Icon(
-                                ImageVector.vectorResource(R.drawable.ic_arrow_back),
-                                contentDescription = "Back"
-                            )
-                        }
+                        })
                     },
                     actions = {
                         IconButton(onClick = {
@@ -225,11 +219,14 @@ fun QuranReaderScreen(
         when (val state = readerState) {
             QuranReaderUiState.Idle,
             QuranReaderUiState.Loading -> {
-                LoadingContent(modifier = Modifier.fillMaxSize())
+                LoadingContent(
+                    modifier = Modifier.fillMaxSize(),
+                    backgroundColor = Color.Transparent
+                )
             }
 
             is QuranReaderUiState.Error -> {
-                ErrorContent(state.message, modifier = Modifier.fillMaxSize())
+                ErrorContent(message = state.message, modifier = Modifier.fillMaxSize())
             }
 
             is QuranReaderUiState.Success -> {

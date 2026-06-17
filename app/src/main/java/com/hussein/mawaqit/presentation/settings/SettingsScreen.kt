@@ -7,9 +7,7 @@ import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -32,16 +30,15 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -53,6 +50,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -67,6 +65,7 @@ import com.hussein.mawaqit.data.infrastructure.settings.AppTheme
 import com.hussein.mawaqit.data.infrastructure.settings.NotificationSound
 import com.hussein.mawaqit.data.infrastructure.settings.PrayerNotificationSettings
 import com.hussein.mawaqit.presentation.shared.LoadingContent
+import com.hussein.mawaqit.presentation.shared.ScreenWrapper
 import com.hussein.mawaqit.presentation.util.getPrayersDisplayNames
 import com.hussein.mawaqit.presentation.util.hasLocationPermission
 import com.hussein.mawaqit.presentation.util.isLocationPermanentlyDenied
@@ -78,13 +77,15 @@ import org.koin.androidx.compose.koinViewModel
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SettingsScreen(
-    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = koinViewModel()
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val locationState by viewModel.locationState.collectAsStateWithLifecycle()
     val savedLocation by viewModel.savedLocation.collectAsStateWithLifecycle()
     val context = LocalContext.current
+
+    val topAppBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     var pendingAction by remember { mutableStateOf<LocationAction>(LocationAction.None) }
 
@@ -128,20 +129,14 @@ fun SettingsScreen(
             Toast.makeText(context, "Error updating location", Toast.LENGTH_SHORT).show()
         }
     }
-    Scaffold(
-        modifier = Modifier,
-        topBar = {
-            TopAppBar(title = { Text("Settings") }, navigationIcon = {
-                FilledTonalIconButton(onClick = onBack) {
-                    Icon(
-                        imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_back),
-                        contentDescription = "Back"
-                    )
-                }
-            })
-        }) { innerPadding ->
-        if (settings == null) {
-            LoadingContent(modifier = Modifier.fillMaxSize())
+    ScreenWrapper(
+        topAppBar = { LargeTopAppBar(title = { Text("Settings") }, scrollBehavior = topAppBarScrollBehavior) },
+        content = {
+            if (settings == null) {
+            LoadingContent(
+                modifier = Modifier
+                    .fillMaxSize()
+            )
         } else {
             SettingsContent(
                 settings = settings!!,
@@ -154,11 +149,13 @@ fun SettingsScreen(
                 onSoundChanged = viewModel::onNotificationSoundChanged,
                 onThemeChanged = viewModel::onAppThemeChanged,
                 onColorSchemeChanged = viewModel::onAppColorSchemeChanged,
-                modifier = Modifier.padding(innerPadding)
+                modifier = Modifier
+                    .fillMaxSize()
+                    .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
             )
         }
-    }
-
+        }
+    )
     when (pendingAction) {
 
         LocationAction.ShowGpsDialog -> {
@@ -233,7 +230,9 @@ private fun SettingsContent(
 ) {
 
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .then(modifier),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
