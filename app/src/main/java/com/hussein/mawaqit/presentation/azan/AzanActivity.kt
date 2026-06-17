@@ -5,7 +5,9 @@ import android.app.NotificationManager
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
+import android.os.Build
 import android.os.Bundle
+import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -29,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.hussein.mawaqit.R
@@ -52,9 +55,7 @@ class AzanActivity : ComponentActivity() {
         setShowWhenLocked(true)
         setTurnScreenOn(true)
 
-        // Dismiss keyguard so activity shows on top of lock screen
-        val keyguard = getSystemService(KeyguardManager::class.java)
-        keyguard.requestDismissKeyguard(this, null)
+        dismissKeyguardIfAllowed()
 
         val prayerName = intent.getStringExtra(EXTRA_PRAYER_NAME) ?: "Prayer"
         val isFajr = intent.getBooleanExtra(EXTRA_IS_FAJR, false)
@@ -90,7 +91,7 @@ class AzanActivity : ComponentActivity() {
     }
 
     private fun playAzan(isFajr: Boolean) {
-        val rawRes = R.raw.azan2
+        val rawRes = if (isFajr) R.raw.azan_fajr else R.raw.azan
         val uri = "android.resource://$packageName/$rawRes".toUri()
         exoPlayer = ExoPlayer.Builder(this).setAudioAttributes(
                 androidx.media3.common.AudioAttributes.Builder()
@@ -103,10 +104,25 @@ class AzanActivity : ComponentActivity() {
                     override fun onPlaybackStateChanged(state: Int) {
                         if (state == Player.STATE_ENDED) dismiss()
                     }
+
+                    override fun onPlayerError(error: PlaybackException) {
+                        dismiss()
+                    }
                 })
                 prepare()
                 play()
             }
+    }
+
+    private fun dismissKeyguardIfAllowed() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+
+        val keyguard = getSystemService(KeyguardManager::class.java) ?: return
+        if (!keyguard.isKeyguardLocked) return
+
+        runCatching {
+            keyguard.requestDismissKeyguard(this, null)
+        }
     }
 
     private fun releasePlayer() {
@@ -125,11 +141,24 @@ class AzanActivity : ComponentActivity() {
         finish()
     }
 
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (event.action == KeyEvent.ACTION_DOWN && event.isVolumeKey()) {
+            dismiss()
+            return true
+        }
+        return super.dispatchKeyEvent(event)
+    }
+
     override fun onDestroy() {
         releasePlayer()
         super.onDestroy()
     }
 }
+
+private fun KeyEvent.isVolumeKey(): Boolean =
+    keyCode == KeyEvent.KEYCODE_VOLUME_UP ||
+            keyCode == KeyEvent.KEYCODE_VOLUME_DOWN ||
+            keyCode == KeyEvent.KEYCODE_VOLUME_MUTE
 
 // ---------------------------------------------------------------------------
 // Full screen UI

@@ -135,7 +135,7 @@ class AzanPlayerService : Service() {
 
 
     private fun playAzan(isFajr: Boolean) {
-        val rawRes = if (isFajr) R.raw.azan14 else R.raw.azan2
+        val rawRes = if (isFajr) R.raw.azan_fajr else R.raw.azan
 
         mediaPlayer = MediaPlayer.create(this, rawRes)?.apply {
             setOnCompletionListener { stopSelf() }
