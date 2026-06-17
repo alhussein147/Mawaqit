@@ -130,6 +130,7 @@ fun SettingsScreen(
         }
     }
     ScreenWrapper(
+        modifier = modifier,
         topAppBar = { LargeTopAppBar(title = { Text("Settings") }, scrollBehavior = topAppBarScrollBehavior) },
         content = {
             if (settings == null) {

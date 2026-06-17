@@ -51,6 +51,7 @@ import java.util.UUID
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SurahListScreen(
+    modifier:Modifier = Modifier,
     onSurahSelected: (surahIndex: Int, scrollToAyah: Int?) -> Unit,
     onNavigateToSearch: () -> Unit,
     surahListViewModel: SurahListViewModel = koinViewModel(),
@@ -95,6 +96,7 @@ fun SurahListScreen(
     }
 
     ScreenWrapper(
+        modifier = modifier,
         topAppBar = {
             LargeTopAppBar(
                 scrollBehavior =topAppBarScrollBehavior ,

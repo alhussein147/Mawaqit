@@ -7,22 +7,23 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -81,7 +82,7 @@ private data class TopLevelDestination(
 )
 
 private val topLevelDestinations = listOf(
-    TopLevelDestination(Home, "Home", R.drawable.ic_placeholder),
+    TopLevelDestination(Home, "Home", R.drawable.ic_home),
     TopLevelDestination(QuranSurahList, "Quran", R.drawable.ic_placeholder),
     TopLevelDestination(Settings, "Settings", R.drawable.ic_settings)
 )
@@ -128,23 +129,9 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
         backStack.add(destination)
     }
 
-    Scaffold(
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        bottomBar = {
-            AnimatedVisibility(
-                visible = selectedTopLevel != null,
-                enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut()
-            ) {
-                if (selectedTopLevel != null) {
-                    MawaqitNavigationBar(
-                        selectedIndex = selectedTopLevel,
-                        onDestinationSelected = { navigateToTopLevel(topLevelDestinations[it].screen) }
-                    )
-                }
-            }
-        }
-    ) { innerPadding ->
+    Box(modifier = Modifier.fillMaxSize()) {
+
+
         NavDisplay(
             transitionSpec = {
                 enterTransition(navDirection.intValue) togetherWith exitTransition(navDirection.intValue)
@@ -157,8 +144,7 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
             },
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(innerPadding),
+                .background(MaterialTheme.colorScheme.background),
             backStack = backStack,
             onBack = {
                 if (backStack.lastOrNull()?.topLevelIndex()?.takeIf { it >= 0 } != null) {
@@ -171,6 +157,7 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
 
                 entry<Home> {
                     HomeScreen(
+                        modifier = Modifier.padding(bottom = 80.dp),
                         onNavigateToAzkar = {
                             backStack.add(
                                 AzkarCategories
@@ -184,11 +171,12 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
                 }
 
                 entry<Settings> {
-                    SettingsScreen()
+                    SettingsScreen(modifier = Modifier.padding(bottom = 80.dp))
                 }
 
                 entry<QuranSurahList> {
                     SurahListScreen(
+                        modifier = Modifier.padding(bottom = 80.dp),
                         onSurahSelected = { index, scrollToAyah ->
                             backStack.add(QuranReader(index, scrollToAyah))
                         },
@@ -256,7 +244,24 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
 
             }
         )
+
+        AnimatedVisibility(
+            modifier = Modifier.align(Alignment.BottomCenter),
+            visible = selectedTopLevel != null,
+            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut()
+        ) {
+            if (selectedTopLevel != null) {
+                MawaqitNavigationBar(
+                    selectedIndex = selectedTopLevel,
+                    onDestinationSelected = { navigateToTopLevel(topLevelDestinations[it].screen) }
+                )
+            }
+        }
+
     }
+
+
 }
 
 @Composable

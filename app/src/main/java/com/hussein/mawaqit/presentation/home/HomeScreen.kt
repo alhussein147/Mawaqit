@@ -59,6 +59,7 @@ import kotlin.time.ExperimentalTime
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+    modifier: Modifier = Modifier,
     onNavigateToAzkar: () -> Unit = {},
     onNavigateToRadio: () -> Unit = {},
     onNavigateToReader: (surahIndex: Int, ayahIndex: Int) -> Unit,
@@ -74,6 +75,7 @@ fun HomeScreen(
     }
 
     ScreenWrapper(
+        modifier = modifier,
         topAppBar = {
             HomeTopAppBar(
                 cityName = state.cityName,
