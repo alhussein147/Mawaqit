@@ -1,5 +1,6 @@
 package com.hussein.mawaqit.presentation.azkar.categories
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -12,21 +13,23 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -54,10 +57,12 @@ fun AzkarCategoryScreen(
     val featuredCategories = categories.take(3).mapIndexed { index, title -> index to title }
     val remainingCategories = categories.drop(3).mapIndexed { index, title -> index + 3 to title }
 
+    val topAppBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
         modifier = Modifier,
         topBar = {
-            TopAppBar(
+            LargeTopAppBar(
+                scrollBehavior = topAppBarScrollBehavior,
                 title = { Text("Azkar") },
                 navigationIcon = {
                     BackButton(onClick = onBack)
@@ -72,7 +77,7 @@ fun AzkarCategoryScreen(
             LazyColumn(
                 modifier = Modifier
                     .padding(padding)
-                    .fillMaxSize(),
+                    .fillMaxSize().nestedScroll(topAppBarScrollBehavior.nestedScrollConnection),
                 verticalArrangement = Arrangement.spacedBy(8.dp) ,
                 contentPadding = PaddingValues(horizontal = 16.dp)
             ) {
@@ -103,12 +108,9 @@ private fun FeaturedAzkarSection(
     categories: List<Pair<Int, String>>,
     onCategorySelected: (index: Int) -> Unit
 ) {
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        modifier = Modifier.fillMaxWidth(),
-        contentPadding =PaddingValues(horizontal = 20.dp)
-    ) {
-        items(categories, key = { it.first }) { (index, title) ->
+    Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        categories.forEach { (index, title) ->
             FeaturedAzkarCard(
                 title = title,
                 label = when (index) {
@@ -120,6 +122,7 @@ private fun FeaturedAzkarSection(
                 onClick = { onCategorySelected(index) }
             )
         }
+
     }
 }
 

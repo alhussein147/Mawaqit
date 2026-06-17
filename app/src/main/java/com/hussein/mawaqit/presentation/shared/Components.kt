@@ -27,7 +27,7 @@ fun BackButton(
         modifier = modifier,
         onClick = onClick,
         shapes = ButtonShapes(
-            shape = IconButtonDefaults.filledShape,
+            shape = IconButtonDefaults.smallRoundShape,
             pressedShape = IconButtonDefaults.smallSquareShape
         ),
     ) {

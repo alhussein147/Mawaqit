@@ -4,7 +4,6 @@ import CurrentLocationFetcher
 import android.Manifest
 import android.content.Intent
 import android.provider.Settings
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -22,6 +21,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -41,7 +41,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,6 +53,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.batoulapps.adhan2.CalculationMethod
@@ -124,11 +124,6 @@ fun SettingsScreen(
         }
     }
 
-    LaunchedEffect(locationState) {
-        if (locationState is SettingsViewModel.LocationUpdateState.Error) {
-            Toast.makeText(context, "Error updating location", Toast.LENGTH_SHORT).show()
-        }
-    }
     ScreenWrapper(
         modifier = modifier,
         topAppBar = { LargeTopAppBar(title = { Text("Settings") }, scrollBehavior = topAppBarScrollBehavior) },
@@ -198,7 +193,7 @@ fun SettingsScreen(
                             )
                         }
                     }) {
-                        Text(if (context.isLocationPermanentlyDenied()) "Open com.hussein.islamic.presentation.Settings" else "Allow")
+                        Text(if (context.isLocationPermanentlyDenied()) "Open App Settings" else "Allow")
                     }
                 },
                 dismissButton = {
@@ -340,7 +335,11 @@ private fun ToggleRow(
     onCheckedChange: (Boolean) -> Unit,
     shape: RoundedCornerShape
 ) {
-    SettingOptionContainer(clickEnabled = false, shape = shape, modifier = Modifier.padding(1.dp)) {
+    SettingOptionContainer(
+        onClick = { onCheckedChange(!checked) },
+        shape = shape,
+        modifier = Modifier.padding(1.dp)
+    ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -348,6 +347,8 @@ private fun ToggleRow(
             Text(
                 text = label,
                 style = MaterialTheme.typography.bodyLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f)
             )
             Switch(checked = checked, onCheckedChange = onCheckedChange)
@@ -368,15 +369,31 @@ private fun PickerRow(
     var showSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
     SettingOptionContainer(onClick = { showSheet = true }, shape = shape) {
-        Column(
+        Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalAlignment = Alignment.Start, verticalArrangement = Arrangement.spacedBy(4.dp)
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(label, style = MaterialTheme.typography.bodyLarge)
-            Text(
-                text = currentValue,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(label, style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    text = currentValue,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Icon(
+                imageVector = ImageVector.vectorResource(R.drawable.ic_chevron_right),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .padding(start = 12.dp)
+                    .size(20.dp)
             )
         }
 
@@ -389,6 +406,7 @@ private fun PickerRow(
             Column(
                 modifier = Modifier
                     .padding(start = 16.dp, end = 16.dp, bottom = 32.dp)
+                    .navigationBarsPadding()
             ) {
                 Text(
                     text = label,
@@ -397,27 +415,47 @@ private fun PickerRow(
                     modifier = Modifier.padding(vertical = 12.dp)
                 )
                 options.forEach { option ->
+                    val isSelected = option == currentValue
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(4.dp),
+                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
                         onClick = {
                             onOptionSelected(option)
                             showSheet = false
                         },
                         border = BorderStroke(
                             width = 1.dp,
-                            color = if (option == currentValue) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
                         )
                     ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(18.dp),
-                            horizontalArrangement = Arrangement.Start
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text(text = option, style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                text = option,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
+                            )
+                            if (isSelected) {
+                                Icon(
+                                    imageVector = ImageVector.vectorResource(R.drawable.ic_check),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier
+                                        .padding(start = 12.dp)
+                                        .size(20.dp)
+                                )
+                            }
                         }
 
                     }
@@ -467,7 +505,9 @@ private fun LocationRow(
                     Column(modifier = Modifier.padding(start = 8.dp)) {
                         Text(
                             text = displayLocation?.cityName ?: "No location set",
-                            style = MaterialTheme.typography.bodyLarge
+                            style = MaterialTheme.typography.bodyLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         if (displayLocation != null) {
                             Text(
@@ -476,7 +516,9 @@ private fun LocationRow(
                                     displayLocation.longitude
                                 ),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
