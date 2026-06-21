@@ -229,7 +229,7 @@ private fun SettingsContent(
         modifier = Modifier
             .fillMaxSize()
             .then(modifier),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 88.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
 

@@ -22,11 +22,11 @@ import com.hussein.mawaqit.data.infrastructure.services.PlaybackSource
 import com.hussein.mawaqit.data.infrastructure.workers.SurahDownloadWorker
 import com.hussein.mawaqit.data.quran.recitation.FullSurahReciter
 import com.hussein.mawaqit.data.quran.recitation.RecitationRepository
-import java.util.UUID
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 sealed interface SurahItemState {
     data object NotDownloaded : SurahItemState

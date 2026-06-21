@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,10 +14,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -116,26 +116,32 @@ private fun PrayerContent(
     onNavigateToRadio: () -> Unit = {},
     onNavigateToReader: (surahIndex: Int, ayahIndex: Int) -> Unit,
 ) {
-
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(start = 16.dp, end = 16.dp, bottom = 32.dp)
+            .padding(horizontal = 16.dp)
             .then(modifier),
+        contentPadding = PaddingValues(bottom = 88.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        HeaderSection(state, countdownFlow = countdownFlow)
-        TodaysPrayersSection(prayers = state.prayers)
-        HomeQuickActionsSection(
-            onNavigateToAzkar = onNavigateToAzkar,
-            onNavigateToRadio = onNavigateToRadio,
-        )
-
-        AyahOfTheDayCard(
-            ayah = state.ayahOfTheDay,
-            onClick = onNavigateToReader,
-        )
+        item {
+            HeaderSection(state, countdownFlow = countdownFlow)
+        }
+        item {
+            TodayPrayersSection(prayers = state.prayers)
+        }
+        item {
+            HomeQuickActionsSection(
+                onNavigateToAzkar = onNavigateToAzkar,
+                onNavigateToRadio = onNavigateToRadio,
+            )
+        }
+        item {
+            AyahOfTheDayCard(
+                ayah = state.ayahOfTheDay,
+                onClick = onNavigateToReader,
+            )
+        }
     }
 }
 
@@ -218,7 +224,7 @@ private fun CountdownDisplay(countdownFlow: StateFlow<CountdownTime?>) {
 
 @OptIn(ExperimentalTime::class)
 @Composable
-private fun TodaysPrayersSection(
+private fun TodayPrayersSection(
     prayers: List<PrayerUiModel>,
     modifier: Modifier = Modifier
 ) {

@@ -75,9 +75,12 @@ import com.hussein.mawaqit.presentation.quran.components.AyahReciterPickerSheetC
 import com.hussein.mawaqit.presentation.shared.BackButton
 import com.hussein.mawaqit.presentation.shared.ErrorContent
 import com.hussein.mawaqit.presentation.shared.LoadingContent
+import com.hussein.mawaqit.presentation.util.GlobalPlayerViewModel
 import com.hussein.mawaqit.ui.theme.quranFontFamily
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
+import kotlin.time.Duration.Companion.milliseconds
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -87,6 +90,8 @@ fun QuranReaderScreen(
     onBack: () -> Unit,
     scrollToAyah: Int? = null,
     viewModel: QuranViewModel = koinViewModel(),
+    globalMediaPlayerViewModel: GlobalPlayerViewModel = koinInject()
+
 ) {
     val readerState by viewModel.readerState.collectAsStateWithLifecycle()
     val fontSize by viewModel.fontSize.collectAsStateWithLifecycle()
@@ -137,7 +142,7 @@ fun QuranReaderScreen(
     LaunchedEffect(scrollToAyah) {
         if (scrollToAyah != null) {
             highlightedAyah = scrollToAyah
-            delay(3000)
+            delay(3000.milliseconds)
             highlightedAyah = null
         }
     }
@@ -166,6 +171,9 @@ fun QuranReaderScreen(
             onTafsir = { viewModel.fetchTafsir(surahIndex, ayah) },
             onBookmark = { viewModel.toggleBookmark(surahIndex, ayah.numberInSurah) },
             onPlayPause = {
+                if (globalMediaPlayerViewModel.isPlaying.value) {
+                    globalMediaPlayerViewModel.stop()
+                }
                 if (playingAyah == ayah.numberInSurah &&
                     recitationState !is AyahRecitationState.Idle
                 ) {

@@ -1,24 +1,39 @@
 package com.hussein.mawaqit.presentation.navigation
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -40,6 +55,7 @@ import com.hussein.mawaqit.presentation.quran.search.QuranSearchScreen
 import com.hussein.mawaqit.presentation.radio.RadioChannelListScreen
 import com.hussein.mawaqit.presentation.settings.SettingsScreen
 import com.hussein.mawaqit.presentation.shared.LoadingContent
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.serialization.Serializable
 import org.koin.core.annotation.KoinExperimentalAPI
 
@@ -104,6 +120,8 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
     val backStack = rememberNavBackStack(Initializing)
     val navDirection = remember { mutableIntStateOf(1) }
 
+    val showNavBar = remember { mutableStateOf(true) }
+
     LaunchedEffect(Unit) {
         if (settingsRepository.isOnboardingDone()) {
             backStack.removeLastOrNull()
@@ -116,6 +134,12 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
 
     val currentScreen = backStack.lastOrNull()
     val selectedTopLevel = currentScreen?.topLevelIndex()?.takeIf { it >= 0 }
+
+    LaunchedEffect(currentScreen) {
+        if (currentScreen == Home) {
+            showNavBar.value = true
+        }
+    }
 
     fun navigateToTopLevel(destination: Screen) {
         val current = backStack.lastOrNull()
@@ -157,7 +181,6 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
 
                 entry<Home> {
                     HomeScreen(
-                        modifier = Modifier.padding(bottom = 80.dp),
                         onNavigateToAzkar = {
                             backStack.add(
                                 AzkarCategories
@@ -166,23 +189,25 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
                         onNavigateToRadio = { backStack.add(RadioChannels) },
                         onNavigateToReader = { index, ayahIndex ->
                             backStack.add(QuranReader(index, ayahIndex))
-                        },
+                        }
                     )
                 }
 
                 entry<Settings> {
-                    SettingsScreen(modifier = Modifier.padding(bottom = 80.dp))
+                    SettingsScreen()
                 }
 
                 entry<QuranSurahList> {
                     SurahListScreen(
-                        modifier = Modifier.padding(bottom = 80.dp),
                         onSurahSelected = { index, scrollToAyah ->
                             backStack.add(QuranReader(index, scrollToAyah))
                         },
                         onNavigateToSearch = {
                             backStack.add(QuranSearch)
+                        }, toggleNavBar = {
+                            showNavBar.value = it
                         }
+
                     )
                 }
 
@@ -245,44 +270,155 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
             }
         )
 
-        AnimatedVisibility(
-            modifier = Modifier.align(Alignment.BottomCenter),
-            visible = selectedTopLevel != null,
-            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-            exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut()
-        ) {
-            if (selectedTopLevel != null) {
-                MawaqitNavigationBar(
-                    selectedIndex = selectedTopLevel,
-                    onDestinationSelected = { navigateToTopLevel(topLevelDestinations[it].screen) }
-                )
-            }
-        }
+        if (selectedTopLevel != null) {
 
-    }
-
-
-}
-
-@Composable
-private fun MawaqitNavigationBar(
-    selectedIndex: Int,
-    onDestinationSelected: (Int) -> Unit
-) {
-    NavigationBar {
-        topLevelDestinations.forEachIndexed { index, destination ->
-            NavigationBarItem(
-                selected = selectedIndex == index,
-                onClick = { onDestinationSelected(index) },
-                icon = {
-                    Icon(
-                        imageVector = ImageVector.vectorResource(destination.icon),
-                        contentDescription = destination.label
-                    )
-                },
-                label = { Text(destination.label) }
+            FloatingNavBar(
+                modifier = Modifier.align(Alignment.BottomCenter),
+                items = topLevelDestinations,
+                selectedIndex = selectedTopLevel,
+                onSelect = { navigateToTopLevel(topLevelDestinations[it].screen) },
+                show = showNavBar.value
             )
         }
     }
+
 }
 
+
+@Composable
+private fun FloatingNavBar(
+    modifier: Modifier = Modifier,
+    items: List<TopLevelDestination>,
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit,
+    show: Boolean
+) {
+    AnimatedVisibility(
+        modifier = modifier,
+        visible = show,
+        enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+        exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+    ) {
+        Surface(
+            shape = RoundedCornerShape(28.dp),
+            shadowElevation = 6.dp,
+            modifier = Modifier.padding(16.dp).windowInsetsPadding(
+                WindowInsets.navigationBars
+            )
+        ) {
+            Row(
+                modifier = Modifier.padding(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items.forEachIndexed { index, item ->
+                    FloatingNavItem(
+                        icon = { Icon(ImageVector.vectorResource(item.icon), null) },
+                        title = item.label,
+                        selected = index == selectedIndex,
+                        onClick = { onSelect(index) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FloatingNavItem(
+    icon: @Composable () -> Unit,
+    title: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(50),
+        tonalElevation = if (selected) 8.dp else 2.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .height(48.dp)
+                .animateContentSize(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Spacer(Modifier.width(12.dp))
+            icon()
+
+            AnimatedVisibility(
+                visible = selected,
+                enter = fadeIn() + expandHorizontally(),
+                exit = fadeOut() + shrinkHorizontally()
+            ) {
+                Text(
+                    text = title,
+                    modifier = Modifier.padding(horizontal = 6.dp),
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
+
+            Spacer(Modifier.width(12.dp))
+        }
+    }
+}
+
+@Composable
+fun ScrollObserver(
+    onToggleNavBar: (Boolean) -> Unit,
+    listState: LazyListState
+) {
+    val currentOnToggleNavBar = rememberUpdatedState(onToggleNavBar)
+
+    LaunchedEffect(listState) {
+        var previousIndex = listState.firstVisibleItemIndex
+        var previousOffset = listState.firstVisibleItemScrollOffset
+        var isNavBarVisible = true
+
+        snapshotFlow {
+            val layoutInfo = listState.layoutInfo
+
+            ScrollSnapshot(
+                listState.firstVisibleItemIndex,
+                listState.firstVisibleItemScrollOffset,
+                layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0,
+                layoutInfo.totalItemsCount
+            )
+        }.distinctUntilChanged().collect { scrollSnapshot ->
+            val index = scrollSnapshot.firstVisibleItemIndex
+            val offset = scrollSnapshot.firstVisibleItemScrollOffset
+
+            val scrollingDown =
+                index > previousIndex ||
+                        (index == previousIndex && offset > previousOffset)
+
+            val scrollingUp =
+                index < previousIndex ||
+                        (index == previousIndex && offset < previousOffset)
+
+            val isAtEnd =
+                scrollSnapshot.totalItemsCount > 0 &&
+                        scrollSnapshot.lastVisibleItemIndex >= scrollSnapshot.totalItemsCount - 1
+
+            val shouldShowNavBar = when {
+                isAtEnd -> true
+                scrollingDown -> false
+                scrollingUp -> true
+                else -> isNavBarVisible
+            }
+
+            if (shouldShowNavBar != isNavBarVisible) {
+                isNavBarVisible = shouldShowNavBar
+                currentOnToggleNavBar.value(shouldShowNavBar)
+            }
+
+            previousIndex = index
+            previousOffset = offset
+        }
+    }
+}
+
+private data class ScrollSnapshot(
+    val firstVisibleItemIndex: Int,
+    val firstVisibleItemScrollOffset: Int,
+    val lastVisibleItemIndex: Int,
+    val totalItemsCount: Int
+)
