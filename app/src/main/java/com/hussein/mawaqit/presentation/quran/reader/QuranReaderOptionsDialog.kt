@@ -3,13 +3,14 @@ package com.hussein.mawaqit.presentation.quran.reader
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -18,14 +19,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import com.hussein.mawaqit.R
-import com.hussein.mawaqit.data.quran.QuranFontSize
 import com.hussein.mawaqit.data.quran.QuranTextAlignment
 
 @Composable
 fun QuranReaderOptionsDialog(
-    selectedFontSize: QuranFontSize,
+    selectedFontSize: Float,
     selectedTextAlignment: QuranTextAlignment,
-    onSelectedFontSize: (QuranFontSize) -> Unit,
+    onSelectedFontSize: (Float) -> Unit,
     onSelectedTextAlignment: (QuranTextAlignment) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -75,25 +75,18 @@ fun QuranReaderOptionsDialog(
                 }
 
                 Text(text = "Quran font size", style = MaterialTheme.typography.titleMedium)
-                SingleChoiceSegmentedButtonRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    space = 0.dp
-                ) {
-                    QuranFontSize.entries.forEach {
-                        SegmentedButton(
-                            selected = it == selectedFontSize,
-                            onClick = { onSelectedFontSize(it) },
-                            shape = SegmentedButtonDefaults.itemShape(
-                                index = QuranFontSize.entries.indexOf(it),
-                                count = QuranFontSize.entries.size,
-                            ), label = {
-                                Text(text = it.label)
-                            }
-                        )
 
-                    }
-                }
-
+                Slider(
+                    value = selectedFontSize,
+                    onValueChange = { onSelectedFontSize(it) },
+                    colors = SliderDefaults.colors(
+                        thumbColor = MaterialTheme.colorScheme.secondary,
+                        activeTrackColor = MaterialTheme.colorScheme.secondary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.secondaryContainer,
+                    ),
+                    steps = 6,
+                    valueRange = 18f..42f
+                )
             }
         },
         confirmButton = {

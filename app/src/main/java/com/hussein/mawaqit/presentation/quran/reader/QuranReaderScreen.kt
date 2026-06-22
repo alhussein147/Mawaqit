@@ -5,6 +5,7 @@ import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -12,14 +13,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -67,7 +71,6 @@ import com.hussein.mawaqit.R
 import com.hussein.mawaqit.data.db.BookmarkEntity
 import com.hussein.mawaqit.data.db.models.Ayah
 import com.hussein.mawaqit.data.quran.QuranData
-import com.hussein.mawaqit.data.quran.QuranFontSize
 import com.hussein.mawaqit.data.quran.QuranTextAlignment
 import com.hussein.mawaqit.data.quran.Surah
 import com.hussein.mawaqit.data.quran.recitation.Reciter
@@ -291,7 +294,7 @@ fun QuranReaderScreen(
 @Composable
 private fun FlowingAyahBlock(
     ayahs: List<Ayah>,
-    fontSize: QuranFontSize,
+    fontSize: Float,
     quranTextAlignment: QuranTextAlignment,
     bookmarks: List<BookmarkEntity>,
     surahIndex: Int,
@@ -316,7 +319,7 @@ private fun FlowingAyahBlock(
             withStyle(
                 SpanStyle(
                     color = if (isBookmarked) bookmarkColor else onSurface,
-                    fontSize = fontSize.sp.sp,
+                    fontSize = fontSize.sp,
                     background = if (isHighlighted) highlightColor else Color.Transparent // Apply background
                 )
             ) {
@@ -325,7 +328,7 @@ private fun FlowingAyahBlock(
             withStyle(
                 SpanStyle(
                     color = primary,
-                    fontSize = (fontSize.sp * 0.75).sp,
+                    fontSize = (fontSize * 0.75).sp,
                     fontWeight = FontWeight.Bold,
                 )
             ) {
@@ -341,8 +344,8 @@ private fun FlowingAyahBlock(
             .fillMaxWidth()
             .padding(),
         style = TextStyle(
-            fontSize = fontSize.sp.sp,
-            lineHeight = (fontSize.sp * 2.0).sp,
+            fontSize = fontSize.sp,
+            lineHeight = (fontSize * 2.0).sp,
             textAlign = when (quranTextAlignment) {
                 QuranTextAlignment.Start -> TextAlign.Start
                 QuranTextAlignment.Center -> TextAlign.Center
@@ -422,25 +425,45 @@ private fun AyahBottomSheet(
             modifier: Modifier,
             onClick: () -> Unit,
             @DrawableRes icon: Int,
-            title: String
+            title: String,
+            selected: Boolean = false
         ) {
             Surface(
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                color = if (selected) {
+                    MaterialTheme.colorScheme.primaryContainer
+                } else {
+                    MaterialTheme.colorScheme.surfaceContainerHigh
+                },
+                contentColor = if (selected) {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
                 modifier = Modifier
                     .then(modifier)
-                    .height(96.dp), shape = RoundedCornerShape(24.dp),
+                    .height(78.dp),
+                shape = RoundedCornerShape(18.dp),
+                tonalElevation = if (selected) 2.dp else 0.dp,
                 onClick = onClick
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.SpaceAround,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Icon(imageVector = ImageVector.vectorResource(icon), contentDescription = null)
+                    Icon(
+                        imageVector = ImageVector.vectorResource(icon),
+                        contentDescription = null,
+                        modifier = Modifier.size(22.dp)
+                    )
                     Text(
                         title,
-                        style = MaterialTheme.typography.titleSmall,
-                        overflow = TextOverflow.Ellipsis
+                        style = MaterialTheme.typography.labelLarge,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center
                     )
                 }
             }
@@ -454,122 +477,208 @@ private fun AyahBottomSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
-                        .padding(bottom = 16.dp)
+                        .padding(bottom = 20.dp)
                         .navigationBarsPadding(),
-                    horizontalAlignment = Alignment.End
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Ayah text preview
-                    Text(
-                        text = ayah.text,
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            textDirection = TextDirection.Rtl,
-                            lineHeight = 30.sp
-                        ),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(Modifier.height(16.dp))
-                    // Tafsir content
-                    when (tafsirState) {
-                        TafsirState.Idle -> {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                // copy button
-                                BottomSheetButton(
-                                    modifier = Modifier.weight(1f),
-                                    icon = R.drawable.ic_copy,
-                                    title = "Copy Ayah",
-                                    onClick = {
-                                        onAyahCopy(ayah.text)
-                                        onDismiss()
-                                    }
-                                )
-                                // bookmark button
-                                BottomSheetButton(
-                                    modifier = Modifier.weight(1f),
-                                    icon = if (isBookmarked) R.drawable.ic_bookmark_filled else R.drawable.ic_bookmark,
-                                    title = if (isBookmarked) "Remove bookmark" else "Bookmark",
-                                    onClick = onBookmark
-                                )
-                                // tafsir button
-                                BottomSheetButton(
-                                    modifier = Modifier.weight(1f),
-                                    icon = R.drawable.ic_placeholder,
-                                    title = "Tafsir", onClick = onTafsir
-                                )
-                            }
-                            Spacer(Modifier.height(8.dp))
-                            Row(modifier = Modifier.fillMaxWidth()) {
-                                // reciter button
-                                OutlinedButton(
-                                    modifier = Modifier.weight(0.4f),
-                                    onClick = { showReciterOptions = true },
-                                    enabled = playEnabled
-                                ) {
-                                    Text(
-                                        currentReciter.nameEnglish,
-                                        modifier = Modifier.basicMarquee()
-                                    )
-                                }
-                                // ayah recitation play pause button
-                                Button(
-                                    modifier = Modifier.weight(0.6f),
-                                    onClick = onPlayPause,
-                                    enabled = playEnabled
-                                ) {
-                                    Icon(
-                                        imageVector = ImageVector.vectorResource(
-                                            if (isPlaying) R.drawable.ic_stop else R.drawable.ic_play
-                                        ),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(Modifier.width(4.dp))
-                                    Text(if (isPlaying) "Stop" else "Play")
-                                }
-                            }
-                        }
-
-                        TafsirState.Loading -> {
-                            LoadingContent(modifier = Modifier.size(100.dp))
-                        }
-
-                        TafsirState.NoNetwork -> {
-                            Spacer(Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = stringResource(R.string.no_internet_connection),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.error,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-
-                        is TafsirState.Error -> {
-                            ErrorContent(
-                                message = tafsirState.message,
-                                modifier = Modifier.size(100.dp)
-                            )
-                        }
-
-                        is TafsirState.Success -> {
-                            HorizontalDivider(
-                                modifier = Modifier.padding(vertical = 12.dp),
-                                color = MaterialTheme.colorScheme.outlineVariant
+                                text = "Ayah ${ayah.numberInSurah}",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
                             )
                             Text(
-                                text = tafsirState.text,
-                                style = MaterialTheme.typography.bodyLarge.copy(
+                                text = currentReciter.nameEnglish,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        IconButton(onClick = onDismiss) {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(R.drawable.ic_close),
+                                contentDescription = null
+                            )
+                        }
+                    }
+
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.surfaceContainer,
+                        shape = RoundedCornerShape(20.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 220.dp)
+                                .verticalScroll(rememberScrollState())
+                                .padding(horizontal = 18.dp, vertical = 16.dp)
+                        ) {
+                            Text(
+                                text = ayah.text,
+                                style = MaterialTheme.typography.titleMedium.copy(
                                     textDirection = TextDirection.Rtl,
-                                    lineHeight = 32.sp
+                                    lineHeight = 34.sp,
+                                    fontFamily = quranFontFamily
                                 ),
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
+                    }
+
+                    if (tafsirState !is TafsirState.Success) {
+                        // main buttons [copy, bookmark, tafsir]
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            BottomSheetButton(
+                                modifier = Modifier.weight(1f),
+                                icon = R.drawable.ic_copy,
+                                title = "Copy",
+                                onClick = {
+                                    onAyahCopy(ayah.text)
+                                    onDismiss()
+                                }
+                            )
+                            BottomSheetButton(
+                                modifier = Modifier.weight(1f),
+                                icon = if (isBookmarked) R.drawable.ic_bookmark_filled else R.drawable.ic_bookmark,
+                                title = if (isBookmarked) "Saved" else "Save",
+                                selected = isBookmarked,
+                                onClick = onBookmark
+                            )
+                            BottomSheetButton(
+                                modifier = Modifier.weight(1f),
+                                icon = R.drawable.ic_placeholder,
+                                title = "Tafsir",
+                                selected = tafsirState is TafsirState.Success,
+                                onClick = onTafsir
+                            )
+                        }
+
+                        // media buttons [reciter, play/pause]
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            OutlinedButton(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(52.dp),
+                                onClick = { showReciterOptions = true },
+                                enabled = playEnabled,
+                                shape = RoundedCornerShape(16.dp)
+                            ) {
+                                Text(
+                                    currentReciter.nameEnglish,
+                                    modifier = Modifier.basicMarquee(),
+                                    maxLines = 1
+                                )
+                            }
+                            Button(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(52.dp),
+                                onClick = onPlayPause,
+                                enabled = playEnabled,
+                                shape = RoundedCornerShape(16.dp)
+                            ) {
+                                Icon(
+                                    imageVector = ImageVector.vectorResource(
+                                        if (isPlaying) R.drawable.ic_stop else R.drawable.ic_play
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(if (isPlaying) "Stop" else "Play")
+                            }
+                        }
+
+                    }
+
+
+                    when (tafsirState) {
+
+                        is TafsirState.Success -> {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                                shape = RoundedCornerShape(20.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(max = 280.dp)
+                                        .verticalScroll(rememberScrollState())
+                                        .padding(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Text(
+                                        text = "Tafsir",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                                    Text(
+                                        text = tafsirState.text,
+                                        style = MaterialTheme.typography.bodyLarge.copy(
+                                            textDirection = TextDirection.Rtl,
+                                            lineHeight = 36.sp
+                                        ),
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+                            }
+                        }
+
+                        TafsirState.Loading -> {
+                            LoadingContent(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(120.dp),
+                                backgroundColor = MaterialTheme.colorScheme.background
+                            )
+                        }
+
+                        TafsirState.NoNetwork -> {
+                            Surface(
+                                color = MaterialTheme.colorScheme.errorContainer,
+                                contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.no_internet_connection),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(16.dp)
+                                )
+                            }
+                        }
+
+                        is TafsirState.Error -> {
+                            ErrorContent(
+                                message = tafsirState.message,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(120.dp)
+                            )
+                        }
+
+                        TafsirState.Idle -> Unit
                     }
                 }
 

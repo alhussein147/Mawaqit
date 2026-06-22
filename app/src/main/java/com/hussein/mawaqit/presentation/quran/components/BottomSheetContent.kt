@@ -10,7 +10,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,20 +37,25 @@ fun AyahReciterPickerSheetContent(
             .navigationBarsPadding(),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        IconButton(onClick = onBack) {
-            Icon(
-                imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_back),
-                contentDescription = null
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp , alignment = Alignment.Start),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(
+                    imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_back),
+                    contentDescription = null
+                )
+            }
+
+            Text(
+                text = "Pick Reciter",
+                style = MaterialTheme.typography.titleMedium,
             )
+
         }
 
-        Text(
-            text = "Pick Reciter",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 12.dp),
-        )
         Reciter.entries.forEach { reciter ->
             val isSelected = reciter == selectedReciter
             Surface(

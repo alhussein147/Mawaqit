@@ -10,7 +10,6 @@ import com.hussein.mawaqit.data.db.models.SurahDetail
 import com.hussein.mawaqit.data.infrastructure.media.AyahPlayer
 import com.hussein.mawaqit.data.infrastructure.network.NetworkObserver
 import com.hussein.mawaqit.data.quran.QuranDisplayPreferences
-import com.hussein.mawaqit.data.quran.QuranFontSize
 import com.hussein.mawaqit.data.quran.QuranTextAlignment
 import com.hussein.mawaqit.data.quran.recitation.RecitationRepository
 import com.hussein.mawaqit.data.quran.recitation.Reciter
@@ -21,6 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
 @Stable
 sealed interface AyahRecitationState {
     data object Idle : AyahRecitationState
@@ -53,8 +53,6 @@ class QuranViewModel(
     private val quranDatabaseRepository: QuranDatabaseRepository
 ) : ViewModel() {
 
-    // quran text alignment
-
     val textAlignment: StateFlow<QuranTextAlignment> = quranDisplayPreferences.quranTextAlignment
         .stateIn(viewModelScope, SharingStarted.Eagerly, QuranTextAlignment.Center)
 
@@ -63,10 +61,10 @@ class QuranViewModel(
     }
 
     // ── Font size — delegated to repo ─────────────────────────────────────────
-    val fontSize: StateFlow<QuranFontSize> = quranDisplayPreferences.fontSizeFlow
-        .stateIn(viewModelScope, SharingStarted.Eagerly, QuranFontSize.MEDIUM)
+    val fontSize: StateFlow<Float> = quranDisplayPreferences.fontSizeFlow
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 18f)
 
-    fun setFontSize(size: QuranFontSize) {
+    fun setFontSize(size: Float) {
         viewModelScope.launch { quranDisplayPreferences.setFontSize(size) }
     }
 
