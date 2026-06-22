@@ -62,7 +62,7 @@ A clean, modern Islamic companion app for Android built with Kotlin and Jetpack 
 
 ## Screenshots
 
-  <img src="screenshots/main.png" width="250"/> | <img src="screenshots/azkar_categories.png" width="250"/> | <img src="screenshots/azkar.png" width="250"/> | <img src="screenshots/onboarding1.png" width="250"/> | <img src="screenshots/onboarding2.png" width="250"/> | <img src="screenshots/onboarding3.png" width="250"/> | <img src="screenshots/setting_screen.png" width="250"/> | <img src="screenshots/quran_list.png" width="250"/> | <img src="screenshots/quran_reading.png" width="250"/> | <img src="screenshots/quran_search.png" width="250"/> | <img src="screenshots/bookmarks.png" width="250"/>
+  <img src="screenshots/main.jpg" width="250"/> | <img src="screenshots/settings.jpg" width="250"/> | <img src="screenshots/quran.jpg" width="250"/> | <img src="screenshots/quran_list.jpg" width="250"/> | <img src="screenshots/azkar.png" width="250"/> | <img src="screenshots/azkar_categories.png" width="250"/> | <img src="screenshots/search.png" width="250"/> | <img src="screenshots/radio.jpg" width="250"/> | <img src="screenshots/reader_bottom_sheet.jpg" width="250"/> | <img src="screenshots/reciters.jpg" width="250"/> | <img src="screenshots/%5Bonboarding%5D-welcome.jpg" width="250"/> | <img src="screenshots/%5Bonboarding%5D-location.jpg" width="250"/> | <img src="screenshots/%5Bonboarding%5D-notification.jpg" width="250"/> | <img src="screenshots/%5Bonboarding%5D-done.jpg" width="250"/>
 
 ---
 
