@@ -42,7 +42,7 @@ import com.hussein.mawaqit.R
 
 enum class OnboardingPage { WELCOME, LOCATION, FETCHING_LOCATION, NOTIFICATION, EXACT_ALARM, BATTERY_OPTIMIZATION, QURAN_SETUP, DONE }
 
-
+// TODO: extract string resources to strings.xml
 @Composable
 fun WelcomePage() {
     PageContent(
@@ -129,9 +129,7 @@ fun DonePage() {
 fun QuranSetupPage(
     progress: Float,
     currentSurah: Int,
-    failed: Boolean,
-    onRetry: () -> Unit
-) {
+    failed: Boolean) {
     val animatedProgress by animateFloatAsState(
         targetValue = progress,
         animationSpec = tween(300),
@@ -143,7 +141,7 @@ fun QuranSetupPage(
         title = "Loading quran data",
         subtitle = "Loaded $currentSurah of 114",
         badge = null,
-        errorMessage = if (failed) "Error happed while loading data" else "",
+        errorMessage = if (failed) "Error happened while loading data" else "",
         progress = animatedProgress
     )
 

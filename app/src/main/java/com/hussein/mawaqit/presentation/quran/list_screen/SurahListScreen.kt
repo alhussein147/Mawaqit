@@ -71,6 +71,7 @@ fun SurahListScreen(
     var showBookmarksDialog by remember { mutableStateOf(false) }
 
     val topAppBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
     if (showReciterPicker) {
         SurahReciterPickerSheet(
             current = selectedReciter,

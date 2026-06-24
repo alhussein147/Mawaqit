@@ -6,7 +6,29 @@ import kotlinx.datetime.toLocalDateTime
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
+data class HijriMonth(
+    val englishName: String,
+    val arabicName: String
+)
+
 object HijriDateCalculator {
+
+
+
+    val hijriMonths = listOf(
+        HijriMonth("Muharram", "محرم"),
+        HijriMonth("Safar", "صفر"),
+        HijriMonth("Rabi' al-Awwal", "ربيع الأول"),
+        HijriMonth("Rabi' al-Thani", "ربيع الآخر"),
+        HijriMonth("Jumada al-Awwal", "جمادى الأولى"),
+        HijriMonth("Jumada al-Thani", "جمادى الآخرة"),
+        HijriMonth("Rajab", "رجب"),
+        HijriMonth("Sha'ban", "شعبان"),
+        HijriMonth("Ramadan", "رمضان"),
+        HijriMonth("Shawwal", "شوال"),
+        HijriMonth("Dhu al-Qi'dah", "ذو القعدة"),
+        HijriMonth("Dhu al-Hijjah", "ذو الحجة")
+    )
 
     @OptIn(ExperimentalTime::class)
      fun toHijriDateString(instant: Instant): String {
@@ -29,16 +51,12 @@ object HijriDateCalculator {
                 (l / 5670) * ((43 * l) / 15238)
         l = l - ((30 - j) / 15) * ((17719 * j) / 50) -
                 (j / 16) * ((15238 * j) / 43) + 29
-        val hYear = (30 * n + j - 30).toArabicDigits()
+        val hYear = (30 * n + j - 30)
         val hMonth = (24 * l) / 709
-        val hDay = (l - (709 * hMonth) / 24).toArabicDigits()
+        val hDay = (l - (709 * hMonth) / 24)
 
-        val monthNames = listOf(
-            "محرم", "صفر", "ربيع الأول", "ربيع الثاني",
-            "جمادى الأولى", "جمادى الثانية", "رجب", "شعبان",
-            "رمضان", "شوال", "ذو القعدة", "ذو الحجة"
-        )
-        val monthName = monthNames.getOrElse(hMonth - 1) { "" }
+        val monthName = hijriMonths.getOrNull(hMonth - 1)?.englishName ?: ""
+
         return "$hDay $monthName $hYear"
     }
 

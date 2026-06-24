@@ -68,8 +68,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.mawaqit.R
-import com.hussein.mawaqit.data.db.BookmarkEntity
-import com.hussein.mawaqit.data.db.models.Ayah
+import com.hussein.mawaqit.data.db.entities.BookmarkEntity
+import com.hussein.mawaqit.domain.models.Ayah
 import com.hussein.mawaqit.data.quran.QuranData
 import com.hussein.mawaqit.data.quran.QuranTextAlignment
 import com.hussein.mawaqit.data.quran.Surah

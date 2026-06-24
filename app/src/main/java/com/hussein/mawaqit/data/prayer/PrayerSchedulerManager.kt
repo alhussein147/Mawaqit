@@ -6,7 +6,7 @@ import android.util.Log
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import com.hussein.mawaqit.data.infrastructure.workers.DailyPrayerWorker
+import com.hussein.mawaqit.infrastructure.workers.DailyPrayerWorker
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 

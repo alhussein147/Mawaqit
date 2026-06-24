@@ -59,11 +59,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.batoulapps.adhan2.CalculationMethod
 import com.hussein.core.models.SavedLocation
 import com.hussein.mawaqit.R
-import com.hussein.mawaqit.data.infrastructure.settings.AppColorScheme
-import com.hussein.mawaqit.data.infrastructure.settings.AppSettings
-import com.hussein.mawaqit.data.infrastructure.settings.AppTheme
-import com.hussein.mawaqit.data.infrastructure.settings.NotificationSound
-import com.hussein.mawaqit.data.infrastructure.settings.PrayerNotificationSettings
+import com.hussein.mawaqit.infrastructure.settings.AppColorScheme
+import com.hussein.mawaqit.infrastructure.settings.AppSettings
+import com.hussein.mawaqit.infrastructure.settings.AppTheme
+import com.hussein.mawaqit.infrastructure.settings.NotificationSound
+import com.hussein.mawaqit.infrastructure.settings.PrayerNotificationSettings
 import com.hussein.mawaqit.presentation.shared.LoadingContent
 import com.hussein.mawaqit.presentation.shared.ScreenWrapper
 import com.hussein.mawaqit.presentation.util.getPrayersDisplayNames

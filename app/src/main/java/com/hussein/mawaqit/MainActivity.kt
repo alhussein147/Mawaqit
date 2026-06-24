@@ -7,7 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
+import com.hussein.mawaqit.infrastructure.settings.SettingsRepository
 import com.hussein.mawaqit.presentation.navigation.AppNavigation
 import com.hussein.mawaqit.ui.theme.MawaqitTheme
 import org.koin.android.ext.android.inject
@@ -20,7 +20,7 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        val settingsRepository: SettingsRepository by inject<SettingsRepository>()
+        val settingsRepository: com.hussein.mawaqit.infrastructure.settings.SettingsRepository by inject<com.hussein.mawaqit.infrastructure.settings.SettingsRepository>()
         setContent {
             val settings by settingsRepository.settingsFlow
                 .collectAsStateWithLifecycle(initialValue = null)

@@ -109,7 +109,7 @@ fun OnboardingScreen(
                         progress = state.quranProgress,
                         currentSurah = state.quranCurrentSurah,
                         failed = state.quranPopulationFailed,
-                        onRetry = { viewModel.retryQuranPopulation() }
+//                        onRetry = { viewModel.retryQuranPopulation() }
                     )
                 }
             }

@@ -34,3 +34,9 @@ data class QuranReader(val surahIndex: Int, val scrollToAyah: Int? = null) : Scr
 
 @Serializable
 data object RadioChannels : Screen
+
+@Serializable
+data object QuranReaderSettings : Screen
+
+@Serializable
+data object QuranBookmarks : Screen

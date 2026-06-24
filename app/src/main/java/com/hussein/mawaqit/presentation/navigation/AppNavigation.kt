@@ -21,7 +21,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.hussein.mawaqit.R
-import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
+import com.hussein.mawaqit.infrastructure.settings.SettingsRepository
 import com.hussein.mawaqit.presentation.azkar.AzkarScreen
 import com.hussein.mawaqit.presentation.azkar.categories.AzkarCategoryScreen
 import com.hussein.mawaqit.presentation.home.HomeScreen

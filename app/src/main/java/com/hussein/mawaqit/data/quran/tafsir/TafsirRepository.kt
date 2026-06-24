@@ -1,27 +1,13 @@
 package com.hussein.mawaqit.data.quran.tafsir
 
+import com.hussein.mawaqit.data.quran.tafsir.models.TafsirResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.android.Android
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.serialization.kotlinx.json.json
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-
-@Serializable
-private data class TafsirResponse(
-    val code: Int,
-    val status: String,
-    val data: TafsirData
-)
-
-@Serializable
-private data class TafsirData(
-    val number: Int,
-    val text: String,
-    val numberInSurah: Int
-)
 
 class TafsirRepository {
 

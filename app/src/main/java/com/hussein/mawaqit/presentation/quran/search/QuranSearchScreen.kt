@@ -44,8 +44,8 @@ import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.hussein.mawaqit.data.db.AyahEntity
-import com.hussein.mawaqit.data.db.SurahEntity
+import com.hussein.mawaqit.data.db.entities.AyahEntity
+import com.hussein.mawaqit.data.db.entities.SurahEntity
 import com.hussein.mawaqit.data.quran.QuranData
 import com.hussein.mawaqit.presentation.shared.BackButton
 import org.koin.androidx.compose.koinViewModel
@@ -178,9 +178,6 @@ fun QuranSearchScreen(
     }
 }
 
-// ---------------------------------------------------------------------------
-// Section header
-// ---------------------------------------------------------------------------
 
 @Composable
 private fun SearchSectionHeader(title: String) {

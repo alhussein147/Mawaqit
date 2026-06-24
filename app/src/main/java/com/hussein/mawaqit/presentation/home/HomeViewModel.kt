@@ -2,24 +2,15 @@ package com.hussein.mawaqit.presentation.home
 
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
 import com.batoulapps.adhan2.CalculationMethod
 import com.hussein.core.LocationRepository
 import com.hussein.core.PrayerTimeCalculator
 import com.hussein.core.models.SavedLocation
 import com.hussein.core.utils.HijriDateCalculator
-import com.hussein.mawaqit.MawaqitApp
-import com.hussein.mawaqit.data.db.AyahDao
-import com.hussein.mawaqit.data.db.AyahEntity
-import com.hussein.mawaqit.data.db.QuranDatabaseRepository
-import com.hussein.mawaqit.data.db.models.Ayah
-import com.hussein.mawaqit.data.db.models.AyahOfTheDay
-import com.hussein.mawaqit.data.db.models.AyahWithSurah
-import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
+import com.hussein.mawaqit.data.db.repo.QuranDatabaseRepository
+import com.hussein.mawaqit.domain.models.AyahOfTheDay
+import com.hussein.mawaqit.infrastructure.settings.SettingsRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +22,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
 import kotlin.time.Duration

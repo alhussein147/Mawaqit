@@ -5,17 +5,18 @@ import androidx.work.WorkManager
 import com.hussein.core.LocationRepository
 import com.hussein.mawaqit.data.azkar.AzkarRepository
 import com.hussein.mawaqit.data.db.QuranDatabase
-import com.hussein.mawaqit.data.db.QuranDatabaseRepository
-import com.hussein.mawaqit.data.infrastructure.media.AyahPlayer
-import com.hussein.mawaqit.data.infrastructure.network.NetworkObserver
-import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
-import com.hussein.mawaqit.data.infrastructure.workers.DailyPrayerWorker
-import com.hussein.mawaqit.data.infrastructure.workers.QuranPopulationWorker
-import com.hussein.mawaqit.data.infrastructure.workers.SurahDownloadWorker
+import com.hussein.mawaqit.data.db.repo.QuranDatabaseRepository
 import com.hussein.mawaqit.data.prayer.PrayerSchedulerManager
 import com.hussein.mawaqit.data.quran.QuranDisplayPreferences
 import com.hussein.mawaqit.data.quran.recitation.RecitationRepository
 import com.hussein.mawaqit.data.quran.tafsir.TafsirRepository
+import com.hussein.mawaqit.infrastructure.media.AyahPlayer
+import com.hussein.mawaqit.infrastructure.network.NetworkObserver
+import com.hussein.mawaqit.infrastructure.settings.SettingsRepository
+import com.hussein.mawaqit.infrastructure.workers.DailyPrayerWorker
+import com.hussein.mawaqit.infrastructure.workers.QuranPopulationWorker
+import com.hussein.mawaqit.infrastructure.workers.SurahDownloadWorker
+import com.hussein.mawaqit.infrastructure.workers.TafsirPopulationWorker
 import com.hussein.mawaqit.presentation.azkar.AzkarViewModel
 import com.hussein.mawaqit.presentation.home.HomeViewModel
 import com.hussein.mawaqit.presentation.onboarding.OnboardingViewModel
@@ -58,7 +59,7 @@ val appModule = module {
     // ViewModels
     viewModel {
         SettingsViewModel(
-            settingsRepository = get(),
+            settingsRepository = get<SettingsRepository>(),
             locationRepository = get(),
             currentLocationFetcher = get(),
             prayerSchedulerManager = get()
@@ -112,4 +113,5 @@ val appModule = module {
     worker { SurahDownloadWorker(context = androidContext(), params = get()) }
     worker { QuranPopulationWorker(context = androidContext(), params = get()) }
     worker { DailyPrayerWorker(appContext = androidContext(), params = get()) }
+    worker { TafsirPopulationWorker(appContext = androidContext(), params = get()) }
 }

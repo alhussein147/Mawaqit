@@ -4,16 +4,16 @@ import android.util.Log
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.hussein.mawaqit.data.db.QuranDatabaseRepository
-import com.hussein.mawaqit.data.db.models.Ayah
-import com.hussein.mawaqit.data.db.models.SurahDetail
-import com.hussein.mawaqit.data.infrastructure.media.AyahPlayer
-import com.hussein.mawaqit.data.infrastructure.network.NetworkObserver
+import com.hussein.mawaqit.data.db.repo.QuranDatabaseRepository
 import com.hussein.mawaqit.data.quran.QuranDisplayPreferences
 import com.hussein.mawaqit.data.quran.QuranTextAlignment
 import com.hussein.mawaqit.data.quran.recitation.RecitationRepository
 import com.hussein.mawaqit.data.quran.recitation.Reciter
 import com.hussein.mawaqit.data.quran.tafsir.TafsirRepository
+import com.hussein.mawaqit.domain.models.Ayah
+import com.hussein.mawaqit.domain.models.SurahDetail
+import com.hussein.mawaqit.infrastructure.media.AyahPlayer
+import com.hussein.mawaqit.infrastructure.network.NetworkObserver
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -60,7 +60,7 @@ class QuranViewModel(
         viewModelScope.launch { quranDisplayPreferences.setTextAlignmentSize(alignment) }
     }
 
-    // ── Font size — delegated to repo ─────────────────────────────────────────
+    // font size prefs
     val fontSize: StateFlow<Float> = quranDisplayPreferences.fontSizeFlow
         .stateIn(viewModelScope, SharingStarted.Eagerly, 18f)
 
@@ -68,16 +68,11 @@ class QuranViewModel(
         viewModelScope.launch { quranDisplayPreferences.setFontSize(size) }
     }
 
-    // ── Reader state ──────────────────────────────────────────────────────────
-
     private val _readerState = MutableStateFlow<QuranReaderUiState>(QuranReaderUiState.Idle)
     val readerState: StateFlow<QuranReaderUiState> = _readerState.asStateFlow()
 
-    // ── Network state ─────────────────────────────────────────────────────────
-
     val networkAvailable: StateFlow<Boolean> = networkObserver.networkAvailableFlow()
         .stateIn(viewModelScope, SharingStarted.Eagerly, true)
-
 
     private var loadedSurahIndex = -1
 
@@ -100,8 +95,6 @@ class QuranViewModel(
     fun toggleBookmark(surahNumber: Int, ayahNumber: Int) {
         viewModelScope.launch { quranDatabaseRepository.toggleBookmark(surahNumber, ayahNumber) }
     }
-
-    // ── Ayah recitation ───────────────────────────────────────────────────────
 
     val ayahRecitationState: StateFlow<AyahRecitationState> = ayahPlayer.state
     val playingAyah: StateFlow<Int?> = ayahPlayer.playingAyah
@@ -127,9 +120,6 @@ class QuranViewModel(
         stopAyah()
         _selectedReciter.value = reciter
     }
-
-
-    // ── Tafsir ────────────────────────────────────────────────────────────────
 
     private val _tafsirState = MutableStateFlow<TafsirState>(TafsirState.Idle)
     val tafsirState: StateFlow<TafsirState> = _tafsirState.asStateFlow()

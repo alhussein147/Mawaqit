@@ -17,11 +17,11 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.google.common.util.concurrent.MoreExecutors
-import com.hussein.mawaqit.data.infrastructure.services.GlobalPlayerService
-import com.hussein.mawaqit.data.infrastructure.services.PlaybackSource
-import com.hussein.mawaqit.data.infrastructure.workers.SurahDownloadWorker
 import com.hussein.mawaqit.data.quran.recitation.FullSurahReciter
 import com.hussein.mawaqit.data.quran.recitation.RecitationRepository
+import com.hussein.mawaqit.infrastructure.services.GlobalPlayerService
+import com.hussein.mawaqit.infrastructure.services.PlaybackSource
+import com.hussein.mawaqit.infrastructure.workers.SurahDownloadWorker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

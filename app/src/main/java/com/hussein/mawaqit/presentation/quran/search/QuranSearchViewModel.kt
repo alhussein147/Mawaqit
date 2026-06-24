@@ -2,9 +2,9 @@ package com.hussein.mawaqit.presentation.quran.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.hussein.mawaqit.data.db.AyahEntity
-import com.hussein.mawaqit.data.db.QuranDatabaseRepository
-import com.hussein.mawaqit.data.db.SurahEntity
+import com.hussein.mawaqit.data.db.entities.AyahEntity
+import com.hussein.mawaqit.data.db.entities.SurahEntity
+import com.hussein.mawaqit.data.db.repo.QuranDatabaseRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlin.time.Duration.Companion.milliseconds
 
 data class SearchResults(
     val surahs: List<SurahEntity> = emptyList(),
@@ -45,7 +46,7 @@ class QuranSearchViewModel(
 
     init {
         _query
-            .debounce(300)
+            .debounce(300.milliseconds)
             .distinctUntilChanged()
             .flatMapLatest { q ->
                 if (q.isBlank()) {

@@ -45,7 +45,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.core.utils.HijriDateCalculator.toArabicDigits
 import com.hussein.mawaqit.R
-import com.hussein.mawaqit.data.db.models.AyahOfTheDay
+import com.hussein.mawaqit.domain.models.AyahOfTheDay
 import com.hussein.mawaqit.presentation.shared.ErrorContent
 import com.hussein.mawaqit.presentation.shared.LoadingContent
 import com.hussein.mawaqit.presentation.shared.ScreenWrapper
@@ -163,7 +163,7 @@ private fun HeaderSection(state: HomeUiState, countdownFlow: StateFlow<Countdown
             if (state.hijriDate.isNotBlank()) {
                 Text(
                     text = state.hijriDate,
-                    style = MaterialTheme.typography.titleSmall.copy(textDirection = TextDirection.Rtl),
+                    style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.9f)
                 )
                 Spacer(Modifier.height(4.dp))

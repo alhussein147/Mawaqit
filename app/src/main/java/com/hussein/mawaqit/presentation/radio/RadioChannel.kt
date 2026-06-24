@@ -1,5 +1,7 @@
 package com.hussein.mawaqit.presentation.radio
 
+// TODO: hoist to a remote api, these doesn't need to be hardcoded and they might change
+// migrate to local db
 enum class RadioChannel(
     val id: Int,
     val displayName: String,
@@ -150,8 +152,4 @@ enum class RadioChannel(
         streamUrl = "https://backup.qurango.net/radio/mukhtasartafsir",
         imageUrl = "https://areejquran.net/wp-content/uploads/2015/12/unnamed.jpg"
     );
-
-    companion object {
-        val entriesById: Map<Int, RadioChannel> = entries.associateBy { it.id }
-    }
 }

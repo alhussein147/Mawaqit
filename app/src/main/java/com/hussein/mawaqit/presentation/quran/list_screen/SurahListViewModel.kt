@@ -2,7 +2,7 @@ package com.hussein.mawaqit.presentation.quran.list_screen
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.hussein.mawaqit.data.db.QuranDatabaseRepository
+import com.hussein.mawaqit.data.db.repo.QuranDatabaseRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch

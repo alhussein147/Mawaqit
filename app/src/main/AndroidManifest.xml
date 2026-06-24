@@ -68,7 +68,7 @@
         </provider>
 
         <service
-            android:name=".data.infrastructure.services.GlobalPlayerService"
+            android:name=".infrastructure.services.GlobalPlayerService"
             android:exported="true"
             android:foregroundServiceType="mediaPlayback">
             <intent-filter>
@@ -77,7 +77,7 @@
         </service>
 
         <receiver
-            android:name=".data.infrastructure.receivers.BootReceiver"
+            android:name=".infrastructure.receivers.BootReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
@@ -86,7 +86,7 @@
         </receiver>
 
         <receiver
-            android:name=".data.infrastructure.receivers.PrayerAlarmReceiver"
+            android:name=".infrastructure.receivers.PrayerAlarmReceiver"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.hussein.islamic.PRAYER_TIME" />

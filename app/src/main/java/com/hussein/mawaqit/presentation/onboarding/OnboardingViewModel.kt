@@ -2,7 +2,6 @@ package com.hussein.mawaqit.presentation.onboarding
 
 
 import CurrentLocationFetcher
-import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.ExistingWorkPolicy
@@ -11,16 +10,14 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.hussein.core.LocationRepository
 import com.hussein.core.models.SavedLocation
-import com.hussein.mawaqit.data.infrastructure.settings.SettingsRepository
-import com.hussein.mawaqit.data.infrastructure.workers.QuranPopulationWorker
-import com.hussein.mawaqit.data.infrastructure.workers.QuranPopulationWorker.Companion.WORK_NAME
 import com.hussein.mawaqit.data.prayer.PrayerSchedulerManager
+import com.hussein.mawaqit.infrastructure.settings.SettingsRepository
+import com.hussein.mawaqit.infrastructure.workers.QuranPopulationWorker
+import com.hussein.mawaqit.infrastructure.workers.QuranPopulationWorker.Companion.WORK_NAME
 import com.hussein.mawaqit.presentation.onboarding.components.OnboardingPage
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -158,7 +155,7 @@ class OnboardingViewModel(
         )
 
         viewModelScope.launch {
-                workerManager.getWorkInfosForUniqueWorkFlow(QuranPopulationWorker.WORK_NAME)
+                workerManager.getWorkInfosForUniqueWorkFlow(WORK_NAME)
                 .collect { infos ->
                     val info = infos.firstOrNull() ?: return@collect
                     when (info.state) {
