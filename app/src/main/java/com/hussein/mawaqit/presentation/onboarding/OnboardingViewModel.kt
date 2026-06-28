@@ -2,6 +2,7 @@ package com.hussein.mawaqit.presentation.onboarding
 
 
 import CurrentLocationFetcher
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.ExistingWorkPolicy
@@ -13,7 +14,9 @@ import com.hussein.core.models.SavedLocation
 import com.hussein.mawaqit.data.prayer.PrayerSchedulerManager
 import com.hussein.mawaqit.infrastructure.settings.SettingsRepository
 import com.hussein.mawaqit.infrastructure.workers.QuranPopulationWorker
-import com.hussein.mawaqit.infrastructure.workers.QuranPopulationWorker.Companion.WORK_NAME
+import com.hussein.mawaqit.infrastructure.workers.QuranPopulationWorker.Companion.QURAN_POPULATION_WORK_NAME
+import com.hussein.mawaqit.infrastructure.workers.TafsirPopulationWorker
+import com.hussein.mawaqit.infrastructure.workers.TafsirPopulationWorker.Companion.TAFSIR_POPULATION_WORK_NAME
 import com.hussein.mawaqit.presentation.onboarding.components.OnboardingPage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -149,13 +152,13 @@ class OnboardingViewModel(
     fun startQuranPopulation() {
 
         workerManager.enqueueUniqueWork(
-            WORK_NAME,
+            QURAN_POPULATION_WORK_NAME,
             ExistingWorkPolicy.KEEP,
             OneTimeWorkRequestBuilder<QuranPopulationWorker>().build()
         )
 
         viewModelScope.launch {
-                workerManager.getWorkInfosForUniqueWorkFlow(WORK_NAME)
+                workerManager.getWorkInfosForUniqueWorkFlow(QURAN_POPULATION_WORK_NAME)
                 .collect { infos ->
                     val info = infos.firstOrNull() ?: return@collect
                     when (info.state) {
@@ -188,6 +191,37 @@ class OnboardingViewModel(
                 }
         }
     }
+
+    fun startTafsirPopulation() {
+
+        workerManager.enqueueUniqueWork(
+            TAFSIR_POPULATION_WORK_NAME,
+            ExistingWorkPolicy.KEEP,
+            OneTimeWorkRequestBuilder<TafsirPopulationWorker>().build()
+        )
+
+        viewModelScope.launch {
+            workerManager.getWorkInfosForUniqueWorkFlow(TAFSIR_POPULATION_WORK_NAME)
+                .collect { infos ->
+                    val info = infos.firstOrNull() ?: return@collect
+                    when (info.state) {
+                        WorkInfo.State.RUNNING -> {}
+
+                        WorkInfo.State.SUCCEEDED -> {
+                            viewModelScope.launch {
+                            }
+                        }
+
+                        WorkInfo.State.FAILED -> {
+                            Log.d("OnboardingViewModel", "${info.outputData.getString("error")}")
+                        }
+
+                        else -> Unit
+                    }
+                }
+        }
+    }
+
 
     fun retryQuranPopulation() {
         _uiState.update { it.copy(quranPopulationFailed = false, quranProgress = 0f) }

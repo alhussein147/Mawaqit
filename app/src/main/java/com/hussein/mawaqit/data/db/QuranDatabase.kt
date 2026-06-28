@@ -12,9 +12,10 @@ import com.hussein.mawaqit.data.db.entities.AyahEntity
 import com.hussein.mawaqit.data.db.entities.BookmarkEntity
 import com.hussein.mawaqit.data.db.entities.SurahEntity
 import com.hussein.mawaqit.data.db.entities.TafsirEntity
+import com.hussein.mawaqit.data.db.entities.TafsirSourceEntity
 
 @Database(
-    entities = [SurahEntity::class, AyahEntity::class, BookmarkEntity::class , TafsirEntity::class],
+    entities = [SurahEntity::class, AyahEntity::class, BookmarkEntity::class, TafsirEntity::class, TafsirSourceEntity::class],
     version = 1,
     exportSchema = false
 )

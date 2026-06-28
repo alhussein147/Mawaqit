@@ -35,7 +35,8 @@ class SettingsRepository(private val context: Context) {
         val APP_COLOR_SCHEME = stringPreferencesKey("app_color_scheme")
         val KEY_ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
         val KEY_QURAN_POPULATED_DONE = booleanPreferencesKey("quran_populated")
-        val KEY_TAFSIR_POPULATED_DONE = booleanPreferencesKey("tafsir_populated") // todo:: persist tafsir population state
+        val KEY_TAFSIR_POPULATED_DONE =
+            booleanPreferencesKey("tafsir_populated") // todo:: persist tafsir population state
 
     }
 

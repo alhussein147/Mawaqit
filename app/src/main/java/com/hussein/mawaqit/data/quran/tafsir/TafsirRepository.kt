@@ -1,36 +1,19 @@
 package com.hussein.mawaqit.data.quran.tafsir
 
-import com.hussein.mawaqit.data.quran.tafsir.models.TafsirResponse
-import io.ktor.client.HttpClient
-import io.ktor.client.call.body
-import io.ktor.client.engine.android.Android
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.request.get
-import io.ktor.serialization.kotlinx.json.json
-import kotlinx.serialization.json.Json
+import com.hussein.mawaqit.data.db.QuranDatabase
+import com.hussein.mawaqit.data.mappers.toTafsir
+import com.hussein.mawaqit.domain.models.Tafsir
 
-class TafsirRepository {
+class TafsirRepository(val db: QuranDatabase) {
 
-    private val client = HttpClient(Android) {
-        install(ContentNegotiation) {
-            json(Json { ignoreUnknownKeys = true })
-        }
+    val dao = db.tafsirDao()
+
+    suspend fun fetchTafsir(surahNumber: Int, ayahNumber: Int): Tafsir? {
+        // TODO:  handle sources
+        return dao.getTafsirForAyah(
+            sourceId = "mukhtasar",
+            surahNumber = surahNumber,
+            ayahNumber = ayahNumber
+        )?.toTafsir()
     }
-
-    // In-memory cache — keyed by "surahIndex:ayahNumber"
-    private val cache = mutableMapOf<String, String>()
-
-    suspend fun fetchTafsir(surahIndex: Int, ayahNumber: Int): String {
-        val key = "$surahIndex:$ayahNumber"
-        cache[key]?.let { return it }
-
-        val url = "https://api.qurani.ai/gw/qh/v1/ayah/$surahIndex:$ayahNumber/ar.mukhtasar"
-        val response = client.get(url).body<TafsirResponse>()
-        val text = response.data.text
-
-        cache[key] = text
-        return text
-    }
-
-    fun close() = client.close()
 }

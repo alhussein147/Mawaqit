@@ -1,9 +1,11 @@
 package com.hussein.mawaqit.data.mappers
 
 import com.hussein.mawaqit.data.db.entities.AyahEntity
+import com.hussein.mawaqit.data.db.entities.TafsirEntity
 import com.hussein.mawaqit.data.db.relations.AyahWithSurah
 import com.hussein.mawaqit.domain.models.Ayah
 import com.hussein.mawaqit.domain.models.AyahOfTheDay
+import com.hussein.mawaqit.domain.models.Tafsir
 
 fun AyahEntity.toAyah() = Ayah(
     surahNumber = surahNumber,
@@ -20,3 +22,9 @@ fun AyahWithSurah.toAyahOfTheDay(): AyahOfTheDay {
         surahIndex = this.surahNumber
     )
 }
+
+fun TafsirEntity.toTafsir(): Tafsir = Tafsir(
+    surahNumber = this.surahNumber,
+    ayahNumber = this.numberInSurah,
+    text = this.text
+)

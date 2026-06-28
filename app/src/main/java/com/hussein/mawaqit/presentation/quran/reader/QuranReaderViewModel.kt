@@ -34,8 +34,8 @@ sealed interface TafsirState {
     data object Loading : TafsirState
     data class Success(val text: String) : TafsirState
     data class Error(val message: String) : TafsirState
-    data object NoNetwork : TafsirState
 }
+
 @Stable
 sealed interface QuranReaderUiState {
     data object Idle : QuranReaderUiState
@@ -128,17 +128,13 @@ class QuranViewModel(
     val selectedAyah: StateFlow<Ayah?> = _selectedAyah.asStateFlow()
 
     fun fetchTafsir(surahIndex: Int, ayah: Ayah) {
-        _selectedAyah.value = ayah
-        if (!networkAvailable.value) {
-            _tafsirState.value = TafsirState.NoNetwork
-            return
-        }
         viewModelScope.launch {
             _tafsirState.value = TafsirState.Loading
-            _tafsirState.value = try {
-                TafsirState.Success(tafsirRepository.fetchTafsir(surahIndex, ayah.numberInSurah))
-            } catch (e: Exception) {
-                TafsirState.Error("Error loading tafisr")
+            val tafsir = tafsirRepository.fetchTafsir(surahIndex, ayah.numberInSurah)
+            if (tafsir != null) {
+                _tafsirState.value = TafsirState.Success(tafsir.text)
+            } else {
+                _tafsirState.value = TafsirState.Error("Failed to fetch tafsir")
             }
         }
     }
@@ -155,7 +151,6 @@ class QuranViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        tafsirRepository.close()
         ayahPlayer.release()
     }
 

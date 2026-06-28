@@ -45,7 +45,7 @@ val appModule = module {
     // Repositories & Data
     factory { AzkarRepository(androidContext()) }
     single { RecitationRepository(androidContext()) }
-    factory { TafsirRepository() }
+    factory { TafsirRepository(get()) }
     factory { QuranDisplayPreferences(androidContext()) }
     factory { AyahPlayer(androidContext()) }
 

@@ -33,6 +33,11 @@ data class TafsirSourceEntity(
                 "numberInSurah"
             ],
             onDelete = ForeignKey.CASCADE
+        ),    ForeignKey(
+            entity = TafsirSourceEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["sourceId"],
+            onDelete = ForeignKey.CASCADE
         )
     ],
     indices = [

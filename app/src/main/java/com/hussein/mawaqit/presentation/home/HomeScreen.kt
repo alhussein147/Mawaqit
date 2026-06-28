@@ -46,6 +46,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.core.utils.HijriDateCalculator.toArabicDigits
 import com.hussein.mawaqit.R
 import com.hussein.mawaqit.domain.models.AyahOfTheDay
+import com.hussein.mawaqit.presentation.navigation.LocalBottomBarHeight
 import com.hussein.mawaqit.presentation.shared.ErrorContent
 import com.hussein.mawaqit.presentation.shared.LoadingContent
 import com.hussein.mawaqit.presentation.shared.ScreenWrapper
@@ -116,12 +117,14 @@ private fun PrayerContent(
     onNavigateToRadio: () -> Unit = {},
     onNavigateToReader: (surahIndex: Int, ayahIndex: Int) -> Unit,
 ) {
+    val bottomBarHeight = LocalBottomBarHeight.current
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp)
             .then(modifier),
-        contentPadding = PaddingValues(bottom = 88.dp),
+        contentPadding = PaddingValues(bottom = bottomBarHeight + 16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item {

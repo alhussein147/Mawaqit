@@ -42,6 +42,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.mawaqit.R
 import com.hussein.mawaqit.data.quran.QuranData
 import com.hussein.mawaqit.data.quran.Surah
+import com.hussein.mawaqit.presentation.navigation.LocalBottomBarHeight
 import com.hussein.mawaqit.presentation.navigation.ScrollObserver
 import com.hussein.mawaqit.presentation.quran.components.SurahReciterPickerSheet
 import com.hussein.mawaqit.presentation.shared.ScreenWrapper
@@ -124,6 +125,7 @@ fun SurahListScreen(
         },
         content = {
             val listState = rememberLazyListState()
+            val bottomBarHeight = LocalBottomBarHeight.current
             ScrollObserver(
                 onToggleNavBar = toggleNavBar,
                 listState = listState
@@ -132,7 +134,7 @@ fun SurahListScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection),
-                contentPadding = PaddingValues(bottom = 88.dp),
+                contentPadding = PaddingValues(bottom = bottomBarHeight + 16.dp),
                 state = listState
             ) {
                 itemsIndexed(QuranData.surahs, key = { _, surah -> surah.number }) { _, surah ->

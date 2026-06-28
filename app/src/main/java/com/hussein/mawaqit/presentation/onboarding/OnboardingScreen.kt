@@ -39,7 +39,7 @@ import com.hussein.mawaqit.presentation.onboarding.components.StepIndicator
 import com.hussein.mawaqit.presentation.onboarding.components.WelcomePage
 import org.koin.compose.viewmodel.koinViewModel
 
-
+// todo :: handle back press
 @Composable
 fun OnboardingScreen(
     onFinished: () -> Unit,
@@ -155,6 +155,7 @@ fun OnboardingScreen(
 
                         OnboardingPage.QURAN_SETUP -> {
                             viewModel.startQuranPopulation()
+                            viewModel.startTafsirPopulation()
                         }
 
                         OnboardingPage.DONE -> {

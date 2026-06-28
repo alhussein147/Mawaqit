@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hussein.mawaqit.R
 
-enum class OnboardingPage { WELCOME, LOCATION, FETCHING_LOCATION, NOTIFICATION, EXACT_ALARM, BATTERY_OPTIMIZATION, QURAN_SETUP, DONE }
+
 
 // TODO: extract string resources to strings.xml
 @Composable

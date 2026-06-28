@@ -64,6 +64,7 @@ import com.hussein.mawaqit.infrastructure.settings.AppSettings
 import com.hussein.mawaqit.infrastructure.settings.AppTheme
 import com.hussein.mawaqit.infrastructure.settings.NotificationSound
 import com.hussein.mawaqit.infrastructure.settings.PrayerNotificationSettings
+import com.hussein.mawaqit.presentation.navigation.LocalBottomBarHeight
 import com.hussein.mawaqit.presentation.shared.LoadingContent
 import com.hussein.mawaqit.presentation.shared.ScreenWrapper
 import com.hussein.mawaqit.presentation.util.getPrayersDisplayNames
@@ -224,12 +225,13 @@ private fun SettingsContent(
     onLocationErrorDismissed: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val bottomBarHeight = LocalBottomBarHeight.current
 
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .then(modifier),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 88.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = bottomBarHeight + 16.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
 

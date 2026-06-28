@@ -28,31 +28,29 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
-
-    buildTypes {
-        release {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
-
     signingConfigs {
         create("release") {
-            storeFile     = file("mawaqit.keystore")
+            storeFile = file("mawaqit.keystore")
             storePassword = localProperties.getProperty("KEYSTORE_PASSWORD") ?: ""
-            keyAlias      = "mawaqit"
-            keyPassword   = localProperties.getProperty("KEY_PASSWORD") ?: ""
+            keyAlias = "mawaqit"
+            keyPassword = localProperties.getProperty("KEY_PASSWORD") ?: ""
         }
     }
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+            )
+        }
+        debug {
+            applicationIdSuffix = ".debug"
         }
     }
+
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11

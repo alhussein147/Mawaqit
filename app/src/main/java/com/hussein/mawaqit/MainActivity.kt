@@ -20,7 +20,7 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        val settingsRepository: com.hussein.mawaqit.infrastructure.settings.SettingsRepository by inject<com.hussein.mawaqit.infrastructure.settings.SettingsRepository>()
+        val settingsRepository: SettingsRepository by inject<SettingsRepository>()
         setContent {
             val settings by settingsRepository.settingsFlow
                 .collectAsStateWithLifecycle(initialValue = null)

@@ -1,21 +1,30 @@
 package com.hussein.mawaqit.presentation.navigation
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -47,180 +56,189 @@ private val topLevelDestinations = listOf(
     TopLevelDestination(Settings, "Settings", R.drawable.ic_settings)
 )
 
-private fun NavKey.topLevelIndex(): Int = topLevelDestinations.indexOfFirst { it.screen == this }
-
 private fun NavKey.navBarIndex(): Int = when (this) {
     Home -> 0
-    QuranSurahList, is QuranReader, QuranSearch -> 1
+    QuranSurahList -> 1
     Settings -> 2
     else -> -1
 }
 
+val LocalBottomBarHeight = staticCompositionLocalOf<Dp> { 0.dp }
 
 @OptIn(KoinExperimentalAPI::class)
 @Composable
 fun AppNavigation(settingsRepository: SettingsRepository) {
 
-    val backStack = rememberNavBackStack(Initializing)
-    val navDirection = remember { mutableIntStateOf(1) }
-
-    val showNavBar = remember { mutableStateOf(true) }
+    val backStack: NavBackStack<NavKey> = rememberNavBackStack(Initializing)
 
     LaunchedEffect(Unit) {
         if (settingsRepository.isOnboardingDone()) {
-            backStack.removeLastOrNull()
-            backStack.add(Home)
+            if (backStack.isNotEmpty()) backStack.removeAt(backStack.size - 1)
+            backStack.add(Main)
         } else {
-            backStack.removeLastOrNull()
+            if (backStack.isNotEmpty()) backStack.removeAt(backStack.size - 1)
             backStack.add(Onboarding)
         }
     }
 
-    val currentScreen = backStack.lastOrNull()
-    val selectedTopLevel = currentScreen?.topLevelIndex()?.takeIf { it >= 0 }
+    NavDisplay(
+        transitionSpec = {
+            enterTransition() togetherWith exitTransition()
+        },
+        popTransitionSpec = {
+            popEnterTransition() togetherWith popExitTransition()
+        },
+        predictivePopTransitionSpec = {
+            enterTransition() togetherWith exitTransition()
+        },
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
+        backStack = backStack,
+        onBack = { if (backStack.size > 1) backStack.removeAt(backStack.size - 1) },
+        entryProvider = entryProvider {
 
-    LaunchedEffect(currentScreen) {
-        if (currentScreen == Home) {
-            showNavBar.value = true
+            entry<Main> {
+                MainNavigation(rootBackStack = backStack)
+            }
+
+            entry<QuranReader> { key ->
+                QuranReaderScreen(
+                    scrollToAyah = key.scrollToAyah,
+                    surahIndex = key.surahIndex,
+                    onBack = { backStack.removeAt(backStack.size - 1) },
+                )
+            }
+
+            entry<QuranSearch> {
+                QuranSearchScreen(
+                    onSurahSelected = { surahIndex ->
+                        backStack.add(QuranReader(surahIndex))
+                    },
+                    onAyahSelected = { surahIndex, ayahNumber ->
+                        backStack.add(QuranReader(surahIndex, ayahNumber))
+                    },
+                    onBack = { backStack.removeAt(backStack.size - 1) },
+                )
+            }
+
+            entry<AzkarCategories> {
+                AzkarCategoryScreen(
+                    onCategorySelected = { index -> backStack.add(AzkarList(index)) },
+                    onBack = { backStack.removeAt(backStack.size - 1) },
+                )
+            }
+
+            entry<AzkarList> { key ->
+                AzkarScreen(
+                    categoryIndex = key.categoryIndex,
+                    onBack = { backStack.removeAt(backStack.size - 1) }
+                )
+            }
+
+            entry<RadioChannels> {
+                RadioChannelListScreen(
+                    onBack = { backStack.removeAt(backStack.size - 1) }
+                )
+            }
+
+            entry<Initializing> {
+                LoadingContent(modifier = Modifier.fillMaxSize())
+            }
+
+            entry<Onboarding> {
+                OnboardingScreen(
+                    onFinished = {
+                        backStack.clear()
+                        backStack.add(Main)
+                    }
+                )
+            }
         }
-    }
+    )
+}
+
+@OptIn(KoinExperimentalAPI::class)
+@Composable
+private fun MainNavigation(rootBackStack: NavBackStack<NavKey>) {
+    val mainBackStack: NavBackStack<NavKey> = rememberNavBackStack(Home)
+    val navDirection = remember { mutableIntStateOf(1) }
+    var bottomPadding by remember { mutableStateOf(0.dp) }
+    val showNavBar = remember { mutableStateOf(true) }
+
+    val currentScreen = mainBackStack.lastOrNull()
+    val selectedTopLevel = currentScreen?.navBarIndex()?.takeIf { it >= 0 } ?: 0
 
     fun navigateToTopLevel(destination: Screen) {
-        val current = backStack.lastOrNull()
+        val current = mainBackStack.lastOrNull()
         if (current == destination) return
 
-        val currentIndex = current?.navBarIndex()?.takeIf { it >= 0 } ?: Home.navBarIndex()
-        val destinationIndex = destination.topLevelIndex()
+        val currentIndex = current?.navBarIndex()?.takeIf { it >= 0 } ?: 0
+        val destinationIndex = destination.navBarIndex()
         navDirection.intValue = destinationIndex.compareTo(currentIndex).takeIf { it != 0 } ?: 1
 
-        backStack.clear()
-        backStack.add(destination)
+        mainBackStack.clear()
+        mainBackStack.add(destination)
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    val density = LocalDensity.current
 
-        NavDisplay(
-            transitionSpec = {
-                enterTransition(navDirection.intValue) togetherWith exitTransition(navDirection.intValue)
-            },
-            popTransitionSpec = {
-                popEnterTransition() togetherWith popExitTransition()
-            },
-            predictivePopTransitionSpec = {
-                popEnterTransition() togetherWith popExitTransition()
-            },
-            modifier = Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
-            backStack = backStack,
-            onBack = {
-                if (backStack.lastOrNull()?.topLevelIndex()?.takeIf { it >= 0 } != null) {
-                    navigateToTopLevel(Home)
-                } else {
-                    backStack.removeLastOrNull()
-                }
-            },
-            entryProvider = entryProvider {
+    CompositionLocalProvider(LocalBottomBarHeight provides bottomPadding) {
 
-                entry<Home> {
-                    HomeScreen(
-                        onNavigateToAzkar = {
-                            backStack.add(
-                                AzkarCategories
-                            )
-                        },
-                        onNavigateToRadio = { backStack.add(RadioChannels) },
-                        onNavigateToReader = { index, ayahIndex ->
-                            backStack.add(QuranReader(index, ayahIndex))
-                        }
-                    )
-                }
-
-                entry<Settings> {
-                    SettingsScreen()
-                }
-
-                entry<QuranSurahList> {
-                    SurahListScreen(
-                        onSurahSelected = { index, scrollToAyah ->
-                            backStack.add(QuranReader(index, scrollToAyah))
-                        },
-                        onNavigateToSearch = {
-                            backStack.add(QuranSearch)
-                        }, toggleNavBar = {
-                            showNavBar.value = it
-                        }
-
-                    )
-                }
-
-                entry<QuranReader> { key ->
-                    QuranReaderScreen(
-                        scrollToAyah = key.scrollToAyah,
-                        surahIndex = key.surahIndex,
-                        onBack = { backStack.removeLastOrNull() },
-                    )
-                }
-
-                entry<QuranSearch> {
-                    QuranSearchScreen(
-                        onSurahSelected = { surahIndex ->
-                            backStack.add(QuranReader(surahIndex))
-                        },
-                        onAyahSelected = { surahIndex, ayahNumber ->
-                            backStack.add(QuranReader(surahIndex, ayahNumber))
-                        },
-                        onBack = { backStack.removeLastOrNull() },
-
+        Box(modifier = Modifier.fillMaxSize()) {
+            NavDisplay(
+                transitionSpec = {
+                    enterTransition(navDirection.intValue) togetherWith exitTransition(navDirection.intValue)
+                },
+                popTransitionSpec = {
+                    popEnterTransition() togetherWith popExitTransition()
+                },
+                predictivePopTransitionSpec = {
+                    enterTransition() togetherWith exitTransition()
+                },
+                modifier = Modifier.fillMaxSize(),
+                backStack = mainBackStack,
+                onBack = {
+                    if (mainBackStack.lastOrNull() != Home) {
+                        navigateToTopLevel(Home)
+                    }
+                },
+                entryProvider = entryProvider {
+                    entry<Home> {
+                        HomeScreen(
+                            onNavigateToAzkar = { rootBackStack.add(AzkarCategories) },
+                            onNavigateToRadio = { rootBackStack.add(RadioChannels) },
+                            onNavigateToReader = { index, ayahIndex ->
+                                rootBackStack.add(QuranReader(index, ayahIndex))
+                            }
                         )
+                    }
+
+                    entry<Settings> {
+                        SettingsScreen()
+                    }
+
+                    entry<QuranSurahList> {
+                        SurahListScreen(
+                            onSurahSelected = { index, scrollToAyah ->
+                                rootBackStack.add(QuranReader(index, scrollToAyah))
+                            },
+                            onNavigateToSearch = {
+                                rootBackStack.add(QuranSearch)
+                            },
+                            toggleNavBar = { showNavBar.value = it }
+                        )
+                    }
                 }
-
-                entry<AzkarCategories> {
-                    AzkarCategoryScreen(
-                        onCategorySelected = { index -> backStack.add(AzkarList(index)) },
-                        onBack = { backStack.removeLastOrNull() },
-                    )
-                }
-
-                entry<AzkarList> { key ->
-                    AzkarScreen(
-                        categoryIndex = key.categoryIndex,
-                        onBack = { backStack.removeLastOrNull() }
-                    )
-                }
-
-
-
-                entry<RadioChannels> {
-                    RadioChannelListScreen(
-                        onBack = { backStack.removeLastOrNull() }
-                    )
-                }
-
-                entry<Initializing> {
-                    LoadingContent(modifier = Modifier.fillMaxSize())
-                }
-
-                entry<Onboarding> {
-                    OnboardingScreen(
-                        onFinished = {
-                            backStack.clear()
-                            backStack.add(Home)
-                        }
-                    )
-                }
-
-            }
-        )
-
-        if (selectedTopLevel != null) {
-
-            BackHandler(enabled = selectedTopLevel > 0 , onBack = {
-                navigateToTopLevel(Home)
-            })
+            )
 
             FloatingNavBar(
-                modifier = Modifier.align(Alignment.BottomCenter),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .onSizeChanged {
+                        bottomPadding = with(density) { it.height.toDp() }
+                    },
                 items = topLevelDestinations,
                 selectedIndex = selectedTopLevel,
                 onSelect = { navigateToTopLevel(topLevelDestinations[it].screen) },
@@ -228,8 +246,6 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
             )
         }
     }
-
-
 }
 
 @Composable
