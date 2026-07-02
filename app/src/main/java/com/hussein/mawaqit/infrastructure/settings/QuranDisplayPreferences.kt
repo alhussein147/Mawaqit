@@ -1,4 +1,4 @@
-package com.hussein.mawaqit.data.quran
+package com.hussein.mawaqit.infrastructure.settings
 
 import android.content.Context
 import androidx.datastore.preferences.core.edit

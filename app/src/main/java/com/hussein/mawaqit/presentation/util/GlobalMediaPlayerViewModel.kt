@@ -18,7 +18,7 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.google.common.util.concurrent.MoreExecutors
 import com.hussein.mawaqit.data.quran.recitation.FullSurahReciter
-import com.hussein.mawaqit.data.quran.recitation.RecitationRepository
+import com.hussein.mawaqit.data.quran.recitation.SurahDownloadRepository
 import com.hussein.mawaqit.infrastructure.services.GlobalPlayerService
 import com.hussein.mawaqit.infrastructure.services.PlaybackSource
 import com.hussein.mawaqit.infrastructure.workers.SurahDownloadWorker
@@ -46,7 +46,7 @@ data class GlobalPlaybackUiState(
 
 class GlobalPlayerViewModel(
     application: Application,
-    private val recitationRepository: RecitationRepository,
+    private val surahDownloadRepository: SurahDownloadRepository,
     private val workManager: WorkManager
 ) : AndroidViewModel(application) {
 
@@ -142,7 +142,7 @@ class GlobalPlayerViewModel(
     }
 
     fun playSurah(surahNumber: Int) {
-        val file = recitationRepository.surahFile(_selectedReciter.value, surahNumber)
+        val file = surahDownloadRepository.surahFile(_selectedReciter.value, surahNumber)
         if (!file.exists()) {
             clearPlaybackError()
             updateSurahState(surahNumber, SurahItemState.NotDownloaded)
@@ -277,10 +277,10 @@ class GlobalPlayerViewModel(
                 surahNumber to when {
                     currentSource is PlaybackSource.Surah &&
                         currentSource.surahNumber == surahNumber &&
-                        recitationRepository.isSurahCached(_selectedReciter.value, surahNumber) ->
+                        surahDownloadRepository.isSurahCached(_selectedReciter.value, surahNumber) ->
                         if (isCurrentSurahPlaying) SurahItemState.Playing else SurahItemState.Paused
 
-                    recitationRepository.isSurahCached(_selectedReciter.value, surahNumber) ->
+                    surahDownloadRepository.isSurahCached(_selectedReciter.value, surahNumber) ->
                         SurahItemState.Downloaded
 
                     else -> SurahItemState.NotDownloaded
@@ -309,7 +309,7 @@ class GlobalPlayerViewModel(
         if (source is PlaybackSource.Surah) {
             updateSurahState(
                 source.surahNumber,
-                if (recitationRepository.isSurahCached(_selectedReciter.value, source.surahNumber)) {
+                if (surahDownloadRepository.isSurahCached(_selectedReciter.value, source.surahNumber)) {
                     SurahItemState.Downloaded
                 } else {
                     SurahItemState.NotDownloaded

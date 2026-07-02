@@ -18,18 +18,20 @@ interface AyahDao {
     suspend fun getAyahsForSurah(surahNumber: Int): List<AyahEntity>
 
     @Query(
-        """SELECT * FROM ayahs
+        """ SELECT ayahs.surahNumber, ayahs.numberInSurah, ayahs.text,
+              surahs.nameArabic AS surahNameArabic, surahs.nameTransliterated AS surahTranslate
+       FROM ayahs JOIN surahs ON ayahs.surahNumber = surahs.number
            WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(normalizedText, 'ٱ', 'ا'), 'أ', 'ا'), 'إ', 'ا'), 'آ', 'ا'), 'ى', 'ي'), 'ؤ', 'و'), 'ئ', 'ي'), 'ة', 'ه'), 'ـ', '') LIKE '%' || :normalizedQuery || '%'
               OR REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(text, 'ٱ', 'ا'), 'أ', 'ا'), 'إ', 'ا'), 'آ', 'ا'), 'ى', 'ي'), 'ؤ', 'و'), 'ئ', 'ي'), 'ة', 'ه'), 'ـ', '') LIKE '%' || :normalizedQuery || '%'
               OR text LIKE '%' || :rawQuery || '%'
            ORDER BY surahNumber, numberInSurah"""
     )
-    fun searchAyahs(rawQuery: String, normalizedQuery: String): Flow<List<AyahEntity>>
+    fun searchAyahs(rawQuery: String, normalizedQuery: String): Flow<List<AyahWithSurah>>
 
     // Ayah of the day joined with its surah in a single query
     @Query(
         """SELECT ayahs.surahNumber, ayahs.numberInSurah, ayahs.text,
-              surahs.nameArabic AS surahNameArabic, surahs.nameTransliterated AS surahTranslit
+              surahs.nameArabic AS surahNameArabic, surahs.nameTransliterated AS surahTranslate
        FROM ayahs
        JOIN surahs ON ayahs.surahNumber = surahs.number
        LIMIT 1

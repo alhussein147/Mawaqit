@@ -68,10 +68,10 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.mawaqit.R
-import com.hussein.mawaqit.data.db.entities.BookmarkEntity
-import com.hussein.mawaqit.data.quran.QuranTextAlignment
 import com.hussein.mawaqit.data.quran.recitation.Reciter
 import com.hussein.mawaqit.domain.models.Ayah
+import com.hussein.mawaqit.domain.models.Bookmark
+import com.hussein.mawaqit.infrastructure.settings.QuranTextAlignment
 import com.hussein.mawaqit.presentation.quran.components.AyahReciterPickerSheetContent
 import com.hussein.mawaqit.presentation.shared.BackButton
 import com.hussein.mawaqit.presentation.shared.ErrorContent
@@ -118,6 +118,11 @@ fun QuranReaderScreen(
 
     val clipboardManager = LocalClipboardManager.current
 
+    val surahName = if (readerState is QuranReaderUiState.Success) {
+        (readerState as QuranReaderUiState.Success).surah.nameArabic
+    } else ""
+
+
     LaunchedEffect(readerState, scrollToAyah, textLayoutResult) {
         if (scrollToAyah != null && scrollToAyah != lastScrolledAyah && readerState is QuranReaderUiState.Success && textLayoutResult != null) {
             val layout = textLayoutResult!!
@@ -163,7 +168,13 @@ fun QuranReaderScreen(
             isPlaying = playingAyah == ayah.numberInSurah && recitationState is AyahRecitationState.Playing,
             currentReciter = selectedReciter,
             onTafsir = { viewModel.fetchTafsir(surahIndex, ayah) },
-            onBookmark = { viewModel.toggleBookmark(surahIndex, ayah.numberInSurah) },
+            onBookmark = {
+                viewModel.toggleBookmark(
+                    surahNumber = surahIndex,
+                    ayahNumber = ayah.numberInSurah,
+                    surahName = surahName
+                )
+            },
             onPlayPause = {
                 if (globalMediaPlayerViewModel.isPlaying.value) {
                     globalMediaPlayerViewModel.stop()
@@ -285,7 +296,7 @@ private fun FlowingAyahBlock(
     ayahs: List<Ayah>,
     fontSize: Float,
     quranTextAlignment: QuranTextAlignment,
-    bookmarks: List<BookmarkEntity>,
+    bookmarks: List<Bookmark>,
     surahIndex: Int,
     onTap: (Ayah) -> Unit,
     onTextLayout: (TextLayoutResult) -> Unit = {},
@@ -303,9 +314,9 @@ private fun FlowingAyahBlock(
                 it.surahNumber == surahIndex && it.ayahNumber == ayah.numberInSurah
             }
             val isHighlighted = ayah.numberInSurah == highlightedAyah
-            
+
             pushStringAnnotation(tag, ayah.numberInSurah.toString())
-            
+
             withStyle(
                 SpanStyle(
                     color = if (isBookmarked) bookmarkColor else onSurface,
@@ -315,7 +326,7 @@ private fun FlowingAyahBlock(
             ) {
                 append(ayah.text)
             }
-            
+
             withStyle(
                 SpanStyle(
                     color = primary.copy(alpha = 0.8f),
@@ -406,16 +417,47 @@ private fun AyahBottomSheet(
                     // Header
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Ayah ${ayah.numberInSurah}",
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold
+
+                        Text(
+                            modifier = Modifier.weight(1f),
+                            text = "Ayah ${ayah.numberInSurah}",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold, overflow = TextOverflow.MiddleEllipsis
+                        )
+
+                        IconButton(
+                            onClick = onBookmark,
+                            modifier = Modifier.background(
+                                color = if (isBookmarked) {
+                                    MaterialTheme.colorScheme.primaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceContainerHigh
+                                },
+                                RoundedCornerShape(12.dp)
+                            )
+                        ) {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(if (isBookmarked) R.drawable.ic_bookmark_filled else R.drawable.ic_bookmark),
+                                contentDescription = "Bookmark"
                             )
                         }
+
+                        IconButton(
+                            onClick = { onAyahCopy(ayah.text) },
+                            modifier = Modifier.background(
+                                MaterialTheme.colorScheme.surfaceVariant,
+                                RoundedCornerShape(12.dp)
+                            )
+                        ) {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(R.drawable.ic_copy),
+                                contentDescription = "Copy Ayah"
+                            )
+                        }
+
                         IconButton(
                             onClick = onDismiss,
                             modifier = Modifier.background(
@@ -483,11 +525,12 @@ private fun AyahBottomSheet(
                                         text = tafsirState.text,
                                         style = MaterialTheme.typography.bodyLarge.copy(
                                             lineHeight = 28.sp,
-                                            textAlign = TextAlign.Justify
+                                            textAlign = TextAlign.Center
                                         ),
                                         modifier = Modifier.fillMaxWidth()
                                     )
                                 }
+
                                 TafsirState.Loading -> {
                                     Box(
                                         Modifier.fillMaxWidth(),
@@ -496,6 +539,7 @@ private fun AyahBottomSheet(
                                         LoadingIndicator()
                                     }
                                 }
+
                                 is TafsirState.Error -> {
                                     Text(
                                         text = tafsirState.message,
@@ -503,32 +547,10 @@ private fun AyahBottomSheet(
                                         color = MaterialTheme.colorScheme.error
                                     )
                                 }
+
                                 TafsirState.Idle -> Unit
                             }
                         }
-                    }
-
-                    // Actions
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        BottomSheetButton(
-                            modifier = Modifier.weight(1f),
-                            icon = R.drawable.ic_copy,
-                            title = "Copy",
-                            onClick = {
-                                onAyahCopy(ayah.text)
-                                onDismiss()
-                            }
-                        )
-                        BottomSheetButton(
-                            modifier = Modifier.weight(1f),
-                            icon = if (isBookmarked) R.drawable.ic_bookmark_filled else R.drawable.ic_bookmark,
-                            title = if (isBookmarked) "Saved" else "Save",
-                            selected = isBookmarked,
-                            onClick = onBookmark
-                        )
                     }
 
                     // Audio Controls

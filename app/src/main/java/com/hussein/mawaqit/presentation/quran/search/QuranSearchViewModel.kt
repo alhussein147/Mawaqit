@@ -2,8 +2,8 @@ package com.hussein.mawaqit.presentation.quran.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.hussein.mawaqit.data.db.entities.AyahEntity
 import com.hussein.mawaqit.data.db.entities.SurahEntity
+import com.hussein.mawaqit.data.db.relations.AyahWithSurah
 import com.hussein.mawaqit.data.db.repo.QuranDatabaseRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -21,7 +21,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 data class SearchResults(
     val surahs: List<SurahEntity> = emptyList(),
-    val ayahs: List<AyahEntity> = emptyList()
+    val ayahs: List<AyahWithSurah> = emptyList()
 ) {
     val isEmpty get() = surahs.isEmpty() && ayahs.isEmpty()
 }
@@ -43,6 +43,7 @@ class QuranSearchViewModel(
 
     private val _state = MutableStateFlow<SearchState>(SearchState.Idle)
     val state: StateFlow<SearchState> = _state.asStateFlow()
+
 
     init {
         _query

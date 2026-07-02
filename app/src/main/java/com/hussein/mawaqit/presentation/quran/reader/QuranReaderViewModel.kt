@@ -5,15 +5,15 @@ import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hussein.mawaqit.data.db.repo.QuranDatabaseRepository
-import com.hussein.mawaqit.data.quran.QuranDisplayPreferences
-import com.hussein.mawaqit.data.quran.QuranTextAlignment
-import com.hussein.mawaqit.data.quran.recitation.RecitationRepository
 import com.hussein.mawaqit.data.quran.recitation.Reciter
+import com.hussein.mawaqit.data.quran.recitation.SurahDownloadRepository
 import com.hussein.mawaqit.data.quran.tafsir.TafsirRepository
 import com.hussein.mawaqit.domain.models.Ayah
 import com.hussein.mawaqit.domain.models.SurahDetail
 import com.hussein.mawaqit.infrastructure.media.AyahPlayer
 import com.hussein.mawaqit.infrastructure.network.NetworkObserver
+import com.hussein.mawaqit.infrastructure.settings.QuranDisplayPreferences
+import com.hussein.mawaqit.infrastructure.settings.QuranTextAlignment
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -45,7 +45,7 @@ sealed interface QuranReaderUiState {
 }
 
 class QuranViewModel(
-    private val recitationRepository: RecitationRepository,
+    private val surahDownloadRepository: SurahDownloadRepository,
     private val tafsirRepository: TafsirRepository,
     private val quranDisplayPreferences: QuranDisplayPreferences,
     private val networkObserver: NetworkObserver,
@@ -92,8 +92,14 @@ class QuranViewModel(
     val bookmarks = quranDatabaseRepository.getAllBookmarks()
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-    fun toggleBookmark(surahNumber: Int, ayahNumber: Int) {
-        viewModelScope.launch { quranDatabaseRepository.toggleBookmark(surahNumber, ayahNumber) }
+    fun toggleBookmark(surahNumber: Int, ayahNumber: Int, surahName: String) {
+        viewModelScope.launch {
+            quranDatabaseRepository.toggleBookmark(
+                surahName = surahName,
+                surahNumber = surahNumber,
+                ayahNumber = ayahNumber
+            )
+        }
     }
 
     val ayahRecitationState: StateFlow<AyahRecitationState> = ayahPlayer.state
@@ -104,7 +110,7 @@ class QuranViewModel(
 
 
     fun playAyah(surahNumber: Int, ayahNumber: Int) {
-        val url = recitationRepository.ayahUrl(_selectedReciter.value, surahNumber, ayahNumber)
+        val url = surahDownloadRepository.ayahUrl(_selectedReciter.value, surahNumber, ayahNumber)
         Log.d("QuranReaderViewModel", "playAyah:$url ")
         ayahPlayer.play(
             url = url,

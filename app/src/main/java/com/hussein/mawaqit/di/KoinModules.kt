@@ -7,19 +7,21 @@ import com.hussein.mawaqit.data.azkar.AzkarRepository
 import com.hussein.mawaqit.data.db.QuranDatabase
 import com.hussein.mawaqit.data.db.repo.QuranDatabaseRepository
 import com.hussein.mawaqit.data.prayer.PrayerSchedulerManager
-import com.hussein.mawaqit.data.quran.QuranDisplayPreferences
-import com.hussein.mawaqit.data.quran.recitation.RecitationRepository
+import com.hussein.mawaqit.data.quran.recitation.SurahDownloadRepository
 import com.hussein.mawaqit.data.quran.tafsir.TafsirRepository
 import com.hussein.mawaqit.infrastructure.media.AyahPlayer
 import com.hussein.mawaqit.infrastructure.network.NetworkObserver
+import com.hussein.mawaqit.infrastructure.settings.QuranDisplayPreferences
 import com.hussein.mawaqit.infrastructure.settings.SettingsRepository
 import com.hussein.mawaqit.infrastructure.workers.DailyPrayerWorker
+import com.hussein.mawaqit.infrastructure.workers.DatabasePopulationWorker
 import com.hussein.mawaqit.infrastructure.workers.QuranPopulationWorker
 import com.hussein.mawaqit.infrastructure.workers.SurahDownloadWorker
 import com.hussein.mawaqit.infrastructure.workers.TafsirPopulationWorker
 import com.hussein.mawaqit.presentation.azkar.AzkarViewModel
 import com.hussein.mawaqit.presentation.home.HomeViewModel
 import com.hussein.mawaqit.presentation.onboarding.OnboardingViewModel
+import com.hussein.mawaqit.presentation.quran.bookmarks.BookmarksViewModel
 import com.hussein.mawaqit.presentation.quran.list_screen.SurahListViewModel
 import com.hussein.mawaqit.presentation.quran.reader.QuranViewModel
 import com.hussein.mawaqit.presentation.quran.search.QuranSearchViewModel
@@ -44,7 +46,7 @@ val appModule = module {
 
     // Repositories & Data
     factory { AzkarRepository(androidContext()) }
-    single { RecitationRepository(androidContext()) }
+    single { SurahDownloadRepository(androidContext()) }
     factory { TafsirRepository(get()) }
     factory { QuranDisplayPreferences(androidContext()) }
     factory { AyahPlayer(androidContext()) }
@@ -75,7 +77,7 @@ val appModule = module {
     viewModel { AzkarViewModel(get()) }
     viewModel {
         QuranViewModel(
-            recitationRepository = get(),
+            surahDownloadRepository = get(),
             tafsirRepository = get(),
             quranDisplayPreferences = get(),
             networkObserver = get(),
@@ -92,7 +94,7 @@ val appModule = module {
     single {
         GlobalPlayerViewModel(
             application = androidApplication(),
-            recitationRepository = get(),
+            surahDownloadRepository = get(),
             workManager = get()
         )
     }
@@ -102,16 +104,20 @@ val appModule = module {
             settingsRepository = get(),
             locationFetcher = get(),
             workerManager = get(),
-            prayerSchedulerManager = get()
+            prayerSchedulerManager = get(), networkObserver = get()
         )
     }
     viewModel {
         QuranSearchViewModel(repo = get())
     }
+    viewModel {
+        BookmarksViewModel(quranDatabaseRepository = get())
+    }
 
     // Workers
     worker { SurahDownloadWorker(context = androidContext(), params = get()) }
-    worker { QuranPopulationWorker(context = androidContext(), params = get()) }
+    worker { DatabasePopulationWorker(context = androidContext(), params = get()) }
     worker { DailyPrayerWorker(appContext = androidContext(), params = get()) }
     worker { TafsirPopulationWorker(appContext = androidContext(), params = get()) }
+    worker { QuranPopulationWorker(context = androidContext(), params = get()) }
 }

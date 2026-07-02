@@ -7,10 +7,8 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBars
-import androidx.compose.material3.ButtonShapes
-import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -23,13 +21,9 @@ fun BackButton(
     onClick: () -> Unit,
     @DrawableRes icon: Int = R.drawable.ic_arrow_back,
 ) {
-    FilledTonalButton(
+    FilledTonalIconButton(
         modifier = modifier,
         onClick = onClick,
-        shapes = ButtonShapes(
-            shape = IconButtonDefaults.standardShape,
-            pressedShape = IconButtonDefaults.smallSquareShape
-        ),
     ) {
         Icon(
             imageVector = ImageVector.vectorResource(icon),

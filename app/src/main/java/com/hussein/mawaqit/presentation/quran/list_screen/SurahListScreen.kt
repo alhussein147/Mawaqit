@@ -1,5 +1,6 @@
 package com.hussein.mawaqit.presentation.quran.list_screen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,10 +15,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
@@ -40,8 +43,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.mawaqit.R
-import com.hussein.mawaqit.data.quran.QuranData
-import com.hussein.mawaqit.data.quran.Surah
+import com.hussein.mawaqit.data.mappers.toSurah
+import com.hussein.mawaqit.domain.models.Surah
 import com.hussein.mawaqit.presentation.navigation.LocalBottomBarHeight
 import com.hussein.mawaqit.presentation.navigation.ScrollObserver
 import com.hussein.mawaqit.presentation.quran.components.SurahReciterPickerSheet
@@ -55,21 +58,21 @@ import java.util.UUID
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SurahListScreen(
-    modifier:Modifier = Modifier,
+    modifier: Modifier = Modifier,
     onSurahSelected: (surahIndex: Int, scrollToAyah: Int?) -> Unit,
     onNavigateToSearch: () -> Unit,
+    onNavigateToBookmarks: () -> Unit,
     surahListViewModel: SurahListViewModel = koinViewModel(),
     globalPlayerViewModel: GlobalPlayerViewModel = koinInject(),
     toggleNavBar: (Boolean) -> Unit = {}
 ) {
 
+    val surahs = surahListViewModel.surahs.collectAsStateWithLifecycle()
+    val isLoading by surahListViewModel.isLoading.collectAsStateWithLifecycle()
     val surahStates by globalPlayerViewModel.surahStates.collectAsStateWithLifecycle()
     val selectedReciter by globalPlayerViewModel.selectedReciter.collectAsStateWithLifecycle()
-    val bookmarks by surahListViewModel.bookmarks.collectAsStateWithLifecycle()
     var showReciterPicker by remember { mutableStateOf(false) }
     var surahToDownload by remember { mutableStateOf<Int?>(null) }
-
-    var showBookmarksDialog by remember { mutableStateOf(false) }
 
     val topAppBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
@@ -90,26 +93,15 @@ fun SurahListScreen(
             })
     }
 
-    if (showBookmarksDialog) {
-        BookmarksDialog(
-            bookmarks = bookmarks,
-            onNavigate = { surahNumber, ayahNumber -> onSurahSelected(surahNumber, ayahNumber) },
-            onDelete = { surahNumber, ayahNumber ->
-                surahListViewModel.deleteBookmark(surahNumber, ayahNumber)
-            },
-            onDismiss = { showBookmarksDialog = false }
-        )
-    }
-
 
     ScreenWrapper(
         modifier = modifier,
         topAppBar = {
             LargeTopAppBar(
-                scrollBehavior =topAppBarScrollBehavior ,
+                scrollBehavior = topAppBarScrollBehavior,
                 title = { Text("Quran") },
                 actions = {
-                    IconButton(onClick = { showBookmarksDialog = true }) {
+                    IconButton(onClick = onNavigateToBookmarks) {
                         Icon(
                             imageVector = ImageVector.vectorResource(R.drawable.ic_bookmark),
                             contentDescription = null
@@ -124,50 +116,52 @@ fun SurahListScreen(
                 })
         },
         content = {
-            val listState = rememberLazyListState()
-            val bottomBarHeight = LocalBottomBarHeight.current
-            ScrollObserver(
-                onToggleNavBar = toggleNavBar,
-                listState = listState
-            )
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection),
-                contentPadding = PaddingValues(bottom = bottomBarHeight + 16.dp),
-                state = listState
-            ) {
-                itemsIndexed(QuranData.surahs, key = { _, surah -> surah.number }) { _, surah ->
-                    val itemState = surahStates[surah.number] ?: SurahItemState.NotDownloaded
-                    SurahRow(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 14.dp),
-                        surah = surah,
-                        itemState = itemState,
-                        onPlayPause = {
-                            when (itemState) {
-                                SurahItemState.Playing,
-                                SurahItemState.Paused -> globalPlayerViewModel.togglePlayPause()
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    ContainedLoadingIndicator()
+                }
+            } else {
+                val listState = rememberLazyListState()
+                val bottomBarHeight = LocalBottomBarHeight.current
+                ScrollObserver(
+                    onToggleNavBar = toggleNavBar,
+                    listState = listState
+                )
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection),
+                    contentPadding = PaddingValues(top = 16.dp, bottom = bottomBarHeight + 32.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    state = listState
+                ) {
+                    itemsIndexed(items = surahs.value, key = { _, surah -> surah.number }) { _, surah ->
+                        val itemState = surahStates[surah.number] ?: SurahItemState.NotDownloaded
+                        SurahRow(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            surah = surah.toSurah(),
+                            itemState = itemState,
+                            onPlayPause = {
+                                when (itemState) {
+                                    SurahItemState.Playing,
+                                    SurahItemState.Paused -> globalPlayerViewModel.togglePlayPause()
 
-                                SurahItemState.Downloaded -> globalPlayerViewModel.playSurah(surah.number)
-                                else -> Unit
-                            }
-                        },
-                        onDownload = {
-                            surahToDownload = surah.number
-                            showReciterPicker = true
-                        },
-                        onCancel = { workId -> globalPlayerViewModel.cancelDownload(workId) },
-                        onClick = { onSurahSelected(surah.number, null) },
-                    )
-                    HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = 20.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                    )
+                                    SurahItemState.Downloaded -> globalPlayerViewModel.playSurah(surah.number)
+                                    else -> Unit
+                                }
+                            },
+                            onDownload = {
+                                surahToDownload = surah.number
+                                showReciterPicker = true
+                            },
+                            onCancel = { workId -> globalPlayerViewModel.cancelDownload(workId) },
+                            onClick = { onSurahSelected(surah.number, null) },
+                        )
+                    }
                 }
             }
-
         }
     )
 }
@@ -183,115 +177,157 @@ private fun SurahRow(
     onCancel: (UUID) -> Unit,
     onPlayPause: () -> Unit,
 ) {
-    Surface(onClick = onClick, color = MaterialTheme.colorScheme.surface) {
+    Surface(
+        onClick = onClick,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        shape = RoundedCornerShape(24.dp),
+        modifier = modifier
+    ) {
         Row(
-            modifier = modifier,
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             // Surah number badge
             Surface(
-                shape = MaterialTheme.shapes.small,
+                shape = CircleShape,
                 color = MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier.size(40.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(
                         text = surah.number.toString(),
-                        style = MaterialTheme.typography.labelMedium,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
             }
 
-            Spacer(Modifier.width(14.dp))
+            Spacer(Modifier.width(16.dp))
 
             // Names
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = surah.nameTransliterated,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    text = "Pages ${surah.startPage} – ${QuranData.endPageOf(surah)}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
                 )
             }
 
-            // Arabic name + bookmark indicator
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     text = surah.nameArabic,
-                    style = MaterialTheme.typography.titleMedium,
-                    textAlign = TextAlign.End,
-                    color = MaterialTheme.colorScheme.primary
+                    style = MaterialTheme.typography.headlineSmall.copy(
+                        textAlign = TextAlign.End
+                    ),
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
                 )
             }
 
-            Spacer(Modifier.width(8.dp))
-            when (itemState) {
-                SurahItemState.NotDownloaded -> {
-                    IconButton(onClick = onDownload) {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(R.drawable.ic_download),
-                            contentDescription = "Download",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+            Spacer(Modifier.width(12.dp))
 
-                is SurahItemState.Downloading -> {
-                    Box(contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(
-                            progress = { itemState.progress },
-                            modifier = Modifier.size(32.dp),
-                            strokeWidth = 3.dp
-                        )
-                        IconButton(
-                            onClick = { onCancel(itemState.workId) },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = ImageVector.vectorResource(R.drawable.ic_close),
-                                contentDescription = "Cancel",
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
-                }
+            ActionIcon(
+                itemState = itemState,
+                onDownload = onDownload,
+                onCancel = onCancel,
+                onPlayPause = onPlayPause
+            )
+        }
+    }
+}
 
-                SurahItemState.Downloaded -> {
-                    IconButton(onClick = onPlayPause) {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(R.drawable.ic_play),
-                            contentDescription = "Play",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
+@Composable
+private fun ActionIcon(
+    itemState: SurahItemState,
+    onDownload: () -> Unit,
+    onCancel: (UUID) -> Unit,
+    onPlayPause: () -> Unit,
+) {
+    when (itemState) {
+        SurahItemState.NotDownloaded -> {
+            IconButton(
+                onClick = onDownload,
+                modifier = Modifier.background(
+                    MaterialTheme.colorScheme.surfaceVariant,
+                    CircleShape
+                )
+            ) {
+                Icon(
+                    imageVector = ImageVector.vectorResource(R.drawable.ic_download),
+                    contentDescription = "Download",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
 
-                SurahItemState.Playing -> {
-                    IconButton(onClick = onPlayPause) {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(R.drawable.ic_pause),
-                            contentDescription = "Pause",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
+        is SurahItemState.Downloading -> {
+            Box(contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(
+                    progress = { itemState.progress },
+                    modifier = Modifier.size(40.dp),
+                    strokeWidth = 3.dp,
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+                IconButton(
+                    onClick = { onCancel(itemState.workId) },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(R.drawable.ic_close),
+                        contentDescription = "Cancel",
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.error
+                    )
                 }
+            }
+        }
 
-                SurahItemState.Paused -> {
-                    IconButton(onClick = onPlayPause) {
-                        Icon(
-                            imageVector = ImageVector.vectorResource(R.drawable.ic_resume),
-                            contentDescription = "Resume",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
+        SurahItemState.Downloaded -> {
+            IconButton(
+                onClick = onPlayPause,
+                modifier = Modifier.background(
+                    MaterialTheme.colorScheme.primaryContainer,
+                    CircleShape
+                )
+            ) {
+                Icon(
+                    imageVector = ImageVector.vectorResource(R.drawable.ic_play),
+                    contentDescription = "Play",
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
+
+        SurahItemState.Playing -> {
+            IconButton(
+                onClick = onPlayPause,
+                modifier = Modifier.background(MaterialTheme.colorScheme.primary, CircleShape)
+            ) {
+                Icon(
+                    imageVector = ImageVector.vectorResource(R.drawable.ic_pause),
+                    contentDescription = "Pause",
+                    tint = MaterialTheme.colorScheme.onPrimary
+                )
+            }
+        }
+
+        SurahItemState.Paused -> {
+            IconButton(
+                onClick = onPlayPause,
+                modifier = Modifier.background(
+                    MaterialTheme.colorScheme.secondaryContainer,
+                    CircleShape
+                )
+            ) {
+                Icon(
+                    imageVector = ImageVector.vectorResource(R.drawable.ic_resume),
+                    contentDescription = "Resume",
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer
+                )
             }
         }
     }

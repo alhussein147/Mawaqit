@@ -8,7 +8,7 @@ import androidx.work.Data
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.hussein.mawaqit.data.quran.recitation.FullSurahReciter
-import com.hussein.mawaqit.data.quran.recitation.RecitationRepository
+import com.hussein.mawaqit.data.quran.recitation.SurahDownloadRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -42,7 +42,7 @@ class SurahDownloadWorker(
         val reciter = FullSurahReciter.entries.find { it.id == reciterId }
             ?: return Result.failure()
 
-        val repo = RecitationRepository(applicationContext)
+        val repo = SurahDownloadRepository(applicationContext)
         val file = repo.surahFile(reciter, surahNumber)
 
         // Already downloaded — nothing to do

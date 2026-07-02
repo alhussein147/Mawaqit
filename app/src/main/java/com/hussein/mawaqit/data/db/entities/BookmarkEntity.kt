@@ -17,8 +17,10 @@ import androidx.room.PrimaryKey
     indices = [Index("surahNumber")]
 )
 data class BookmarkEntity(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @PrimaryKey(autoGenerate = true)
+    val id: Int = 0,
     val surahNumber: Int,
     val ayahNumber: Int,
+    val nameArabic: String,
     val addedAt: Long = System.currentTimeMillis()
 )

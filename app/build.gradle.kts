@@ -24,7 +24,7 @@ android {
         minSdk = 29
         targetSdk = 37
         versionCode = 1
-        versionName = "1.0.0"
+        versionName = "1.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -47,6 +47,11 @@ android {
         }
         debug {
             applicationIdSuffix = ".debug"
+            buildConfigField(
+                "boolean",
+                "LOAD_FROM_ASSETS",
+                "true"
+            )
         }
     }
 
@@ -56,6 +61,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
 }

@@ -3,30 +3,26 @@ package com.hussein.mawaqit.presentation.quran.list_screen
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hussein.mawaqit.data.db.repo.QuranDatabaseRepository
+import com.hussein.mawaqit.data.db.entities.SurahEntity
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
 class SurahListViewModel(
     private val quranDatabaseRepository: QuranDatabaseRepository,
 ) : ViewModel() {
 
-    val allSurahs = quranDatabaseRepository.getAllSurahs().stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList()
-    )
+    private val _isLoading = MutableStateFlow(true)
+    val isLoading = _isLoading.asStateFlow()
 
-    val bookmarks = quranDatabaseRepository.getAllBookmarks().stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        emptyList()
-    )
-
-    fun deleteBookmark(surahNumber: Int, ayahNumber: Int) {
-        viewModelScope.launch {
-            quranDatabaseRepository.removeBookmark(surahNumber, ayahNumber)
-        }
-    }
+    val surahs = quranDatabaseRepository.getAllSurahs()
+        .onEach { _isLoading.value = false }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
 }

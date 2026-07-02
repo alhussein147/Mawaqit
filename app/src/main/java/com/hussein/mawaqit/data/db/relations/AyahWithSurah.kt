@@ -5,5 +5,5 @@ data class AyahWithSurah(
     val numberInSurah: Int,
     val text: String,
     val surahNameArabic: String,
-    val surahTranslit: String
+    val surahTranslate: String
 )

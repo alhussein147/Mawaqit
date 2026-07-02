@@ -11,8 +11,6 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,25 +19,23 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -47,7 +43,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
@@ -67,6 +62,9 @@ import com.hussein.mawaqit.infrastructure.settings.PrayerNotificationSettings
 import com.hussein.mawaqit.presentation.navigation.LocalBottomBarHeight
 import com.hussein.mawaqit.presentation.shared.LoadingContent
 import com.hussein.mawaqit.presentation.shared.ScreenWrapper
+import com.hussein.mawaqit.presentation.shared.SettingPickerRow
+import com.hussein.mawaqit.presentation.shared.SettingSectionHeader
+import com.hussein.mawaqit.presentation.shared.SettingToggleRow
 import com.hussein.mawaqit.presentation.util.getPrayersDisplayNames
 import com.hussein.mawaqit.presentation.util.hasLocationPermission
 import com.hussein.mawaqit.presentation.util.isLocationPermanentlyDenied
@@ -90,7 +88,6 @@ fun SettingsScreen(
 
     var pendingAction by remember { mutableStateOf<LocationAction>(LocationAction.None) }
 
-    // ── Permission launcher ───────────────────────────────────────────────────
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { results ->
@@ -99,26 +96,20 @@ fun SettingsScreen(
         if (granted) {
             viewModel.fetchAndSaveLocation()
         } else {
-            // After denial,
-            // shouldShowRationale flips to false = permanently denied
             pendingAction = LocationAction.None
         }
     }
 
-    // ── Kick off the right flow when user taps "Update Location" ─────────────
     fun onUpdateLocationTapped() {
         when {
-            // GPS disabled — send to system location settings
             !CurrentLocationFetcher.isLocationEnabled(context) -> {
                 pendingAction = LocationAction.ShowGpsDialog
             }
 
-            // Permission already granted — fetch immediately
             context.hasLocationPermission() -> {
                 viewModel.fetchAndSaveLocation()
             }
 
-            // Permission denied once before — show rationale first
             else -> {
                 pendingAction = LocationAction.ShowRationaleDialog
             }
@@ -127,34 +118,41 @@ fun SettingsScreen(
 
     ScreenWrapper(
         modifier = modifier,
-        topAppBar = { LargeTopAppBar(title = { Text("Settings") }, scrollBehavior = topAppBarScrollBehavior) },
+        topAppBar = {
+            LargeTopAppBar(
+                title = { Text("Settings", fontWeight = FontWeight.Black) },
+                scrollBehavior = topAppBarScrollBehavior,
+                colors = TopAppBarDefaults.largeTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer
+                )
+            )
+        },
         content = {
             if (settings == null) {
-            LoadingContent(
-                modifier = Modifier
-                    .fillMaxSize()
-            )
-        } else {
-            SettingsContent(
-                settings = settings!!,
-                locationState = locationState,
-                savedLocation = savedLocation,
-                onUpdateLocationTapped = ::onUpdateLocationTapped,
-                onLocationErrorDismissed = { viewModel.resetLocationState() },
-                onPrayerToggled = viewModel::onPrayerNotificationToggled,
-                onMethodChanged = viewModel::onCalculationMethodChanged,
-                onSoundChanged = viewModel::onNotificationSoundChanged,
-                onThemeChanged = viewModel::onAppThemeChanged,
-                onColorSchemeChanged = viewModel::onAppColorSchemeChanged,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
-            )
-        }
+                LoadingContent(modifier = Modifier.fillMaxSize())
+            } else {
+                SettingsContent(
+                    settings = settings!!,
+                    locationState = locationState,
+                    savedLocation = savedLocation,
+                    onUpdateLocationTapped = ::onUpdateLocationTapped,
+                    onLocationErrorDismissed = { viewModel.resetLocationState() },
+                    onPrayerToggled = viewModel::onPrayerNotificationToggled,
+                    onMethodChanged = viewModel::onCalculationMethodChanged,
+                    onSoundChanged = viewModel::onNotificationSoundChanged,
+                    onThemeChanged = viewModel::onAppThemeChanged,
+                    onColorSchemeChanged = viewModel::onAppColorSchemeChanged,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
+                )
+            }
         }
     )
-    when (pendingAction) {
 
+    // Dialogs
+    when (pendingAction) {
         LocationAction.ShowGpsDialog -> {
             AlertDialog(
                 onDismissRequest = { pendingAction = LocationAction.None },
@@ -167,9 +165,7 @@ fun SettingsScreen(
                     }) { Text("Open Settings") }
                 },
                 dismissButton = {
-                    TextButton(onClick = { pendingAction = LocationAction.None }) {
-                        Text("Cancel")
-                    }
+                    TextButton(onClick = { pendingAction = LocationAction.None }) { Text("Cancel") }
                 }
             )
         }
@@ -182,7 +178,6 @@ fun SettingsScreen(
                 confirmButton = {
                     TextButton(onClick = {
                         pendingAction = LocationAction.None
-                        // If permanently denied, shouldShowRationale is false — go to app settings
                         if (context.isLocationPermanentlyDenied()) {
                             context.openAppSettings()
                         } else {
@@ -198,9 +193,7 @@ fun SettingsScreen(
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { pendingAction = LocationAction.None }) {
-                        Text("Cancel")
-                    }
+                    TextButton(onClick = { pendingAction = LocationAction.None }) { Text("Cancel") }
                 }
             )
         }
@@ -210,7 +203,6 @@ fun SettingsScreen(
 }
 
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun SettingsContent(
     settings: AppSettings,
@@ -228,37 +220,35 @@ private fun SettingsContent(
     val bottomBarHeight = LocalBottomBarHeight.current
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .then(modifier),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = bottomBarHeight + 16.dp),
+        modifier = modifier,
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            end = 16.dp,
+            bottom = bottomBarHeight + 32.dp
+        ),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-
         item {
-            SectionHeader("Prayer Notifications")
-            val enabled = settings.notificationSound != NotificationSound.NONE
-
-            PickerRow(
-                label = "Sound",
+            SettingSectionHeader("Prayer Notifications")
+            SettingPickerRow(
+                label = "Notification Style",
                 currentValue = settings.notificationSound.displayName,
                 options = NotificationSound.entries.map { it.displayName },
                 onOptionSelected = { name ->
                     onSoundChanged(NotificationSound.entries.first { it.displayName == name })
-                })
+                }
+            )
 
             AnimatedVisibility(
-                enabled,
-                enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()
+                visible = settings.notificationSound != NotificationSound.NONE,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
             ) {
-                Column(modifier = Modifier.padding(vertical = 4.dp)) {
+                Column(modifier = Modifier.padding(top = 8.dp)) {
                     getPrayersDisplayNames().forEachIndexed { index, prayer ->
-
-                        val enabled = settings.prayerNotifications.isEnabledFor(prayer)
-
-                        ToggleRow(
+                        SettingToggleRow(
                             label = prayer,
-                            checked = enabled,
+                            checked = settings.prayerNotifications.isEnabledFor(prayer),
                             onCheckedChange = { onPrayerToggled(prayer, it) },
                             shape = when (index) {
                                 0 -> listShapes.topItem
@@ -269,23 +259,21 @@ private fun SettingsContent(
                     }
                 }
             }
-
         }
 
         item {
-            SectionHeader("Location")
+            SettingSectionHeader("Location")
             LocationRow(
                 locationState = locationState,
                 savedLocation = savedLocation,
                 onUpdateTapped = onUpdateLocationTapped,
                 onErrorDismissed = onLocationErrorDismissed
             )
-            Spacer(Modifier.height(8.dp))
         }
 
         item {
-            SectionHeader("Calculation Method")
-            PickerRow(
+            SettingSectionHeader("Calculation Method")
+            SettingPickerRow(
                 label = "Method",
                 currentValue = settings.calculationMethod.displayName(),
                 options = CalculationMethod.entries.filter { it != CalculationMethod.OTHER }
@@ -293,176 +281,40 @@ private fun SettingsContent(
                 onOptionSelected = { name ->
                     val method = CalculationMethod.entries.first { it.displayName() == name }
                     onMethodChanged(method)
-                })
+                }
+            )
         }
 
         item {
-            SectionHeader("Appearance")
-            PickerRow(
+            SettingSectionHeader("Appearance")
+            SettingPickerRow(
                 label = "Theme",
-                shape = RoundedCornerShape(
-                    bottomStart = 2.dp,
-                    bottomEnd = 2.dp,
-                    topEnd = 16.dp,
-                    topStart = 16.dp
-                ),
                 currentValue = settings.appTheme.displayName,
                 options = AppTheme.entries.map { it.displayName },
                 onOptionSelected = { name ->
                     onThemeChanged(AppTheme.entries.first { it.displayName == name })
-                })
-            Spacer(Modifier.height(1.dp))
-            PickerRow(
-                label = "Color Scheme",
+                },
                 shape = RoundedCornerShape(
-                    bottomStart = 16.dp,
-                    bottomEnd = 16.dp,
-                    topEnd = 2.dp,
-                    topStart = 2.dp
-                ),
+                    topStart = 24.dp,
+                    topEnd = 24.dp,
+                    bottomStart = 4.dp,
+                    bottomEnd = 4.dp
+                )
+            )
+            SettingPickerRow(
+                label = "Color Scheme",
                 currentValue = settings.appColorScheme.displayName,
                 options = AppColorScheme.entries.map { it.displayName },
                 onOptionSelected = { name ->
                     onColorSchemeChanged(AppColorScheme.entries.first { it.displayName == name })
-                })
-        }
-    }
-}
-
-
-@Composable
-private fun ToggleRow(
-    label: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    shape: RoundedCornerShape
-) {
-    SettingOptionContainer(
-        onClick = { onCheckedChange(!checked) },
-        shape = shape,
-        modifier = Modifier.padding(1.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyLarge,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
-            )
-            Switch(checked = checked, onCheckedChange = onCheckedChange)
-        }
-
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun PickerRow(
-    label: String,
-    currentValue: String,
-    shape: RoundedCornerShape = RoundedCornerShape(16.dp),
-    options: List<String>,
-    onOptionSelected: (String) -> Unit
-) {
-    var showSheet by remember { mutableStateOf(false) }
-    val sheetState = rememberModalBottomSheetState()
-    SettingOptionContainer(onClick = { showSheet = true }, shape = shape) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(label, style = MaterialTheme.typography.bodyLarge)
-                Text(
-                    text = currentValue,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                },
+                shape = RoundedCornerShape(
+                    topStart = 4.dp,
+                    topEnd = 4.dp,
+                    bottomStart = 24.dp,
+                    bottomEnd = 24.dp
                 )
-            }
-            Icon(
-                imageVector = ImageVector.vectorResource(R.drawable.ic_chevron_right),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .padding(start = 12.dp)
-                    .size(20.dp)
             )
-        }
-
-    }
-
-    if (showSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showSheet = false }, sheetState = sheetState
-        ) {
-            Column(
-                modifier = Modifier
-                    .padding(start = 16.dp, end = 16.dp, bottom = 32.dp)
-                    .navigationBarsPadding()
-            ) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(vertical = 12.dp)
-                )
-                options.forEach { option ->
-                    val isSelected = option == currentValue
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(4.dp),
-                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-                        onClick = {
-                            onOptionSelected(option)
-                            showSheet = false
-                        },
-                        border = BorderStroke(
-                            width = 1.dp,
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(18.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = option,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f)
-                            )
-                            if (isSelected) {
-                                Icon(
-                                    imageVector = ImageVector.vectorResource(R.drawable.ic_check),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier
-                                        .padding(start = 12.dp)
-                                        .size(20.dp)
-                                )
-                            }
-                        }
-
-                    }
-                }
-            }
         }
     }
 }
@@ -475,20 +327,15 @@ private fun LocationRow(
     onUpdateTapped: () -> Unit,
     onErrorDismissed: () -> Unit
 ) {
-    // Resolve what to display — Success overrides the persisted savedLocation
     val displayLocation = when (locationState) {
         is SettingsViewModel.LocationUpdateState.Success -> locationState.location
         else -> savedLocation
     }
-
-    SettingOptionContainer(
-        clickEnabled = false
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
+        shape = RoundedCornerShape(24.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-        ) {
+        Column(modifier = Modifier.padding(20.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -501,15 +348,17 @@ private fun LocationRow(
                     Icon(
                         imageVector = ImageVector.vectorResource(R.drawable.ic_location),
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(18.dp)
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
                     )
-                    Column(modifier = Modifier.padding(start = 8.dp)) {
+                    Column(modifier = Modifier.padding(start = 16.dp)) {
                         Text(
                             text = displayLocation?.cityName ?: "No location set",
-                            style = MaterialTheme.typography.bodyLarge,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
+                            ,color = MaterialTheme.colorScheme.onSurface
                         )
                         if (displayLocation != null) {
                             Text(
@@ -518,37 +367,27 @@ private fun LocationRow(
                                     displayLocation.longitude
                                 ),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
                 }
 
-                when (locationState) {
-                    SettingsViewModel.LocationUpdateState.Fetching -> {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp
-                        )
-                    }
-
-                    else -> {
-                        TextButton(onClick = onUpdateTapped) {
-                            Text(
-                                text = if (displayLocation != null) "Update" else "Set",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
+                if (locationState is SettingsViewModel.LocationUpdateState.Fetching) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 3.dp)
+                } else {
+                    Button(
+                        onClick = onUpdateTapped,
+                        shape = RoundedCornerShape(12.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text(if (displayLocation != null) "Update" else "Set")
                     }
                 }
             }
 
-            // Inline error
             if (locationState is SettingsViewModel.LocationUpdateState.Error) {
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(12.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -564,40 +403,8 @@ private fun LocationRow(
                 }
             }
         }
+
     }
-
-}
-
-@Composable
-private fun SettingOptionContainer(
-    modifier: Modifier = Modifier,
-    shape: RoundedCornerShape = RoundedCornerShape(16.dp),
-    color: Color = MaterialTheme.colorScheme.surfaceContainer,
-    clickEnabled: Boolean = true,
-    onClick: () -> Unit = {},
-    content: @Composable () -> Unit
-) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(clickEnabled, onClick = onClick)
-            .then(modifier),
-        shape = shape,
-        color = color
-    ) {
-        content()
-    }
-}
-
-@Composable
-private fun SectionHeader(title: String) {
-    Text(
-        text = title.uppercase(),
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.primary,
-        fontWeight = FontWeight.SemiBold,
-        modifier = Modifier.padding(vertical = 8.dp)
-    )
 }
 
 private sealed interface LocationAction {

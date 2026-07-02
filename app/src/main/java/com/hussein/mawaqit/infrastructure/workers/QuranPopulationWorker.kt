@@ -26,8 +26,8 @@ class QuranPopulationWorker(
     private val json = Json { ignoreUnknownKeys = true }
 
     companion object {
-        const val QURAN_POPULATION_WORK_NAME = "quran_population"
-        const val KEY_PROGRESS = "progress"
+        const val LOCAL_QURAN_POPULATION_WORK_NAME = "quran_population_from_assets"
+        const val LOCAL_QURAN_POPULATION_PROGRESS = "progress"
         const val KEY_CURRENT_SURAH = "current_surah"
         private const val TAG = "QuranPopulation"
 
@@ -82,7 +82,7 @@ class QuranPopulationWorker(
                 val progress = (index + 1) / 114f
                 setProgress(
                     workDataOf(
-                        KEY_PROGRESS to progress,
+                        LOCAL_QURAN_POPULATION_PROGRESS to progress,
                         KEY_CURRENT_SURAH to surahNumber
                     )
                 )
@@ -93,7 +93,7 @@ class QuranPopulationWorker(
 
             Log.d(TAG, "Population complete: ${surahs.size} surahs, ${ayahs.size} ayahs")
             Result.success()
-        } catch (e: Exception) { // todo: handle exceptions
+        } catch (e: Exception) {
             Log.e(TAG, "Population failed", e)
             Result.retry()
         }

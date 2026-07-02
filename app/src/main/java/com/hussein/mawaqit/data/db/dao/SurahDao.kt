@@ -15,7 +15,7 @@ interface SurahDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(surahs: List<SurahEntity>)
 
-    @Query("SELECT * FROM surahs ORDER BY number")
+    @Query("SELECT * FROM surahs ORDER BY number ASC")
     fun getAllSurahs(): Flow<List<SurahEntity>>
 
     @Query("SELECT * FROM surahs WHERE number = :number LIMIT 1")

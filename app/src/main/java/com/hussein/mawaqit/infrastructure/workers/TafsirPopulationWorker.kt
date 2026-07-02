@@ -8,16 +8,12 @@ import androidx.work.workDataOf
 import com.hussein.mawaqit.data.db.QuranDatabase
 import com.hussein.mawaqit.data.db.entities.TafsirEntity
 import com.hussein.mawaqit.data.db.entities.TafsirSourceEntity
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-
-@Serializable
-data class AyahTafsir(val text: String)
 
 class TafsirPopulationWorker(
     appContext: Context,
@@ -79,7 +75,7 @@ class TafsirPopulationWorker(
 
             setProgress(
                 workDataOf(
-                    KEY_PROGRESS to (processed * 100 / total)
+                    TAFSIR_POPULATION_PROGRESS to (processed * 100 / total)
                 )
             )
 
@@ -90,11 +86,11 @@ class TafsirPopulationWorker(
             db.tafsirDao().insertAll(batch)
         }
 
-        setProgress(workDataOf(KEY_PROGRESS to 100))
+        setProgress(workDataOf(TAFSIR_POPULATION_PROGRESS to 100))
     }
 
     companion object {
-        const val TAFSIR_POPULATION_WORK_NAME = "tafsir_population"
-        const val KEY_PROGRESS = "progress"
+        const val TAFSIR_POPULATION_WORK_NAME = "tafsir_population_from_assets"
+        const val TAFSIR_POPULATION_PROGRESS = "progress"
     }
 }

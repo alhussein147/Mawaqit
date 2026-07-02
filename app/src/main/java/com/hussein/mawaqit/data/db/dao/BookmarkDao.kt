@@ -19,12 +19,14 @@ interface BookmarkDao {
     @Query("SELECT * FROM bookmarks ORDER BY addedAt DESC")
     fun getAllBookmarks(): Flow<List<BookmarkEntity>>
 
+    // check if an ayah is already bookmarked and returns an observable flow
     @Query("SELECT EXISTS(SELECT 1 FROM bookmarks WHERE surahNumber = :surahNumber AND ayahNumber = :ayahNumber)")
     fun isBookmarked(surahNumber: Int, ayahNumber: Int): Flow<Boolean>
 
     @Query("SELECT COUNT(*) FROM bookmarks")
     suspend fun count(): Int
 
+    // checks if an ayah is already bookmarked but without returning a flow
     @Query("SELECT COUNT(*) FROM bookmarks WHERE surahNumber = :surahNumber AND ayahNumber = :ayahNumber")
     suspend fun countForAyah(surahNumber: Int, ayahNumber: Int): Int
 }

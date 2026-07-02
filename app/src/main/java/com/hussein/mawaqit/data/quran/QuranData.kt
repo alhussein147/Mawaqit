@@ -1,14 +1,7 @@
 package com.hussein.mawaqit.data.quran
 
-//domain model
-data class Surah(
-    val number: Int,
-    val nameArabic: String,
-    val nameTransliterated: String,
-    val startPage: Int
-)
+import com.hussein.mawaqit.domain.models.Surah
 
-// TODO: this needs to be refactored
 object QuranData {
 
     val surahs = listOf(
@@ -127,8 +120,4 @@ object QuranData {
         Surah(113, "الفلق", "Al-Falaq", 604),
         Surah(114, "الناس", "An-Nas", 604)
     )
-
-    /** Last page of a surah — next surah's startPage minus 1, or 604 for An-Nas. */
-    fun endPageOf(surah: Surah): Int =
-        surahs.getOrNull(surah.number)?.startPage?.minus(1) ?: 604
 }

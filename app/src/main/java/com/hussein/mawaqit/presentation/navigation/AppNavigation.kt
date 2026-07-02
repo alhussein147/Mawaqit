@@ -1,5 +1,6 @@
 package com.hussein.mawaqit.presentation.navigation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -35,6 +36,7 @@ import com.hussein.mawaqit.presentation.azkar.AzkarScreen
 import com.hussein.mawaqit.presentation.azkar.categories.AzkarCategoryScreen
 import com.hussein.mawaqit.presentation.home.HomeScreen
 import com.hussein.mawaqit.presentation.onboarding.OnboardingScreen
+import com.hussein.mawaqit.presentation.quran.bookmarks.BookmarksScreen
 import com.hussein.mawaqit.presentation.quran.list_screen.SurahListScreen
 import com.hussein.mawaqit.presentation.quran.reader.QuranReaderScreen
 import com.hussein.mawaqit.presentation.quran.search.QuranSearchScreen
@@ -122,6 +124,15 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
                 )
             }
 
+            entry<QuranBookmarks> {
+                BookmarksScreen(
+                    onNavigateToAyah = { surahIndex, ayahNumber ->
+                        backStack.add(QuranReader(surahIndex, ayahNumber))
+                    },
+                    onBack = { backStack.removeAt(backStack.size - 1) }
+                )
+            }
+
             entry<AzkarCategories> {
                 AzkarCategoryScreen(
                     onCategorySelected = { index -> backStack.add(AzkarList(index)) },
@@ -181,6 +192,10 @@ private fun MainNavigation(rootBackStack: NavBackStack<NavKey>) {
         mainBackStack.add(destination)
     }
 
+    BackHandler(enabled = currentScreen != Home && currentScreen != null) {
+        navigateToTopLevel(Home)
+    }
+
     val density = LocalDensity.current
 
     CompositionLocalProvider(LocalBottomBarHeight provides bottomPadding) {
@@ -225,6 +240,9 @@ private fun MainNavigation(rootBackStack: NavBackStack<NavKey>) {
                             },
                             onNavigateToSearch = {
                                 rootBackStack.add(QuranSearch)
+                            },
+                            onNavigateToBookmarks = {
+                                rootBackStack.add(QuranBookmarks)
                             },
                             toggleNavBar = { showNavBar.value = it }
                         )

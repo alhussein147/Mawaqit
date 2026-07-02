@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">Mawaqit</string>
     <string name="onboarding_welcome_title">Welcome to \n Mawaqit!</string>
+    <string name="onboarding_permissions_title">Permissions</string>
+    <string name="onboarding_options_title">Customization</string>
     <string name="onboarding_location_title">Your Location</string>
     <string name="onboarding_location_description">Prayer times change daily based on your coordinates. \n Your location is stored only on your device — never shared.</string>
     <string name="onboarding_notification_title">Prayer Reminders</string>
@@ -14,6 +16,13 @@
     <string name="allow_exact_alarms">Allow Exact Alarms</string>
     <string name="disable_optimization">Disable Optimization</string>
     <string name="skip_for_now">Skip for now</string>
+    <string name="onboarding_quran_title">Loading Quran Data</string>
+    <string name="onboarding_quran_error">Error happened while loading data</string>
+    <string name="onboarding_done_title">All Set</string>
+    <string name="onboarding_finding_location">Finding your location…</string>
+    <string name="onboarding_takes_moment">This only takes a moment</string>
+    <string name="load_quran_data">Load Quran Data</string>
+    <string name="finish">Finish!</string>
     <string name="quran">Quran</string>
     <string name="azakr">Azakr</string>
     <string name="no_internet_connection">No internet connection</string>
