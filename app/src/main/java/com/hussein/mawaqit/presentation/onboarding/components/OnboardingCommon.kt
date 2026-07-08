@@ -30,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -140,7 +141,9 @@ fun OnboardingActions(
     val showSkip = page == OnboardingPage.QURAN_SETUP
 
     Column(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .background(Color.Transparent)
+            .fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Button(
@@ -149,10 +152,14 @@ fun OnboardingActions(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(64.dp),
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(32.dp),
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
         ) {
-            Text(primaryLabel, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text(
+                primaryLabel,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
         }
 
         if (showSkip) {

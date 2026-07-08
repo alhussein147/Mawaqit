@@ -28,7 +28,7 @@ interface SurahDao {
     @Query(
         """SELECT * FROM surahs
            WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(nameArabic, 'ٱ', 'ا'), 'أ', 'ا'), 'إ', 'ا'), 'آ', 'ا'), 'ى', 'ي'), 'ؤ', 'و'), 'ئ', 'ي'), 'ة', 'ه'), 'ـ', '') LIKE '%' || :normalizedQuery || '%'
-              OR LOWER(nameTransliterated) LIKE '%' || :normalizedQuery || '%'
+              OR LOWER(transliteration) LIKE '%' || :normalizedQuery || '%'
               OR nameArabic LIKE '%' || :rawQuery || '%'
            ORDER BY number"""
     )

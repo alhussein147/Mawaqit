@@ -20,6 +20,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -37,7 +38,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.mawaqit.R
 import com.hussein.mawaqit.domain.models.Bookmark
 import com.hussein.mawaqit.presentation.shared.BackButton
-import com.hussein.mawaqit.presentation.shared.ScreenWrapper
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -50,43 +50,51 @@ fun BookmarksScreen(
     val bookmarks by viewModel.bookmarks.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
-    ScreenWrapper(
-        topAppBar = {
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
             LargeTopAppBar(
                 title = { Text("Bookmarks") },
                 navigationIcon = { BackButton(onClick = onBack) },
                 scrollBehavior = scrollBehavior
             )
-        },
-        content = {
-            if (bookmarks.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = "No bookmarks yet",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+
+        }
+    ) { innerPadding ->
+        if (bookmarks.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text(
+                    text = "No bookmarks yet",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .nestedScroll(scrollBehavior.nestedScrollConnection),
+                contentPadding = PaddingValues(top = 16.dp, bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(bookmarks, key = { "${it.surahNumber}_${it.ayahNumber}" }) { bookmark ->
+                    BookmarkRow(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        bookmark = bookmark,
+                        onClick = { onNavigateToAyah(bookmark.surahNumber, bookmark.ayahNumber) },
+                        onDelete = {
+                            viewModel.deleteBookmark(
+                                bookmark.surahNumber,
+                                bookmark.ayahNumber
+                            )
+                        }
                     )
-                }
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .nestedScroll(scrollBehavior.nestedScrollConnection),
-                    contentPadding = PaddingValues(top = 16.dp, bottom = 32.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(bookmarks, key = { "${it.surahNumber}_${it.ayahNumber}" }) { bookmark ->
-                        BookmarkRow(
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            bookmark = bookmark,
-                            onClick = { onNavigateToAyah(bookmark.surahNumber, bookmark.ayahNumber) },
-                            onDelete = { viewModel.deleteBookmark(bookmark.surahNumber, bookmark.ayahNumber) }
-                        )
-                    }
                 }
             }
         }
-    )
+
+    }
 }
 
 @Composable

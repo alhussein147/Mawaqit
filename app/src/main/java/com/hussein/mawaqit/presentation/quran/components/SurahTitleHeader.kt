@@ -1,4 +1,4 @@
-
+package com.hussein.mawaqit.presentation.quran.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer

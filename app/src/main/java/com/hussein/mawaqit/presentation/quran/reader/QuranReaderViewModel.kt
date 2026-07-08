@@ -5,14 +5,14 @@ import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hussein.mawaqit.data.db.repo.QuranDatabaseRepository
-import com.hussein.mawaqit.data.quran.recitation.Reciter
+import com.hussein.mawaqit.data.db.repo.TafsirRepository
 import com.hussein.mawaqit.data.quran.recitation.SurahDownloadRepository
-import com.hussein.mawaqit.data.quran.tafsir.TafsirRepository
 import com.hussein.mawaqit.domain.models.Ayah
+import com.hussein.mawaqit.domain.models.Reciter
 import com.hussein.mawaqit.domain.models.SurahDetail
 import com.hussein.mawaqit.infrastructure.media.AyahPlayer
-import com.hussein.mawaqit.infrastructure.network.NetworkObserver
-import com.hussein.mawaqit.infrastructure.settings.QuranDisplayPreferences
+import com.hussein.mawaqit.infrastructure.connectivity.NetworkObserver
+import com.hussein.mawaqit.infrastructure.settings.QuranReaderPreferences
 import com.hussein.mawaqit.infrastructure.settings.QuranTextAlignment
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -47,26 +47,19 @@ sealed interface QuranReaderUiState {
 class QuranViewModel(
     private val surahDownloadRepository: SurahDownloadRepository,
     private val tafsirRepository: TafsirRepository,
-    private val quranDisplayPreferences: QuranDisplayPreferences,
+    private val quranReaderPreferences: QuranReaderPreferences,
     private val networkObserver: NetworkObserver,
     private val ayahPlayer: AyahPlayer,
     private val quranDatabaseRepository: QuranDatabaseRepository
 ) : ViewModel() {
 
-    val textAlignment: StateFlow<QuranTextAlignment> = quranDisplayPreferences.quranTextAlignment
+    val textAlignment: StateFlow<QuranTextAlignment> = quranReaderPreferences.quranTextAlignment
         .stateIn(viewModelScope, SharingStarted.Eagerly, QuranTextAlignment.Center)
 
-    fun setTextAlignment(alignment: QuranTextAlignment) {
-        viewModelScope.launch { quranDisplayPreferences.setTextAlignmentSize(alignment) }
-    }
 
     // font size prefs
-    val fontSize: StateFlow<Float> = quranDisplayPreferences.fontSizeFlow
+    val fontSize: StateFlow<Float> = quranReaderPreferences.fontSizeFlow
         .stateIn(viewModelScope, SharingStarted.Eagerly, 18f)
-
-    fun setFontSize(size: Float) {
-        viewModelScope.launch { quranDisplayPreferences.setFontSize(size) }
-    }
 
     private val _readerState = MutableStateFlow<QuranReaderUiState>(QuranReaderUiState.Idle)
     val readerState: StateFlow<QuranReaderUiState> = _readerState.asStateFlow()
@@ -82,7 +75,12 @@ class QuranViewModel(
             _readerState.value = QuranReaderUiState.Loading
             _readerState.value = try {
                 QuranReaderUiState.Success(quranDatabaseRepository.loadSurah(index))
-                    .also { loadedSurahIndex = index }
+                    .also { 
+                        loadedSurahIndex = index
+                        viewModelScope.launch {
+                            quranReaderPreferences.setLastReadSurah(index)
+                        }
+                    }
             } catch (e: Exception) {
                 QuranReaderUiState.Error("Failed to load surah: ${e.message}")
             }
@@ -116,6 +114,7 @@ class QuranViewModel(
             url = url,
             ayahNumber = ayahNumber
         )
+        updateLastRead(surahNumber, ayahNumber)
     }
 
     fun stopAyah() {
@@ -148,6 +147,13 @@ class QuranViewModel(
     fun selectAyah(ayah: Ayah) {
         _selectedAyah.value = ayah
         _tafsirState.value = TafsirState.Idle
+        updateLastRead(loadedSurahIndex, ayah.numberInSurah)
+    }
+
+    fun updateLastRead(surahIndex: Int, ayahIndex: Int) {
+        viewModelScope.launch {
+            quranReaderPreferences.setLastRead(surahIndex, ayahIndex)
+        }
     }
 
     fun dismissTafsir() {

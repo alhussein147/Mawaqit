@@ -89,7 +89,6 @@ fun QuranSearchScreen(
                                 style = MaterialTheme.typography.bodyLarge
                             ) 
                         },
-                        singleLine = true,
                         shape = CircleShape,
                         colors = TextFieldDefaults.colors(
                             focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -122,7 +121,6 @@ fun QuranSearchScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(end = 16.dp)
-                            .height(56.dp)
                             .focusRequester(focusRequester)
                     )
                 },
@@ -256,7 +254,7 @@ private fun SurahSearchRow(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = surah.nameTransliterated,
+                text = surah.transliteration,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurface

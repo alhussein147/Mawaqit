@@ -18,6 +18,9 @@ data object Home : Screen
 data object Settings : Screen
 
 @Serializable
+data object NotificationSettings : Screen
+
+@Serializable
 data object Initializing : Screen
 
 @Serializable
@@ -43,3 +46,6 @@ data object QuranReaderSettings : Screen
 
 @Serializable
 data object QuranBookmarks : Screen
+
+@Serializable
+data class QuranReaderWithTafsir(val surahIndex: Int, val surahName: String) : Screen

@@ -10,16 +10,23 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.ui.graphics.TransformOrigin
 
+// Decelerate for elements entering the screen — mirror of EmphasizedAccelerateEasing
+// so the entry feels as weighty/grounded as the pop-exit
 private val EmphasizedDecelerateEasing = CubicBezierEasing(0.2f, 0.85f, 0.7f, 1f)
+
+// Accelerate for elements leaving the screen
 private val EmphasizedAccelerateEasing = CubicBezierEasing(0.3f, 0f, 0.8f, 0.15f)
 
+// Base duration designed for 1x animation scale — looks good at full speed,
+// still smooth at 0.5x (system halves it to ~225 ms).
 const val TRANSITION_DURATION = 450
 
-private fun directionSign(direction: Int) = if (direction < 0) -1 else 1
-
-fun enterTransition(direction: Int = 1) = slideInHorizontally(
+// Push: Enter from Right — slides in 50% of screen width + slight scale up (mirrors popExit's weight)
+// Fade uses an accelerate-style curve so alpha stays low while slide does its work,
+// then catches up at the end — prevents the "fade arrives before slide" perceptual mismatch.
+fun enterTransition() = slideInHorizontally(
     animationSpec = tween(TRANSITION_DURATION, easing = EmphasizedDecelerateEasing),
-    initialOffsetX = { directionSign(direction) * (it * 0.5f).toInt() }
+    initialOffsetX = { (it * 0.5f).toInt() }
 ) + scaleIn(
     animationSpec = tween(TRANSITION_DURATION, easing = EmphasizedDecelerateEasing),
     initialScale = 0.92f,
@@ -28,13 +35,15 @@ fun enterTransition(direction: Int = 1) = slideInHorizontally(
     animationSpec = tween(TRANSITION_DURATION, easing = EmphasizedAccelerateEasing)
 )
 
-fun exitTransition(direction: Int = 1) = slideOutHorizontally(
+// Push: Exit to Left — recedes 25% (parallax, barely moves)
+fun exitTransition() = slideOutHorizontally(
     animationSpec = tween(TRANSITION_DURATION, easing = EmphasizedAccelerateEasing),
-    targetOffsetX = { -directionSign(direction) * (it * 0.25f).toInt() }
+    targetOffsetX = { -(it * 0.25f).toInt() }
 ) + fadeOut(
     animationSpec = tween(TRANSITION_DURATION / 2, easing = EmphasizedAccelerateEasing)
 )
 
+// Pop: Enter from Left — parallax slide-in 25% + subtle scale up
 fun popEnterTransition() = slideInHorizontally(
     animationSpec = tween(TRANSITION_DURATION, easing = EmphasizedDecelerateEasing),
     initialOffsetX = { -(it * 0.25f).toInt() }
@@ -45,6 +54,7 @@ fun popEnterTransition() = slideInHorizontally(
     animationSpec = tween(TRANSITION_DURATION / 2, easing = EmphasizedDecelerateEasing)
 )
 
+// Pop: Exit to Right — slides out 50% + slight scale down
 fun popExitTransition() = slideOutHorizontally(
     animationSpec = tween(TRANSITION_DURATION, easing = EmphasizedAccelerateEasing),
     targetOffsetX = { (it * 0.5f).toInt() }

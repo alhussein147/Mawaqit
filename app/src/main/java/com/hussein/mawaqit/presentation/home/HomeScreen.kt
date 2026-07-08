@@ -18,10 +18,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -48,10 +48,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.core.utils.HijriDateCalculator.toArabicDigits
 import com.hussein.mawaqit.R
 import com.hussein.mawaqit.domain.models.AyahOfTheDay
-import com.hussein.mawaqit.presentation.navigation.LocalBottomBarHeight
 import com.hussein.mawaqit.presentation.shared.ErrorContent
 import com.hussein.mawaqit.presentation.shared.LoadingContent
-import com.hussein.mawaqit.presentation.shared.ScreenWrapper
+import com.hussein.mawaqit.presentation.shared.RootScreenWrapper
 import com.hussein.mawaqit.presentation.util.formatTime
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
@@ -65,6 +64,7 @@ fun HomeScreen(
     onNavigateToAzkar: () -> Unit = {},
     onNavigateToRadio: () -> Unit = {},
     onNavigateToReader: (surahIndex: Int, ayahIndex: Int) -> Unit,
+    onNavigateToSettings: () -> Unit = {},
     viewModel: HomeViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -76,34 +76,35 @@ fun HomeScreen(
         }
     }
 
-    ScreenWrapper(
-        modifier = modifier,
-        topAppBar = {
-            HomeTopAppBar(
-                cityName = state.cityName,
+    RootScreenWrapper(topAppBar = {
+        HomeTopAppBar(
+            cityName = state.cityName,
+        )
+    }, content = {
+        when {
+            state.isLoading -> LoadingContent(
+                Modifier.fillMaxSize()
             )
-        },
-        content = {
-            when {
-                state.isLoading -> LoadingContent(
-                    Modifier.fillMaxSize()
-                )
 
-                state.error != null -> ErrorContent(
-                    modifier = Modifier.fillMaxSize(),
-                    message = state.error!!
-                )
+            state.error == "Location not set." -> NoLocationContent(
+                modifier = Modifier.fillMaxSize(),
+                onNavigateToSettings = onNavigateToSettings
+            )
 
-                else -> HomeScreenContent(
-                    state = state,
-                    countdownFlow = viewModel.countdown,
-                    onNavigateToAzkar = onNavigateToAzkar,
-                    onNavigateToRadio = onNavigateToRadio,
-                    onNavigateToReader = onNavigateToReader
-                )
-            }
+            state.error != null -> ErrorContent(
+                modifier = Modifier.fillMaxSize(), message = state.error!!
+            )
+
+            else -> HomeScreenContent(
+                modifier = modifier,
+                state = state,
+                countdownFlow = viewModel.countdown,
+                onNavigateToAzkar = onNavigateToAzkar,
+                onNavigateToRadio = onNavigateToRadio,
+                onNavigateToReader = onNavigateToReader
+            )
         }
-    )
+    })
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -116,14 +117,14 @@ private fun HomeScreenContent(
     onNavigateToRadio: () -> Unit = {},
     onNavigateToReader: (surahIndex: Int, ayahIndex: Int) -> Unit,
 ) {
-    val bottomBarHeight = LocalBottomBarHeight.current
+
 
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp)
             .then(modifier),
-        contentPadding = PaddingValues(top = 8.dp, bottom = bottomBarHeight + 32.dp),
+        contentPadding = PaddingValues(vertical = 8.dp ),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
@@ -160,8 +161,7 @@ private fun HeaderSection(state: HomeUiState, countdownFlow: StateFlow<Countdown
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.Start
+                .padding(24.dp), horizontalAlignment = Alignment.Start
         ) {
             if (state.hijriDate.isNotBlank()) {
                 Surface(
@@ -178,7 +178,6 @@ private fun HeaderSection(state: HomeUiState, countdownFlow: StateFlow<Countdown
                 }
                 Spacer(Modifier.height(16.dp))
             }
-
             state.nextPrayer?.let { next ->
                 val label =
                     if (next.status == PrayerStatus.CURRENT) "Current Prayer" else "Next Prayer"
@@ -220,7 +219,7 @@ private fun CountdownDisplay(countdownFlow: StateFlow<CountdownTime?>) {
     val time = countdown ?: return
 
     Surface(
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(24.dp),
         color = MaterialTheme.colorScheme.secondaryContainer,
         shadowElevation = 4.dp
     ) {
@@ -238,88 +237,87 @@ private fun CountdownDisplay(countdownFlow: StateFlow<CountdownTime?>) {
 
 @Composable
 private fun TodayPrayersSection(
-    prayers: List<PrayerUiModel>,
-    modifier: Modifier = Modifier
+    prayers: List<PrayerUiModel>, modifier: Modifier = Modifier
 ) {
     if (prayers.isEmpty()) return
     val completedCount = prayers.count { it.status == PrayerStatus.PASSED }
-
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(32.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Surface(
+            modifier = modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(
+                topStart = 32.dp, topEnd = 32.dp, bottomEnd = 4.dp, bottomStart = 4.dp
+            ),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Column {
-                    Text(
-                        text = "Today's Schedule",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Black,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "$completedCount of ${prayers.size} prayers completed",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-
-                val activePrayer = prayers.firstOrNull { it.status == PrayerStatus.CURRENT }
-                    ?: prayers.firstOrNull { it.status == PrayerStatus.UPCOMING }
-                activePrayer?.let { prayer ->
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primary,
-                        shadowElevation = 4.dp
-                    ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
                         Text(
-                            text = prayer.time.formatTime(),
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            style = MaterialTheme.typography.labelLarge,
+                            text = "Today's Schedule",
+                            style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Black,
-                            color = MaterialTheme.colorScheme.onPrimary
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "$completedCount of ${prayers.size} prayers completed",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Medium
                         )
                     }
+
+                    val activePrayer = prayers.firstOrNull { it.status == PrayerStatus.CURRENT }
+                        ?: prayers.firstOrNull { it.status == PrayerStatus.UPCOMING }
+                    activePrayer?.let { prayer ->
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary,
+                            shadowElevation = 4.dp
+                        ) {
+                            Text(
+                                text = prayer.time.formatTime(),
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Black,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    }
                 }
-
-
             }
+        }
 
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 8.dp),
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-            )
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(
+                bottomEnd = 32.dp, bottomStart = 32.dp, topEnd = 4.dp, topStart = 4.dp
+            ), color = MaterialTheme.colorScheme.surfaceContainerHigh
 
-            Column() {
+        ) {
+            Column(modifier = Modifier.padding(8.dp)) {
                 prayers.forEachIndexed { index, prayer ->
                     PrayerScheduleRow(
-                        prayer = prayer,
-                        isFirst = index == 0,
-                        isLast = index == prayers.lastIndex
+                        prayer = prayer, isFirst = index == 0, isLast = index == prayers.lastIndex
                     )
                 }
             }
         }
+
     }
 }
 
 @Composable
 private fun PrayerScheduleRow(
-    prayer: PrayerUiModel,
-    isFirst: Boolean,
-    isLast: Boolean
+    prayer: PrayerUiModel, isFirst: Boolean, isLast: Boolean
 ) {
     val isCurrent = prayer.status == PrayerStatus.CURRENT
     val isPassed = prayer.status == PrayerStatus.PASSED
@@ -340,9 +338,7 @@ private fun PrayerScheduleRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         PrayerStepIndicator(
-            status = prayer.status,
-            isFirst = isFirst,
-            isLast = isLast
+            status = prayer.status, isFirst = isFirst, isLast = isLast
         )
 
         Spacer(Modifier.width(16.dp))
@@ -382,9 +378,7 @@ private fun PrayerScheduleRow(
 
 @Composable
 private fun PrayerStepIndicator(
-    status: PrayerStatus,
-    isFirst: Boolean,
-    isLast: Boolean
+    status: PrayerStatus, isFirst: Boolean, isLast: Boolean
 ) {
     val indicatorColor = when (status) {
         PrayerStatus.CURRENT -> MaterialTheme.colorScheme.primary
@@ -395,8 +389,7 @@ private fun PrayerStepIndicator(
     val connectorColor = MaterialTheme.colorScheme.outlineVariant
 
     Box(
-        modifier = Modifier.size(width = 24.dp, height = 64.dp),
-        contentAlignment = Alignment.Center
+        modifier = Modifier.size(width = 24.dp, height = 64.dp), contentAlignment = Alignment.Center
     ) {
         if (!isFirst) {
             Box(
@@ -426,8 +419,7 @@ private fun PrayerStepIndicator(
 
 @Composable
 private fun HomeTopAppBar(
-    modifier: Modifier = Modifier,
-    cityName: String
+    modifier: Modifier = Modifier, cityName: String
 ) {
     Row(
         modifier = Modifier
@@ -442,8 +434,7 @@ private fun HomeTopAppBar(
             Surface(
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
-                onClick = {}
-            ) {
+                onClick = {}) {
                 Row(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -536,8 +527,8 @@ fun HomeQuickActionsSection(
             modifier = Modifier.weight(1f),
             onClick = onNavigateToAzkar,
             title = stringResource(R.string.azakr),
-            subtitle = "Daily dhikr",
-            icon = R.drawable.ic_placeholder,
+            subtitle = "Daily Zikr",
+            icon = R.drawable.ic_tasbih,
             containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f)
         )
         ActionTile(
@@ -550,6 +541,70 @@ fun HomeQuickActionsSection(
         )
     }
 }
+
+@Composable
+fun NoLocationContent(
+    modifier: Modifier = Modifier,
+    onNavigateToSettings: () -> Unit
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Surface(
+            modifier = Modifier.size(120.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = ImageVector.vectorResource(R.drawable.ic_location),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(64.dp)
+                )
+            }
+        }
+
+        Spacer(Modifier.height(32.dp))
+
+        Text(
+            text = "Location Not Set",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Black,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        Text(
+            text = "Mawaqit needs your location to calculate accurate prayer times for your city.",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(Modifier.height(32.dp))
+
+        Button(
+            onClick = onNavigateToSettings,
+            shape = RoundedCornerShape(16.dp),
+            contentPadding = PaddingValues(horizontal = 32.dp, vertical = 12.dp)
+        ) {
+            Icon(
+                imageVector = ImageVector.vectorResource(R.drawable.ic_settings),
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(Modifier.width(8.dp))
+            Text("Configure Location", fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
 
 @Composable
 fun AyahOfTheDayCard(
@@ -565,13 +620,11 @@ fun AyahOfTheDayCard(
             ayah?.let {
                 onClick(it.surahIndex, it.numberInSurah)
             }
-        }
-    ) {
+        }) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.End
+                .padding(24.dp), horizontalAlignment = Alignment.End
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),

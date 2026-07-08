@@ -48,12 +48,6 @@ class GlobalPlayerService : MediaSessionService() {
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo) = mediaSession
 
-    override fun onTaskRemoved(rootIntent: Intent?) {
-        releaseMediaSession()
-        stopSelf()
-        super.onTaskRemoved(rootIntent)
-    }
-
     override fun onDestroy() {
         releaseMediaSession()
         super.onDestroy()

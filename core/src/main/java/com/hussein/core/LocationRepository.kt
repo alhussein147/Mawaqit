@@ -1,8 +1,6 @@
 package com.hussein.core
 
 import android.content.Context
-import android.location.Geocoder
-import android.os.Build
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.doublePreferencesKey
@@ -14,9 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
-import kotlin.coroutines.resume
 
 private val Context.locationDataStore: DataStore<Preferences>
         by preferencesDataStore(name = "location")
@@ -52,9 +48,8 @@ class LocationRepository(private val context: Context) {
      * Persists [latitude] and [longitude], reverse-geocodes a city name,
      * and returns the saved [SavedLocation].
      */
-    suspend fun saveLocation(latitude: Double, longitude: Double): SavedLocation =
+    suspend fun saveLocation(latitude: Double, longitude: Double , cityName:String): SavedLocation =
         withContext(Dispatchers.IO) {
-            val cityName = resolveCityName(latitude, longitude)
             context.locationDataStore.edit { prefs ->
                 prefs[KEY_LATITUDE]  = latitude
                 prefs[KEY_LONGITUDE] = longitude
@@ -68,34 +63,5 @@ class LocationRepository(private val context: Context) {
         context.locationDataStore.edit { it.clear() }
     }
 
-    // ---------------------------------------------------------------------------
-    // Geocoding
-    // ---------------------------------------------------------------------------
-
-    private val geocoder = Geocoder(context)
-
-    private suspend fun resolveCityName(lat: Double, lng: Double): String {
-        return try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                suspendCancellableCoroutine { cont ->
-                    geocoder.getFromLocation(lat, lng, 1) { addresses ->
-                        cont.resume(
-                            addresses.firstOrNull()?.locality
-                                ?: addresses.firstOrNull()?.adminArea
-                                ?: "Unknown"
-                        )
-                    }
-                }
-            } else {
-                @Suppress("DEPRECATION")
-                val addresses = geocoder.getFromLocation(lat, lng, 1)
-                addresses?.firstOrNull()?.locality
-                    ?: addresses?.firstOrNull()?.adminArea
-                    ?: "Unknown"
-            }
-        } catch (e: Exception) {
-            "Unknown"
-        }
-    }
 }
 

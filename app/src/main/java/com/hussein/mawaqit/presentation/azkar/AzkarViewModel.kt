@@ -33,11 +33,7 @@ class AzkarViewModel(private val azkarRepository: AzkarRepository) : ViewModel()
     }
 
     fun selectCategory(index: Int) {
-        if (loadedIndex == index && _listState.value is AzkarListState.Success) _listState.update {
-            AzkarListState.Error(
-                "Unknown Error"
-            )
-        }
+        if (loadedIndex == index && _listState.value is AzkarListState.Success) return
         viewModelScope.launch {
             _listState.update { AzkarListState.Loading }
             try {

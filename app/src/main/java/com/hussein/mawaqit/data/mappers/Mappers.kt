@@ -36,8 +36,9 @@ fun TafsirEntity.toTafsir(): Tafsir = Tafsir(
 fun SurahEntity.toSurah() = Surah(
     number = this.number,
     nameArabic = this.nameArabic,
-    nameTransliterated = this.nameTransliterated,
-    numberOfAyahs = this.totalAyahs
+    nameTransliterated = this.transliteration,
+    numberOfAyahs = this.totalAyahs,
+    origin = this.origin
 )
 
 fun BookmarkEntity.toBookmark(): Bookmark{

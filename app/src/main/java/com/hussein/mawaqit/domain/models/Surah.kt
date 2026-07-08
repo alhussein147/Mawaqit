@@ -4,5 +4,6 @@ data class Surah(
     val number: Int,
     val nameArabic: String,
     val nameTransliterated: String,
-    val numberOfAyahs: Int
+    val numberOfAyahs: Int,
+    val origin: String
 )

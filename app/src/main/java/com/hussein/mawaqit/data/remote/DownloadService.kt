@@ -1,46 +1,50 @@
 package com.hussein.mawaqit.data.remote
 
-import io.ktor.client.HttpClient
-import io.ktor.client.plugins.onDownload
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.HttpStatusCode
-import io.ktor.utils.io.jvm.javaio.copyTo
+import io.ktor.http.contentLength
+import io.ktor.utils.io.readAvailable
 import java.io.File
 
 object DownloadService {
 
-    const val SUPABASE_MAWAQIT_DB =
-        "https://dvtajbmeveppcffgfnog.supabase.co/storage/v1/object/public/db/mawaqit.db"
-
-
+// refactor
     suspend fun downloadFile(
         url: String,
         outputFile: File,
-        onProgress: (Float) -> Unit
+        onProgress: suspend (Float) -> Unit
     ): Result<Unit> {
-        val client = HttpClient()
+        val client = RemoteService.getClient()
+
         return runCatching {
-            val response = client.get(url) {
-                onDownload { bytesSentTotal, contentLength ->
-                    if (contentLength != null && contentLength > 0) {
-                        onProgress(bytesSentTotal.toFloat() / contentLength)
-                    }
-                }
-            }
+            val response = client.get(url)
 
             if (response.status != HttpStatusCode.OK) {
                 error("Download failed: ${response.status}")
             }
 
-            // Stream the response body to the file to save memory
+            val contentLength = response.contentLength() ?: -1L
             val channel = response.bodyAsChannel()
+            
             outputFile.outputStream().use { output ->
-                channel.copyTo(output)
+                val buffer = ByteArray(1024 * 8)
+                var bytesRead = 0L
+                while (!channel.isClosedForRead) {
+                    val read = channel.readAvailable(buffer)
+                    if (read == -1) break
+                    output.write(buffer, 0, read)
+                    bytesRead += read
+                    
+                    if (contentLength > 0) {
+                        onProgress(bytesRead.toFloat() / contentLength)
+                    }
+                }
             }
-            Unit
         }.also {
-            client.close()
+            RemoteService.close()
         }
     }
+
+
 }

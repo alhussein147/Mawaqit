@@ -1,6 +1,8 @@
 package com.hussein.mawaqit.data.quran.recitation
 
 import android.content.Context
+import com.hussein.mawaqit.domain.models.FullSurahReciter
+import com.hussein.mawaqit.domain.models.Reciter
 import java.io.File
 
 class SurahDownloadRepository(private val context: Context) {

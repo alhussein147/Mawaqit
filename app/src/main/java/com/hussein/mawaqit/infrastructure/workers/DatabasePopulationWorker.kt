@@ -5,9 +5,8 @@ import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import com.hussein.mawaqit.data.db.QuranDatabase.Companion.DB_NAME
+import com.hussein.mawaqit.data.db.AppDatabase.Companion.DB_NAME
 import com.hussein.mawaqit.data.remote.DownloadService
-import com.hussein.mawaqit.data.remote.DownloadService.SUPABASE_MAWAQIT_DB
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -24,20 +23,17 @@ class DatabasePopulationWorker(
     }
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-        val url = SUPABASE_MAWAQIT_DB
+        val url = "https://dvtajbmeveppcffgfnog.supabase.co/storage/v1/object/public/assets/db/mawaqit.db"
         val dbFile = applicationContext.getDatabasePath(DB_NAME)
         val tempFile = File(applicationContext.cacheDir, "temp_$DB_NAME")
 
         Log.d(TAG, "Starting Quran database population from: $url")
-
-        var lastProgressUpdate = -1f
+        
+        var lastProgress = -1f
         DownloadService.downloadFile(url, tempFile) { progress ->
-            val progressPercent = progress.coerceIn(0f, 1f)
-            // Throttle updates to avoid overwhelming WorkManager
-            if (progressPercent >= lastProgressUpdate + 0.05f || progressPercent == 1f) {
-                Log.d(TAG, "Progress: $progressPercent")
-                lastProgressUpdate = progressPercent
-                setProgressAsync(workDataOf(DATABASE_POPULATION_PROGRESS to progressPercent))
+            if (progress - lastProgress >= 0.01f || progress == 1f) {
+                lastProgress = progress
+                setProgress(workDataOf(DATABASE_POPULATION_PROGRESS to progress))
             }
         }.fold(
             onSuccess = {

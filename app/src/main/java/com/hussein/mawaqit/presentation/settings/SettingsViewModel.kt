@@ -1,7 +1,6 @@
 package com.hussein.mawaqit.presentation.settings
 
 
-import CurrentLocationFetcher
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,6 +8,7 @@ import com.batoulapps.adhan2.CalculationMethod
 import com.hussein.core.LocationRepository
 import com.hussein.core.models.SavedLocation
 import com.hussein.mawaqit.data.prayer.PrayerSchedulerManager
+import com.hussein.mawaqit.infrastructure.location.CurrentLocationFetcher
 import com.hussein.mawaqit.infrastructure.settings.AppColorScheme
 import com.hussein.mawaqit.infrastructure.settings.AppSettings
 import com.hussein.mawaqit.infrastructure.settings.AppTheme
@@ -28,7 +28,6 @@ class SettingsViewModel(
     private val currentLocationFetcher: CurrentLocationFetcher,
     private val prayerSchedulerManager: PrayerSchedulerManager
 ) : ViewModel() {
-
     val TAG = "SettingsViewModel"
 
     private val _locationState = MutableStateFlow<LocationUpdateState>(LocationUpdateState.Idle)
@@ -99,9 +98,13 @@ class SettingsViewModel(
         viewModelScope.launch {
             _locationState.update { LocationUpdateState.Fetching }
             try {
-                val latLng = currentLocationFetcher.fetch()
-                if (latLng != null) {
-                    val saved = locationRepository.saveLocation(latLng.first, latLng.second)
+                val userLocation = currentLocationFetcher.fetch()
+                if (userLocation != null) {
+                    val saved = locationRepository.saveLocation(
+                        latitude = userLocation.latitude,
+                        longitude = userLocation.longitude,
+                        cityName = userLocation.city
+                    )
                     // Reschedule prayer alarms for the new location
                     prayerSchedulerManager.enqueueImmediate()
                     _savedLocation.value = saved

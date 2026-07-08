@@ -25,10 +25,10 @@ class MainActivity : ComponentActivity() {
             val settings by settingsRepository.settingsFlow
                 .collectAsStateWithLifecycle(initialValue = null)
 
-            settings?.let { s ->
+            settings?.let { settings ->
                 MawaqitTheme(
-                    appTheme = s.appTheme,
-                    appColorScheme = s.appColorScheme
+                    appTheme = settings.appTheme,
+                    appColorScheme = settings.appColorScheme
                 ) {
                     AppNavigation(
                         settingsRepository = settingsRepository

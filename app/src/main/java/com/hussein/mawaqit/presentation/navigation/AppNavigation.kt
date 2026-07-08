@@ -1,30 +1,28 @@
 package com.hussein.mawaqit.presentation.navigation
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.unit.IntOffset
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -35,15 +33,19 @@ import com.hussein.mawaqit.infrastructure.settings.SettingsRepository
 import com.hussein.mawaqit.presentation.azkar.AzkarScreen
 import com.hussein.mawaqit.presentation.azkar.categories.AzkarCategoryScreen
 import com.hussein.mawaqit.presentation.home.HomeScreen
+import com.hussein.mawaqit.presentation.navigation.components.BottomBarNestedScrollConnection
+import com.hussein.mawaqit.presentation.navigation.components.FloatingNavBar
+import com.hussein.mawaqit.presentation.navigation.components.rememberBottomBarState
 import com.hussein.mawaqit.presentation.onboarding.OnboardingScreen
 import com.hussein.mawaqit.presentation.quran.bookmarks.BookmarksScreen
 import com.hussein.mawaqit.presentation.quran.list_screen.SurahListScreen
 import com.hussein.mawaqit.presentation.quran.reader.QuranReaderScreen
 import com.hussein.mawaqit.presentation.quran.search.QuranSearchScreen
+import com.hussein.mawaqit.presentation.quran.tafsir.QuranReaderWithTafsirScreen
 import com.hussein.mawaqit.presentation.radio.RadioChannelListScreen
+import com.hussein.mawaqit.presentation.settings.NotificationSettingsScreen
 import com.hussein.mawaqit.presentation.settings.SettingsScreen
 import com.hussein.mawaqit.presentation.shared.LoadingContent
-import kotlinx.coroutines.flow.distinctUntilChanged
 import org.koin.core.annotation.KoinExperimentalAPI
 
 data class TopLevelDestination(
@@ -54,7 +56,7 @@ data class TopLevelDestination(
 
 private val topLevelDestinations = listOf(
     TopLevelDestination(Home, "Home", R.drawable.ic_home),
-    TopLevelDestination(QuranSurahList, "Quran", R.drawable.ic_placeholder),
+    TopLevelDestination(QuranSurahList, "Quran", R.drawable.ic_quran2),
     TopLevelDestination(Settings, "Settings", R.drawable.ic_settings)
 )
 
@@ -65,7 +67,6 @@ private fun NavKey.navBarIndex(): Int = when (this) {
     else -> -1
 }
 
-val LocalBottomBarHeight = staticCompositionLocalOf<Dp> { 0.dp }
 
 @OptIn(KoinExperimentalAPI::class)
 @Composable
@@ -85,13 +86,46 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
 
     NavDisplay(
         transitionSpec = {
-            enterTransition() togetherWith exitTransition()
+            mainRootEnterTransition(
+                fromRoute = initialState.key as? NavKey,
+                toRoute = targetState.key as? NavKey,
+                fallback = enterTransition(),
+                isPop = false
+            ) togetherWith
+                    mainRootExitTransition(
+                        fromRoute = initialState.key as? NavKey,
+                        toRoute = targetState.key as? NavKey,
+                        fallback = exitTransition(),
+                        isPop = false
+                    )
         },
         popTransitionSpec = {
-            popEnterTransition() togetherWith popExitTransition()
+            mainRootEnterTransition(
+                fromRoute = initialState.key as? NavKey,
+                toRoute = targetState.key as? NavKey,
+                fallback = popEnterTransition(),
+                isPop = true
+            ) togetherWith
+                    mainRootExitTransition(
+                        fromRoute = initialState.key as? NavKey,
+                        toRoute = targetState.key as? NavKey,
+                        fallback = popExitTransition(),
+                        isPop = true
+                    )
         },
         predictivePopTransitionSpec = {
-            enterTransition() togetherWith exitTransition()
+            mainRootEnterTransition(
+                fromRoute = initialState.key as? NavKey,
+                toRoute = targetState.key as? NavKey,
+                fallback = popEnterTransition(),
+                isPop = true
+            ) togetherWith
+                    mainRootExitTransition(
+                        fromRoute = initialState.key as? NavKey,
+                        toRoute = targetState.key as? NavKey,
+                        fallback = popExitTransition(),
+                        isPop = true
+                    )
         },
         modifier = Modifier
             .fillMaxSize()
@@ -101,7 +135,13 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
         entryProvider = entryProvider {
 
             entry<Main> {
-                MainNavigation(rootBackStack = backStack)
+                TopLevelNavigation(rootBackStack = backStack)
+            }
+
+            entry<NotificationSettings> {
+                NotificationSettingsScreen(
+                    onBack = { backStack.removeAt(backStack.size - 1) }
+                )
             }
 
             entry<QuranReader> { key ->
@@ -109,6 +149,24 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
                     scrollToAyah = key.scrollToAyah,
                     surahIndex = key.surahIndex,
                     onBack = { backStack.removeAt(backStack.size - 1) },
+                    onNavigateToSettings = { backStack.add(QuranReaderSettings) },
+                    onNavigateToTafsir = { surahName ->
+                        backStack.add(QuranReaderWithTafsir(key.surahIndex, surahName))
+                    }
+                )
+            }
+
+            entry<QuranReaderWithTafsir> { key ->
+                QuranReaderWithTafsirScreen(
+                    surahNumber = key.surahIndex,
+                    surahName = key.surahName,
+                    onBack = { backStack.removeAt(backStack.size - 1) }
+                )
+            }
+
+            entry<QuranReaderSettings> {
+                com.hussein.mawaqit.presentation.quran.reader.QuranReaderSettingsScreen(
+                    onBack = { backStack.removeAt(backStack.size - 1) }
                 )
             }
 
@@ -171,11 +229,21 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
 
 @OptIn(KoinExperimentalAPI::class)
 @Composable
-private fun MainNavigation(rootBackStack: NavBackStack<NavKey>) {
+private fun TopLevelNavigation(
+    rootBackStack: NavBackStack<NavKey>
+) {
     val mainBackStack: NavBackStack<NavKey> = rememberNavBackStack(Home)
+
     val navDirection = remember { mutableIntStateOf(1) }
-    var bottomPadding by remember { mutableStateOf(0.dp) }
-    val showNavBar = remember { mutableStateOf(true) }
+
+    val bottomBarVisible = rememberBottomBarState()
+
+    val scrollConnection = remember {
+        BottomBarNestedScrollConnection(
+            onHide = { bottomBarVisible.value = false },
+            onShow = { bottomBarVisible.value = true }
+        )
+    }
 
     val currentScreen = mainBackStack.lastOrNull()
     val selectedTopLevel = currentScreen?.navBarIndex()?.takeIf { it >= 0 } ?: 0
@@ -186,144 +254,175 @@ private fun MainNavigation(rootBackStack: NavBackStack<NavKey>) {
 
         val currentIndex = current?.navBarIndex()?.takeIf { it >= 0 } ?: 0
         val destinationIndex = destination.navBarIndex()
+
         navDirection.intValue = destinationIndex.compareTo(currentIndex).takeIf { it != 0 } ?: 1
 
-        mainBackStack.clear()
-        mainBackStack.add(destination)
+        if (mainBackStack.isNotEmpty()) {
+            mainBackStack[0] = destination
+        } else {
+            mainBackStack.add(destination)
+        }
     }
 
     BackHandler(enabled = currentScreen != Home && currentScreen != null) {
         navigateToTopLevel(Home)
     }
 
-    val density = LocalDensity.current
+    Box(modifier = Modifier.fillMaxSize()) {
+        val direction = if (navDirection.intValue >= 0) MainRootDirection.FORWARD else MainRootDirection.BACKWARD
 
-    CompositionLocalProvider(LocalBottomBarHeight provides bottomPadding) {
-
-        Box(modifier = Modifier.fillMaxSize()) {
-            NavDisplay(
-                transitionSpec = {
-                    enterTransition(navDirection.intValue) togetherWith exitTransition(navDirection.intValue)
-                },
-                popTransitionSpec = {
-                    popEnterTransition() togetherWith popExitTransition()
-                },
-                predictivePopTransitionSpec = {
-                    enterTransition() togetherWith exitTransition()
-                },
-                modifier = Modifier.fillMaxSize(),
-                backStack = mainBackStack,
-                onBack = {
-                    if (mainBackStack.lastOrNull() != Home) {
-                        navigateToTopLevel(Home)
-                    }
-                },
-                entryProvider = entryProvider {
-                    entry<Home> {
-                        HomeScreen(
-                            onNavigateToAzkar = { rootBackStack.add(AzkarCategories) },
-                            onNavigateToRadio = { rootBackStack.add(RadioChannels) },
-                            onNavigateToReader = { index, ayahIndex ->
-                                rootBackStack.add(QuranReader(index, ayahIndex))
-                            }
-                        )
-                    }
-
-                    entry<Settings> {
-                        SettingsScreen()
-                    }
-
-                    entry<QuranSurahList> {
-                        SurahListScreen(
-                            onSurahSelected = { index, scrollToAyah ->
-                                rootBackStack.add(QuranReader(index, scrollToAyah))
-                            },
-                            onNavigateToSearch = {
-                                rootBackStack.add(QuranSearch)
-                            },
-                            onNavigateToBookmarks = {
-                                rootBackStack.add(QuranBookmarks)
-                            },
-                            toggleNavBar = { showNavBar.value = it }
-                        )
-                    }
+        NavDisplay(
+            transitionSpec = {
+                mainRootEnterTransition(direction, enterTransition()) togetherWith
+                        mainRootExitTransition(direction, exitTransition())
+            },
+            popTransitionSpec = {
+                mainRootEnterTransition(direction, popEnterTransition()) togetherWith
+                        mainRootExitTransition(direction, popExitTransition())
+            },
+            predictivePopTransitionSpec = {
+                mainRootEnterTransition(direction, popEnterTransition()) togetherWith
+                        mainRootExitTransition(direction, popExitTransition())
+            },
+            modifier = Modifier.fillMaxSize(),
+            backStack = mainBackStack,
+            onBack = {
+                if (mainBackStack.lastOrNull() != Home) {
+                    navigateToTopLevel(Home)
                 }
-            )
+            },
+            entryProvider = entryProvider {
+                entry<Home> {
+                    HomeScreen(
+                        modifier = Modifier.nestedScroll(scrollConnection),
+                        onNavigateToAzkar = { rootBackStack.add(AzkarCategories) },
+                        onNavigateToRadio = { rootBackStack.add(RadioChannels) },
+                        onNavigateToReader = { index, ayahIndex ->
+                            rootBackStack.add(QuranReader(index, ayahIndex))
+                        },
+                        onNavigateToSettings = { navigateToTopLevel(Settings) }
+                    )
+                }
 
-            FloatingNavBar(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .navigationBarsPadding()
-                    .onSizeChanged {
-                        bottomPadding = with(density) { it.height.toDp() }
-                    },
-                items = topLevelDestinations,
-                selectedIndex = selectedTopLevel,
-                onSelect = { navigateToTopLevel(topLevelDestinations[it].screen) },
-                show = showNavBar.value
-            )
-        }
+                entry<Settings> {
+                    SettingsScreen(
+                        modifier = Modifier.nestedScroll(scrollConnection),
+                        onNavigateToNotificationSettings = { rootBackStack.add(NotificationSettings) }
+                    )
+                }
+
+                entry<QuranSurahList> {
+                    SurahListScreen(
+                        modifier = Modifier.nestedScroll(scrollConnection),
+                        onSurahSelected = { index, scrollToAyah ->
+                            rootBackStack.add(QuranReader(index, scrollToAyah))
+                        },
+                        onNavigateToSearch = {
+                            rootBackStack.add(QuranSearch)
+                        },
+                        onNavigateToBookmarks = {
+                            rootBackStack.add(QuranBookmarks)
+                        }
+                    )
+                }
+            }
+        )
+
+        FloatingNavBar(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding(),
+            items = topLevelDestinations,
+            selectedIndex = selectedTopLevel,
+            onSelect = { navigateToTopLevel(topLevelDestinations[it].screen) },
+            show = bottomBarVisible.value
+        )
     }
 }
 
-@Composable
-fun ScrollObserver(
-    onToggleNavBar: (Boolean) -> Unit,
-    listState: LazyListState
-) {
-    val currentOnToggleNavBar = rememberUpdatedState(onToggleNavBar)
-
-    LaunchedEffect(listState) {
-        var previousIndex = listState.firstVisibleItemIndex
-        var previousOffset = listState.firstVisibleItemScrollOffset
-        var isNavBarVisible = true
-
-        snapshotFlow {
-            val layoutInfo = listState.layoutInfo
-
-            ScrollSnapshot(
-                listState.firstVisibleItemIndex,
-                listState.firstVisibleItemScrollOffset,
-                layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0,
-                layoutInfo.totalItemsCount
-            )
-        }.distinctUntilChanged().collect { scrollSnapshot ->
-            val index = scrollSnapshot.firstVisibleItemIndex
-            val offset = scrollSnapshot.firstVisibleItemScrollOffset
-
-            val scrollingDown =
-                index > previousIndex ||
-                        (index == previousIndex && offset > previousOffset)
-
-            val scrollingUp =
-                index < previousIndex ||
-                        (index == previousIndex && offset < previousOffset)
-
-            val isAtEnd =
-                scrollSnapshot.totalItemsCount > 0 &&
-                        scrollSnapshot.lastVisibleItemIndex >= scrollSnapshot.totalItemsCount - 1
-
-            val shouldShowNavBar = when {
-                isAtEnd -> true
-                scrollingDown -> false
-                scrollingUp -> true
-                else -> isNavBarVisible
-            }
-
-            if (shouldShowNavBar != isNavBarVisible) {
-                isNavBarVisible = shouldShowNavBar
-                currentOnToggleNavBar.value(shouldShowNavBar)
-            }
-
-            previousIndex = index
-            previousOffset = offset
-        }
-    }
+private enum class MainRootDirection {
+    FORWARD,
+    BACKWARD
 }
 
-private data class ScrollSnapshot(
-    val firstVisibleItemIndex: Int,
-    val firstVisibleItemScrollOffset: Int,
-    val lastVisibleItemIndex: Int,
-    val totalItemsCount: Int
-)
+// Base duration for bottom-nav switches at 1x — at 0.5x system scale = ~190 ms.
+private const val BOTTOM_NAV_TRANSITION_DURATION = 380
+
+// MD3 Expressive easing for bottom-nav switches
+private val BottomNavEasing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
+
+private val MAIN_ROOT_TRANSITION_SPEC =
+    tween<IntOffset>(durationMillis = BOTTOM_NAV_TRANSITION_DURATION, easing = BottomNavEasing)
+
+private val MAIN_ROOT_FADE_SPEC =
+    tween<Float>(durationMillis = BOTTOM_NAV_TRANSITION_DURATION / 2, easing = BottomNavEasing)
+
+private fun mainRootDirection(
+    fromRoute: NavKey?,
+    toRoute: NavKey?,
+    isPop: Boolean = false
+): MainRootDirection? {
+    if (fromRoute == toRoute) return null
+
+    val fromIndex = fromRoute?.navBarIndex() ?: -1
+    val toIndex = toRoute?.navBarIndex() ?: -1
+
+    if (fromIndex != -1 && toIndex != -1) {
+        if (fromIndex == toIndex) return null
+        return if (toIndex > fromIndex) MainRootDirection.FORWARD else MainRootDirection.BACKWARD
+    }
+
+    return if (isPop) MainRootDirection.BACKWARD else MainRootDirection.FORWARD
+}
+
+private fun mainRootEnterTransition(
+    direction: MainRootDirection?,
+    fallback: EnterTransition
+): EnterTransition = when (direction) {
+    MainRootDirection.FORWARD -> {
+        slideInHorizontally(
+            animationSpec = MAIN_ROOT_TRANSITION_SPEC,
+            initialOffsetX = { (it * 0.5f).toInt() }
+        ) + fadeIn(animationSpec = MAIN_ROOT_FADE_SPEC)
+    }
+    MainRootDirection.BACKWARD -> {
+        slideInHorizontally(
+            animationSpec = MAIN_ROOT_TRANSITION_SPEC,
+            initialOffsetX = { -(it * 0.5f).toInt() }
+        ) + fadeIn(animationSpec = MAIN_ROOT_FADE_SPEC)
+    }
+    null -> fallback
+}
+
+private fun mainRootEnterTransition(
+    fromRoute: NavKey?,
+    toRoute: NavKey?,
+    fallback: EnterTransition,
+    isPop: Boolean = false
+): EnterTransition = mainRootEnterTransition(mainRootDirection(fromRoute, toRoute, isPop), fallback)
+
+private fun mainRootExitTransition(
+    direction: MainRootDirection?,
+    fallback: ExitTransition
+): ExitTransition = when (direction) {
+    MainRootDirection.FORWARD -> {
+        slideOutHorizontally(
+            animationSpec = MAIN_ROOT_TRANSITION_SPEC,
+            targetOffsetX = { -(it * 0.5f).toInt() }
+        ) + fadeOut(animationSpec = MAIN_ROOT_FADE_SPEC)
+    }
+    MainRootDirection.BACKWARD -> {
+        slideOutHorizontally(
+            animationSpec = MAIN_ROOT_TRANSITION_SPEC,
+            targetOffsetX = { (it * 0.5f).toInt() }
+        ) + fadeOut(animationSpec = MAIN_ROOT_FADE_SPEC)
+    }
+    null -> fallback
+}
+
+private fun mainRootExitTransition(
+    fromRoute: NavKey?,
+    toRoute: NavKey?,
+    fallback: ExitTransition,
+    isPop: Boolean = false
+): ExitTransition = mainRootExitTransition(mainRootDirection(fromRoute, toRoute, isPop), fallback)

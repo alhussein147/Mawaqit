@@ -36,7 +36,7 @@ class QuranDatabaseRepository(
         return SurahDetail(
             number = result.surah.number,
             nameArabic = result.surah.nameArabic,
-            nameTransliterated = result.surah.nameTransliterated,
+            nameTransliterated = result.surah.transliteration,
             ayahs = result.ayahs.map { it.toAyah() }
         )
     }

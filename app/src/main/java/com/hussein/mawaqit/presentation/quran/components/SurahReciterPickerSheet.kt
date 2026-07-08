@@ -20,12 +20,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import com.hussein.mawaqit.R
-import com.hussein.mawaqit.data.quran.recitation.FullSurahReciter
+import com.hussein.mawaqit.domain.models.FullSurahReciter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SurahReciterPickerSheet(
-    current: FullSurahReciter,
+    current: FullSurahReciter?,
     onSelect: (FullSurahReciter) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -40,7 +40,7 @@ fun SurahReciterPickerSheet(
 
 @Composable
 fun SurahReciterPickerSheetContent(
-    selectedReciter: FullSurahReciter,
+    selectedReciter: FullSurahReciter?,
     onDismiss: () -> Unit,
     onSelect: (FullSurahReciter) -> Unit
 ) {

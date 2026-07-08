@@ -18,6 +18,7 @@ import android.support.v4.media.session.MediaSessionCompat
 import android.view.KeyEvent
 import androidx.core.app.NotificationCompat
 import com.hussein.mawaqit.R
+import com.hussein.mawaqit.infrastructure.notification.NotificationUtils
 
 /**
  * Foreground service that plays the azan audio when a prayer time is reached
@@ -39,8 +40,6 @@ class AzanPlayerService : Service() {
         const val ACTION_STOP = "com.hussein.islamic.AZAN_STOP"
 
         const val NOTIFICATION_ID = 9001
-        const val AZAN_CHANNEL_ID = "azan_player"
-        const val AZAN_CHANNEL_NAME = "Azan Player"
 
         fun buildIntent(context: Context, prayerName: String, isFajr: Boolean) =
             Intent(context, AzanPlayerService::class.java).apply {
@@ -60,11 +59,6 @@ class AzanPlayerService : Service() {
         }
     }
     private var mediaSession: MediaSessionCompat? = null
-
-
-    // ---------------------------------------------------------------------------
-    // Lifecycle
-    // ---------------------------------------------------------------------------
 
     override fun onCreate() {
         super.onCreate()
@@ -129,11 +123,6 @@ class AzanPlayerService : Service() {
         focusRequest = null
     }
 
-    // ---------------------------------------------------------------------------
-    // Playback
-    // ---------------------------------------------------------------------------
-
-
     private fun playAzan(isFajr: Boolean) {
         val rawRes = if (isFajr) R.raw.azan_fajr else R.raw.azan
 
@@ -156,8 +145,8 @@ class AzanPlayerService : Service() {
 
 
     private fun buildNotification(prayerName: String) =
-        NotificationCompat.Builder(this, AZAN_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_placeholder)
+        NotificationCompat.Builder(this, NotificationUtils.AZAN_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification_icon)
             .setContentTitle("🕌 $prayerName")
             .setContentText("It's time for $prayerName prayer")
             .setPriority(NotificationCompat.PRIORITY_HIGH)

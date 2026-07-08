@@ -1,6 +1,5 @@
 package com.hussein.mawaqit.presentation.onboarding
 
-import CurrentLocationFetcher
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -17,15 +16,16 @@ import com.batoulapps.adhan2.CalculationMethod
 import com.hussein.core.LocationRepository
 import com.hussein.core.models.SavedLocation
 import com.hussein.mawaqit.data.prayer.PrayerSchedulerManager
-import com.hussein.mawaqit.infrastructure.network.NetworkObserver
+import com.hussein.mawaqit.infrastructure.location.CurrentLocationFetcher
+import com.hussein.mawaqit.infrastructure.connectivity.NetworkObserver
 import com.hussein.mawaqit.infrastructure.settings.AppSettings
 import com.hussein.mawaqit.infrastructure.settings.AppTheme
 import com.hussein.mawaqit.infrastructure.settings.NotificationSound
 import com.hussein.mawaqit.infrastructure.settings.SettingsRepository
 import com.hussein.mawaqit.infrastructure.workers.DatabasePopulationWorker
 import com.hussein.mawaqit.infrastructure.workers.DatabasePopulationWorker.Companion.DATABASE_POPULATION_WORK_NAME
-import com.hussein.mawaqit.infrastructure.workers.QuranPopulationWorker
-import com.hussein.mawaqit.infrastructure.workers.TafsirPopulationWorker
+import com.hussein.mawaqit.infrastructure.workers.local_population_workers.QuranPopulationWorker
+import com.hussein.mawaqit.infrastructure.workers.local_population_workers.TafsirPopulationWorker
 import com.hussein.mawaqit.presentation.onboarding.components.OnboardingPage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -58,6 +58,8 @@ class OnboardingViewModel(
     private val networkObserver: NetworkObserver
 ) : ViewModel() {
 
+    private val LOCAL_LOAD = false
+
     private val TAG = "OnboardingViewModel"
     private val _uiState = MutableStateFlow(OnboardingUiState())
     val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
@@ -84,6 +86,7 @@ class OnboardingViewModel(
         }
     }
 
+    // todo : remove
     private fun observeDatabasePopulation() {
         viewModelScope.launch {
             workerManager.getWorkInfosForUniqueWorkFlow(DATABASE_POPULATION_WORK_NAME)
@@ -113,7 +116,7 @@ class OnboardingViewModel(
                         }
 
                         WorkInfo.State.FAILED -> {
-                            val error = info.outputData.getString("error") 
+                            val error = info.outputData.getString("error")
                                 ?: info.progress.getString("error")
                             Log.e(TAG, "Quran population FAILED: $error")
                             _uiState.update {
@@ -138,7 +141,7 @@ class OnboardingViewModel(
         val locationGranted = ContextCompat.checkSelfPermission(
             context, android.Manifest.permission.ACCESS_COARSE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
-        
+
         val notificationGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ContextCompat.checkSelfPermission(
                 context, android.Manifest.permission.POST_NOTIFICATIONS
@@ -146,7 +149,8 @@ class OnboardingViewModel(
         } else true
 
         val exactAlarmGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+            val alarmManager =
+                context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
             alarmManager.canScheduleExactAlarms()
         } else true
 
@@ -183,18 +187,25 @@ class OnboardingViewModel(
     }
 
     fun onExactAlarmResult(context: Context) {
-         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val alarmManager =
+                context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
             _uiState.update { it.copy(isExactAlarmGranted = alarmManager.canScheduleExactAlarms()) }
         }
     }
 
     fun onBatteryOptimizationResult(context: Context) {
         val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
-        _uiState.update { it.copy(isBatteryOptimizationIgnored = powerManager.isIgnoringBatteryOptimizations(context.packageName)) }
+        _uiState.update {
+            it.copy(
+                isBatteryOptimizationIgnored = powerManager.isIgnoringBatteryOptimizations(
+                    context.packageName
+                )
+            )
+        }
     }
 
-    fun onPermissionsContinue() = advance()
+    fun onPermissionsContinue() = advance(to = if (LOCAL_LOAD) OnboardingPage.QURAN_SETUP else OnboardingPage.DONE )
 
     fun onCalculationMethodChanged(method: CalculationMethod) {
         viewModelScope.launch {
@@ -219,14 +230,34 @@ class OnboardingViewModel(
 
     fun onPageSwiped(page: OnboardingPage) {
         _uiState.update { it.copy(page = page) }
+        if (page == OnboardingPage.DONE) {
+            checkAndFetchLocationIfMissing()
+        }
     }
 
-    private fun advance() {
+    private fun advance(to: OnboardingPage? = null) {
+        if (to!= null){
+            _uiState.update { it.copy(page = to) }
+            return
+        }
         val current = _uiState.value.page
         val nextOrdinal = current.ordinal + 1
         if (nextOrdinal < OnboardingPage.entries.size) {
             val nextPage = OnboardingPage.entries[nextOrdinal]
             _uiState.update { it.copy(page = nextPage) }
+            if (nextPage == OnboardingPage.DONE) {
+                checkAndFetchLocationIfMissing()
+            }
+        }
+    }
+
+    private fun checkAndFetchLocationIfMissing() {
+        viewModelScope.launch {
+            val hasLocation = locationRepo.hasLocation()
+            if (!hasLocation && !_uiState.value.isOffline) {
+                Log.d(TAG, "Location missing on Done page, attempting auto-fetch via IP...")
+                fetchLocation()
+            }
         }
     }
 
@@ -237,17 +268,18 @@ class OnboardingViewModel(
         }
     }
 
-    fun clearError() {
-        _uiState.update { it.copy(errorMessage = null) }
-    }
 
     private fun fetchLocation() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoadingLocation = true, errorMessage = null) }
             try {
-                val latLng = locationFetcher.fetch()
-                if (latLng != null) {
-                    val saved = locationRepo.saveLocation(latLng.first, latLng.second)
+                val userLocation = locationFetcher.fetch()
+                if (userLocation != null) {
+                    val saved = locationRepo.saveLocation(
+                        latitude = userLocation.latitude,
+                        longitude = userLocation.longitude,
+                        cityName = userLocation.city
+                    )
                     _uiState.update {
                         it.copy(
                             isLoadingLocation = false,
@@ -297,8 +329,4 @@ class OnboardingViewModel(
         )
     }
 
-    fun retryQuranPopulation() {
-        _uiState.update { it.copy(quranPopulationFailed = false, populationProgress = 0f) }
-        startDatabasePopulation()
-    }
 }

@@ -13,7 +13,6 @@ import com.hussein.mawaqit.infrastructure.settings.NotificationSound
 import com.hussein.mawaqit.infrastructure.settings.SettingsRepository
 import kotlinx.coroutines.flow.first
 import org.koin.java.KoinJavaComponent.inject
-import kotlin.getValue
 import kotlin.time.ExperimentalTime
 
 /**
@@ -52,7 +51,7 @@ class DailyPrayerWorker(
 
             // Both notification channels are blocked by the user —
             // nothing to schedule, but this is a valid user preference not a failure
-            if (!NotificationUtils.areChannelEnabled(applicationContext)) return Result.success()
+            if (!NotificationUtils.areChannelsEnabled(applicationContext)) return Result.success()
 
             val alarmManager = PrayerAlarmManager(applicationContext)
 

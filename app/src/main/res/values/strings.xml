@@ -29,6 +29,13 @@
     <string name="bookmark">Bookmark</string>
     <string name="remove_bookmark">Remove Bookmark</string>
     <string name="tafsir">Tafsir</string>
+
+    <!-- Notifications -->
+    <string name="notification_prayer_title">🕌 %1$s</string>
+    <string name="notification_prayer_content">It\'s time for %1$s prayer</string>
+    <string name="notification_channel_prayers_description">Notifications for each of the 5 daily prayer times</string>
+    <string name="notification_channel_azan_description">Plays azan audio at prayer times</string>
+
     <string-array name="azkar_titles">
         <item>Morning Azkar</item>
         <item>Night Azkar</item>

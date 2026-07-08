@@ -35,14 +35,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.mawaqit.R
-import com.hussein.mawaqit.data.azkar.Zikr
 import com.hussein.mawaqit.presentation.azkar.AzkarViewModel
 import com.hussein.mawaqit.presentation.shared.BackButton
 import com.hussein.mawaqit.presentation.shared.LoadingContent
-import com.hussein.mawaqit.ui.theme.quranFontFamily
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -238,55 +235,6 @@ private fun CategoryListItem(
                 )
             }
 
-        }
-    }
-}
-
-@Composable
-fun ZikrItem(index: Int, zikr: Zikr) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 16.dp)
-    ) {
-        // Index badge
-        Surface(
-            shape = RoundedCornerShape(50),
-            color = MaterialTheme.colorScheme.primaryContainer
-        ) {
-            Text(
-                text = index.toString(),
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 2.dp),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-        }
-
-        Spacer(Modifier.height(10.dp))
-
-        // Arabic zikr text — RTL
-        Text(
-            fontFamily = quranFontFamily,
-            text = zikr.text,
-            style = MaterialTheme.typography.bodyLarge.copy(
-                lineHeight = 32.sp,
-                fontSize = 18.sp
-            ),
-            fontWeight = FontWeight.Medium,
-            textAlign = TextAlign.End,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        // Repeat count — only show if > 1
-        if (zikr.repeat > 1) {
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = "Repeat ${zikr.repeat}",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.End
-            )
         }
     }
 }

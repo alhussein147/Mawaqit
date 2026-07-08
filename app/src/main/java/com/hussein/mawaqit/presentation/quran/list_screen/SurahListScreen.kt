@@ -4,17 +4,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
@@ -45,10 +44,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.mawaqit.R
 import com.hussein.mawaqit.data.mappers.toSurah
 import com.hussein.mawaqit.domain.models.Surah
-import com.hussein.mawaqit.presentation.navigation.LocalBottomBarHeight
-import com.hussein.mawaqit.presentation.navigation.ScrollObserver
 import com.hussein.mawaqit.presentation.quran.components.SurahReciterPickerSheet
-import com.hussein.mawaqit.presentation.shared.ScreenWrapper
+import com.hussein.mawaqit.presentation.shared.RootScreenWrapper
 import com.hussein.mawaqit.presentation.util.GlobalPlayerViewModel
 import com.hussein.mawaqit.presentation.util.SurahItemState
 import org.koin.androidx.compose.koinViewModel
@@ -63,12 +60,12 @@ fun SurahListScreen(
     onNavigateToSearch: () -> Unit,
     onNavigateToBookmarks: () -> Unit,
     surahListViewModel: SurahListViewModel = koinViewModel(),
-    globalPlayerViewModel: GlobalPlayerViewModel = koinInject(),
-    toggleNavBar: (Boolean) -> Unit = {}
+    globalPlayerViewModel: GlobalPlayerViewModel = koinInject()
 ) {
 
     val surahs = surahListViewModel.surahs.collectAsStateWithLifecycle()
     val isLoading by surahListViewModel.isLoading.collectAsStateWithLifecycle()
+    val lastRead by surahListViewModel.lastReadPosition.collectAsStateWithLifecycle()
     val surahStates by globalPlayerViewModel.surahStates.collectAsStateWithLifecycle()
     val selectedReciter by globalPlayerViewModel.selectedReciter.collectAsStateWithLifecycle()
     var showReciterPicker by remember { mutableStateOf(false) }
@@ -94,12 +91,11 @@ fun SurahListScreen(
     }
 
 
-    ScreenWrapper(
-        modifier = modifier,
+    RootScreenWrapper(
         topAppBar = {
             LargeTopAppBar(
                 scrollBehavior = topAppBarScrollBehavior,
-                title = { Text("Quran") },
+                title = { Text("Quran" ,fontWeight = FontWeight.Black) },
                 actions = {
                     IconButton(onClick = onNavigateToBookmarks) {
                         Icon(
@@ -121,21 +117,28 @@ fun SurahListScreen(
                     ContainedLoadingIndicator()
                 }
             } else {
-                val listState = rememberLazyListState()
-                val bottomBarHeight = LocalBottomBarHeight.current
-                ScrollObserver(
-                    onToggleNavBar = toggleNavBar,
-                    listState = listState
-                )
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
-                        .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection),
-                    contentPadding = PaddingValues(top = 16.dp, bottom = bottomBarHeight + 32.dp),
+                        .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection).then(modifier),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    state = listState
                 ) {
-                    itemsIndexed(items = surahs.value, key = { _, surah -> surah.number }) { _, surah ->
+                    lastRead?.let { last ->
+                        item {
+                            ContinueReadingCard(
+                                lastRead = last,
+                                onClick = { onSurahSelected(last.surahNumber, last.ayahNumber) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp)
+                                    .padding(top = 8.dp)
+                            )
+                        }
+                    }
+
+                    itemsIndexed(
+                        items = surahs.value,
+                        key = { _, surah -> surah.number }) { _, surah ->
                         val itemState = surahStates[surah.number] ?: SurahItemState.NotDownloaded
                         SurahRow(
                             modifier = Modifier
@@ -148,7 +151,10 @@ fun SurahListScreen(
                                     SurahItemState.Playing,
                                     SurahItemState.Paused -> globalPlayerViewModel.togglePlayPause()
 
-                                    SurahItemState.Downloaded -> globalPlayerViewModel.playSurah(surah.number)
+                                    SurahItemState.Downloaded -> globalPlayerViewModel.playSurah(
+                                        surah.number
+                                    )
+
                                     else -> Unit
                                 }
                             },
@@ -191,7 +197,7 @@ private fun SurahRow(
         ) {
             // Surah number badge
             Surface(
-                shape = CircleShape,
+                shape = RoundedCornerShape(12.dp),
                 color = MaterialTheme.colorScheme.primaryContainer,
                 modifier = Modifier.size(40.dp)
             ) {
@@ -208,21 +214,23 @@ private fun SurahRow(
             Spacer(Modifier.width(16.dp))
 
             // Names
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = surah.nameTransliterated,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            Column(horizontalAlignment = Alignment.End) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+                horizontalAlignment = Alignment.Start
+            ) {
                 Text(
                     text = surah.nameArabic,
-                    style = MaterialTheme.typography.headlineSmall.copy(
+                    style = MaterialTheme.typography.titleLargeEmphasized.copy(
                         textAlign = TextAlign.End
                     ),
                     color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(
+                    text = surah.nameTransliterated,
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -328,6 +336,56 @@ private fun ActionIcon(
                     contentDescription = "Resume",
                     tint = MaterialTheme.colorScheme.onSecondaryContainer
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ContinueReadingCard(
+    lastRead: LastRead,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onClick,
+        color = MaterialTheme.colorScheme.primaryContainer,
+        shape = RoundedCornerShape(24.dp),
+        modifier = modifier
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Continue Reading",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "${lastRead.surahName} • Ayah ${lastRead.ayahNumber}",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(48.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = ImageVector.vectorResource(R.drawable.ic_chevron_right),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primaryContainer,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
         }
     }

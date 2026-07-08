@@ -59,12 +59,14 @@ fun SettingToggleRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     shape: RoundedCornerShape = RoundedCornerShape(28.dp),
     icon: ImageVector? = null
 ) {
     Surface(
-        onClick = { onCheckedChange(!checked) },
+        onClick = { if (enabled) onCheckedChange(!checked) },
         shape = shape,
+        enabled = enabled,
         color = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
         modifier = modifier
             .fillMaxWidth()
@@ -79,7 +81,9 @@ fun SettingToggleRow(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    tint = if (!enabled) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                    else if (checked) MaterialTheme.colorScheme.primary 
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(24.dp)
                 )
                 Spacer(Modifier.width(20.dp))
@@ -91,16 +95,22 @@ fun SettingToggleRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
-                color = MaterialTheme.colorScheme.onSurface
+                color = if (enabled) MaterialTheme.colorScheme.onSurface 
+                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
             )
             Switch(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
+                enabled = enabled,
                 colors = SwitchDefaults.colors(
                     checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
                     checkedTrackColor = MaterialTheme.colorScheme.primary,
                     uncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                    uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                    uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    disabledCheckedTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                    disabledCheckedThumbColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.38f),
+                    disabledUncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.12f),
+                    disabledUncheckedThumbColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.38f)
                 )
             )
         }
@@ -115,6 +125,7 @@ fun SettingPickerRow(
     options: List<String>,
     onOptionSelected: (String) -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     shape: RoundedCornerShape = RoundedCornerShape(28.dp),
     icon: ImageVector? = null
 ) {
@@ -122,8 +133,9 @@ fun SettingPickerRow(
     val sheetState = rememberModalBottomSheetState()
 
     Surface(
-        onClick = { showSheet = true },
+        onClick = { if (enabled) showSheet = true },
         shape = shape,
+        enabled = enabled,
         color = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
         modifier = modifier
             .fillMaxWidth()
@@ -137,7 +149,8 @@ fun SettingPickerRow(
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = if (enabled) MaterialTheme.colorScheme.primary 
+                    else MaterialTheme.colorScheme.primary.copy(alpha = 0.38f),
                     modifier = Modifier.size(24.dp)
                 )
                 Spacer(Modifier.width(20.dp))
@@ -152,16 +165,19 @@ fun SettingPickerRow(
                     text = label,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = if (enabled) MaterialTheme.colorScheme.onSurface 
+                    else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                 )
                 Surface(
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                    color = if (enabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                    else MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
                     shape = CircleShape,
                 ) {
                     Text(
                         text = currentValue,
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = if (enabled) MaterialTheme.colorScheme.primary 
+                        else MaterialTheme.colorScheme.primary.copy(alpha = 0.38f),
                         fontWeight = FontWeight.ExtraBold,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                     )
@@ -171,7 +187,8 @@ fun SettingPickerRow(
             Icon(
                 imageVector = ImageVector.vectorResource(R.drawable.ic_chevron_right),
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                tint = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.24f),
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -211,6 +228,75 @@ fun SettingPickerRow(
         }
     }
 }
+
+@Composable
+fun SettingNavigationRow(
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    shape: RoundedCornerShape = RoundedCornerShape(28.dp),
+    icon: ImageVector? = null,
+    subLabel: String? = null
+) {
+    Surface(
+        onClick = { if (enabled) onClick() },
+        shape = shape,
+        enabled = enabled,
+        color = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 22.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (icon != null) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = if (enabled) MaterialTheme.colorScheme.primary 
+                    else MaterialTheme.colorScheme.primary.copy(alpha = 0.38f),
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(Modifier.width(20.dp))
+            }
+
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = if (enabled) MaterialTheme.colorScheme.onSurface 
+                    else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                )
+                if (subLabel != null) {
+                    Text(
+                        text = subLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant 
+                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+
+            Icon(
+                imageVector = ImageVector.vectorResource(R.drawable.ic_chevron_right),
+                contentDescription = null,
+                tint = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.24f),
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+}
+
 
 @Composable
 private fun SheetOptionItem(

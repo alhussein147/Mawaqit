@@ -1,6 +1,8 @@
 package com.hussein.mawaqit.infrastructure.media
 
 import android.content.Context
+import androidx.media3.common.AudioAttributes
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
@@ -8,7 +10,7 @@ import com.hussein.mawaqit.presentation.quran.reader.AyahRecitationState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-// todo:  check this
+
 class AyahPlayer(val context: Context) {
 
     private val _state = MutableStateFlow<AyahRecitationState>(AyahRecitationState.Idle)
@@ -17,20 +19,35 @@ class AyahPlayer(val context: Context) {
     private val _playingAyah = MutableStateFlow<Int?>(null)
     val playingAyah: StateFlow<Int?> = _playingAyah.asStateFlow()
 
-    private val player = ExoPlayer.Builder(context.applicationContext).build().apply {
-        addListener(object : Player.Listener {
-            override fun onPlaybackStateChanged(state: Int) {
-                when (state) {
-                    Player.STATE_BUFFERING -> _state.value = AyahRecitationState.Buffering
-                    Player.STATE_READY -> _state.value =
-                        if (isPlaying) AyahRecitationState.Playing else AyahRecitationState.Idle
+    private val player = ExoPlayer.Builder(context.applicationContext)
+        .setAudioAttributes(
+            AudioAttributes.Builder()
+                .setContentType(C.AUDIO_CONTENT_TYPE_SPEECH)
+                .setUsage(C.USAGE_MEDIA)
+                .build(),
+            /* handleAudioFocus= */ true
+        )
+        .setHandleAudioBecomingNoisy(true)
+        .build().apply {
+            addListener(object : Player.Listener {
+                override fun onPlaybackStateChanged(state: Int) {
+                    when (state) {
+                        Player.STATE_BUFFERING -> _state.value = AyahRecitationState.Buffering
+                        Player.STATE_READY -> _state.value =
+                            if (playWhenReady) AyahRecitationState.Playing else AyahRecitationState.Idle
 
-                    Player.STATE_ENDED -> stop()
-                    else -> Unit
+                        Player.STATE_ENDED -> stop()
+                        else -> Unit
+                    }
                 }
-            }
-        })
-    }
+
+                override fun onIsPlayingChanged(isPlaying: Boolean) {
+                    if (playbackState == Player.STATE_READY) {
+                        _state.value = if (isPlaying) AyahRecitationState.Playing else AyahRecitationState.Idle
+                    }
+                }
+            })
+        }
 
     fun play(url: String, ayahNumber: Int) {
         _playingAyah.value = ayahNumber

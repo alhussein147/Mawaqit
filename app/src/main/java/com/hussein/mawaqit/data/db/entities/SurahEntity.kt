@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey
 data class SurahEntity(
     @PrimaryKey val number: Int,
     val nameArabic: String,
-    val nameTransliterated: String,
-    val totalAyahs: Int
+    val transliteration: String,
+    val totalAyahs: Int,
+    val origin:String
 )

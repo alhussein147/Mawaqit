@@ -1,17 +1,14 @@
 package com.hussein.mawaqit.presentation.settings
 
-import CurrentLocationFetcher
 import android.Manifest
 import android.content.Intent
 import android.provider.Settings
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -21,7 +18,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -43,6 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
@@ -50,32 +50,31 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.batoulapps.adhan2.CalculationMethod
 import com.hussein.core.models.SavedLocation
 import com.hussein.mawaqit.R
+import com.hussein.mawaqit.infrastructure.location.CurrentLocationFetcher
 import com.hussein.mawaqit.infrastructure.settings.AppColorScheme
 import com.hussein.mawaqit.infrastructure.settings.AppSettings
 import com.hussein.mawaqit.infrastructure.settings.AppTheme
-import com.hussein.mawaqit.infrastructure.settings.NotificationSound
 import com.hussein.mawaqit.infrastructure.settings.PrayerNotificationSettings
-import com.hussein.mawaqit.presentation.navigation.LocalBottomBarHeight
 import com.hussein.mawaqit.presentation.shared.LoadingContent
-import com.hussein.mawaqit.presentation.shared.ScreenWrapper
+import com.hussein.mawaqit.presentation.shared.RootScreenWrapper
+import com.hussein.mawaqit.presentation.shared.SettingNavigationRow
 import com.hussein.mawaqit.presentation.shared.SettingPickerRow
 import com.hussein.mawaqit.presentation.shared.SettingSectionHeader
-import com.hussein.mawaqit.presentation.shared.SettingToggleRow
-import com.hussein.mawaqit.presentation.util.getPrayersDisplayNames
 import com.hussein.mawaqit.presentation.util.hasLocationPermission
 import com.hussein.mawaqit.presentation.util.isLocationPermanentlyDenied
 import com.hussein.mawaqit.presentation.util.openAppSettings
-import com.hussein.mawaqit.ui.listShapes
 import org.koin.androidx.compose.koinViewModel
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SettingsScreen(
+    onNavigateToNotificationSettings: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = koinViewModel()
 ) {
@@ -96,11 +95,16 @@ fun SettingsScreen(
         if (granted) {
             viewModel.fetchAndSaveLocation()
         } else {
-            pendingAction = LocationAction.None
+            if (context.isLocationPermanentlyDenied()) {
+                pendingAction = LocationAction.ShowSettingsDialog
+            } else {
+                pendingAction = LocationAction.None
+            }
         }
     }
 
     fun onUpdateLocationTapped() {
+        val activity = context as? ComponentActivity
         when {
             !CurrentLocationFetcher.isLocationEnabled(context) -> {
                 pendingAction = LocationAction.ShowGpsDialog
@@ -110,21 +114,35 @@ fun SettingsScreen(
                 viewModel.fetchAndSaveLocation()
             }
 
-            else -> {
+            activity != null && ActivityCompat.shouldShowRequestPermissionRationale(
+                activity, Manifest.permission.ACCESS_FINE_LOCATION
+            ) -> {
                 pendingAction = LocationAction.ShowRationaleDialog
+            }
+
+            else -> {
+                // First time OR permanently denied
+                permissionLauncher.launch(
+                    arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    )
+                )
             }
         }
     }
 
-    ScreenWrapper(
-        modifier = modifier,
+    RootScreenWrapper(
         topAppBar = {
             LargeTopAppBar(
                 title = { Text("Settings", fontWeight = FontWeight.Black) },
                 scrollBehavior = topAppBarScrollBehavior,
-                colors = TopAppBarDefaults.largeTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer
+                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    navigationIconContentColor = Color.Unspecified,
+                    titleContentColor = Color.Unspecified,
+                    actionIconContentColor = Color.Unspecified
                 )
             )
         },
@@ -138,14 +156,13 @@ fun SettingsScreen(
                     savedLocation = savedLocation,
                     onUpdateLocationTapped = ::onUpdateLocationTapped,
                     onLocationErrorDismissed = { viewModel.resetLocationState() },
-                    onPrayerToggled = viewModel::onPrayerNotificationToggled,
                     onMethodChanged = viewModel::onCalculationMethodChanged,
-                    onSoundChanged = viewModel::onNotificationSoundChanged,
                     onThemeChanged = viewModel::onAppThemeChanged,
                     onColorSchemeChanged = viewModel::onAppColorSchemeChanged,
+                    onNavigateToNotificationSettings = onNavigateToNotificationSettings,
                     modifier = Modifier
                         .fillMaxSize()
-                        .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
+                        .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection).then(modifier)
                 )
             }
         }
@@ -178,18 +195,33 @@ fun SettingsScreen(
                 confirmButton = {
                     TextButton(onClick = {
                         pendingAction = LocationAction.None
-                        if (context.isLocationPermanentlyDenied()) {
-                            context.openAppSettings()
-                        } else {
-                            permissionLauncher.launch(
-                                arrayOf(
-                                    Manifest.permission.ACCESS_FINE_LOCATION,
-                                    Manifest.permission.ACCESS_COARSE_LOCATION
-                                )
+                        permissionLauncher.launch(
+                            arrayOf(
+                                Manifest.permission.ACCESS_FINE_LOCATION,
+                                Manifest.permission.ACCESS_COARSE_LOCATION
                             )
-                        }
+                        )
                     }) {
-                        Text(if (context.isLocationPermanentlyDenied()) "Open App Settings" else "Allow")
+                        Text("Allow")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { pendingAction = LocationAction.None }) { Text("Cancel") }
+                }
+            )
+        }
+
+        LocationAction.ShowSettingsDialog -> {
+            AlertDialog(
+                onDismissRequest = { pendingAction = LocationAction.None },
+                title = { Text("Permission Needed") },
+                text = { Text("You have permanently denied location permission. To update your location accurately, please enable it in the app settings.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        pendingAction = LocationAction.None
+                        context.openAppSettings()
+                    }) {
+                        Text("Open Settings")
                     }
                 },
                 dismissButton = {
@@ -208,57 +240,31 @@ private fun SettingsContent(
     settings: AppSettings,
     savedLocation: SavedLocation?,
     locationState: SettingsViewModel.LocationUpdateState,
-    onPrayerToggled: (String, Boolean) -> Unit,
     onMethodChanged: (CalculationMethod) -> Unit,
-    onSoundChanged: (NotificationSound) -> Unit,
     onThemeChanged: (AppTheme) -> Unit,
     onColorSchemeChanged: (AppColorScheme) -> Unit,
     onUpdateLocationTapped: () -> Unit,
     onLocationErrorDismissed: () -> Unit,
+    onNavigateToNotificationSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val bottomBarHeight = LocalBottomBarHeight.current
 
     LazyColumn(
         modifier = modifier,
         contentPadding = PaddingValues(
             start = 16.dp,
-            end = 16.dp,
-            bottom = bottomBarHeight + 32.dp
+            end = 16.dp
         ),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         item {
             SettingSectionHeader("Prayer Notifications")
-            SettingPickerRow(
-                label = "Notification Style",
-                currentValue = settings.notificationSound.displayName,
-                options = NotificationSound.entries.map { it.displayName },
-                onOptionSelected = { name ->
-                    onSoundChanged(NotificationSound.entries.first { it.displayName == name })
-                }
+            SettingNavigationRow(
+                label = "Notification Settings",
+                subLabel = "Control sounds and specific prayer alerts",
+                onClick = onNavigateToNotificationSettings,
+                icon = ImageVector.vectorResource(R.drawable.ic_notification)
             )
-
-            AnimatedVisibility(
-                visible = settings.notificationSound != NotificationSound.NONE,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
-            ) {
-                Column(modifier = Modifier.padding(top = 8.dp)) {
-                    getPrayersDisplayNames().forEachIndexed { index, prayer ->
-                        SettingToggleRow(
-                            label = prayer,
-                            checked = settings.prayerNotifications.isEnabledFor(prayer),
-                            onCheckedChange = { onPrayerToggled(prayer, it) },
-                            shape = when (index) {
-                                0 -> listShapes.topItem
-                                4 -> listShapes.bottomItem
-                                else -> listShapes.midItem
-                            }
-                        )
-                    }
-                }
-            }
         }
 
         item {
@@ -327,6 +333,10 @@ private fun LocationRow(
     onUpdateTapped: () -> Unit,
     onErrorDismissed: () -> Unit
 ) {
+    val context = LocalContext.current
+    val hasPermission = context.hasLocationPermission()
+    val isGpsEnabled = CurrentLocationFetcher.isLocationEnabled(context)
+
     val displayLocation = when (locationState) {
         is SettingsViewModel.LocationUpdateState.Success -> locationState.location
         else -> savedLocation
@@ -345,20 +355,39 @@ private fun LocationRow(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Icon(
-                        imageVector = ImageVector.vectorResource(R.drawable.ic_location),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    Box(contentAlignment = Alignment.BottomEnd) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = ImageVector.vectorResource(R.drawable.ic_location),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
+                        if (!hasPermission || !isGpsEnabled) {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(16.dp),
+                                border = BorderStroke(2.dp, MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp))
+                            ) {}
+                        }
+                    }
+
                     Column(modifier = Modifier.padding(start = 16.dp)) {
                         Text(
                             text = displayLocation?.cityName ?: "No location set",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                            ,color = MaterialTheme.colorScheme.onSurface
+                            overflow = TextOverflow.Ellipsis,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         if (displayLocation != null) {
                             Text(
@@ -366,6 +395,12 @@ private fun LocationRow(
                                     displayLocation.latitude,
                                     displayLocation.longitude
                                 ),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        } else {
+                            Text(
+                                text = "Configure to see prayer times",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -382,6 +417,38 @@ private fun LocationRow(
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                     ) {
                         Text(if (displayLocation != null) "Update" else "Set")
+                    }
+                }
+            }
+
+            if (!hasPermission || !isGpsEnabled) {
+                Spacer(Modifier.height(16.dp))
+                Surface(
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.ic_check), // Or another icon
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = when {
+                                !hasPermission && !isGpsEnabled -> "Permission missing & GPS disabled"
+                                !hasPermission -> "Location permission missing"
+                                else -> "GPS is disabled"
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
                     }
                 }
             }
@@ -403,7 +470,6 @@ private fun LocationRow(
                 }
             }
         }
-
     }
 }
 
@@ -411,6 +477,7 @@ private sealed interface LocationAction {
     data object None : LocationAction
     data object ShowGpsDialog : LocationAction
     data object ShowRationaleDialog : LocationAction
+    data object ShowSettingsDialog : LocationAction
 }
 
 private fun PrayerNotificationSettings.isEnabledFor(prayer: String): Boolean = when (prayer) {

@@ -1,7 +1,7 @@
 package com.hussein.mawaqit.presentation.quran.reader
 
+import android.content.ClipData
 import androidx.activity.compose.BackHandler
-import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
@@ -45,15 +45,18 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
@@ -68,31 +71,34 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.mawaqit.R
-import com.hussein.mawaqit.data.quran.recitation.Reciter
 import com.hussein.mawaqit.domain.models.Ayah
 import com.hussein.mawaqit.domain.models.Bookmark
+import com.hussein.mawaqit.domain.models.Reciter
 import com.hussein.mawaqit.infrastructure.settings.QuranTextAlignment
-import com.hussein.mawaqit.presentation.quran.components.AyahReciterPickerSheetContent
 import com.hussein.mawaqit.presentation.shared.BackButton
 import com.hussein.mawaqit.presentation.shared.ErrorContent
 import com.hussein.mawaqit.presentation.shared.LoadingContent
-import com.hussein.mawaqit.presentation.util.GlobalPlayerViewModel
 import com.hussein.mawaqit.ui.theme.quranFontFamily
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
-import org.koin.compose.koinInject
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, FlowPreview::class)
 @Composable
 fun QuranReaderScreen(
     surahIndex: Int,
     onBack: () -> Unit,
+    onNavigateToSettings: () -> Unit,
+    onNavigateToTafsir: (String) -> Unit,
     scrollToAyah: Int? = null,
-    viewModel: QuranViewModel = koinViewModel(),
-    globalMediaPlayerViewModel: GlobalPlayerViewModel = koinInject()
-) {
+    viewModel: QuranViewModel = koinViewModel()) {
     val readerState by viewModel.readerState.collectAsStateWithLifecycle()
     val fontSize by viewModel.fontSize.collectAsStateWithLifecycle()
     val quranTextAlignment by viewModel.textAlignment.collectAsStateWithLifecycle()
@@ -106,17 +112,18 @@ fun QuranReaderScreen(
     val selectedReciter by viewModel.selectedReciter.collectAsStateWithLifecycle()
     val hasNetwork by viewModel.networkAvailable.collectAsStateWithLifecycle()
 
-    var showReadingOptionsDialog by remember { mutableStateOf(false) }
-
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
     var highlightedAyah by remember { mutableStateOf<Int?>(null) }
 
     val listState = rememberLazyListState()
+
     var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
+
     var lastScrolledAyah by remember(surahIndex) { mutableStateOf<Int?>(null) }
 
-    val clipboardManager = LocalClipboardManager.current
+    val clipboardManager = LocalClipboard.current
+    val coroutineScope = rememberCoroutineScope()
 
     val surahName = if (readerState is QuranReaderUiState.Success) {
         (readerState as QuranReaderUiState.Success).surah.nameArabic
@@ -157,6 +164,37 @@ fun QuranReaderScreen(
 
     LaunchedEffect(surahIndex) { viewModel.loadSurah(surahIndex) }
 
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    // Track center ayah for "continue reading" feature
+    LaunchedEffect(listState, textLayoutResult) {
+        snapshotFlow {
+            val layout = textLayoutResult ?: return@snapshotFlow null
+            val viewportHeight = listState.layoutInfo.viewportSize.height
+            if (viewportHeight <= 0) return@snapshotFlow null
+
+            val scrollOffset = listState.firstVisibleItemScrollOffset
+            val paddingPx = with(density) { 8.dp.toPx() }
+            val centerY = scrollOffset + (viewportHeight / 2f) - paddingPx
+
+            if (centerY < 0 || centerY > layout.size.height) return@snapshotFlow null
+
+            val offset = try {
+                layout.getOffsetForPosition(Offset(layout.size.width / 2f, centerY))
+            } catch (e: Exception) {
+                return@snapshotFlow null
+            }
+
+            layout.layoutInput.text.getStringAnnotations("AYAH", offset, offset)
+                .firstOrNull()?.item?.toIntOrNull()
+        }
+            .filterNotNull()
+            .distinctUntilChanged()
+            .debounce(2.seconds)
+            .collect { ayahIndex ->
+                viewModel.updateLastRead(surahIndex, ayahIndex)
+            }
+    }
+
     selectedAyah?.let { ayah ->
         val isBookmarked = bookmarks.any {
             it.surahNumber == surahIndex && it.ayahNumber == ayah.numberInSurah
@@ -176,9 +214,6 @@ fun QuranReaderScreen(
                 )
             },
             onPlayPause = {
-                if (globalMediaPlayerViewModel.isPlaying.value) {
-                    globalMediaPlayerViewModel.stop()
-                }
                 if (playingAyah == ayah.numberInSurah && recitationState !is AyahRecitationState.Idle) {
                     viewModel.stopAyah()
                 } else {
@@ -189,7 +224,11 @@ fun QuranReaderScreen(
             onDismiss = { viewModel.dismissTafsir() },
             playEnabled = hasNetwork,
             onAyahCopy = {
-                clipboardManager.setText(AnnotatedString(it))
+                coroutineScope.launch {
+                    val clipData = ClipData.newPlainText("Ayah ${ayah.numberInSurah}", ayah.text)
+                    clipboardManager.setClipEntry(ClipEntry(clipData))
+                }
+
             })
     }
 
@@ -219,7 +258,13 @@ fun QuranReaderScreen(
                     })
                 },
                 actions = {
-                    IconButton(onClick = { showReadingOptionsDialog = true }) {
+                    IconButton(onClick = { onNavigateToTafsir(surahName) }) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(R.drawable.ic_placeholder),
+                            contentDescription = "Tafsir"
+                        )
+                    }
+                    IconButton(onClick = onNavigateToSettings) {
                         Icon(
                             imageVector = ImageVector.vectorResource(R.drawable.ic_settings),
                             contentDescription = "Reading Options"
@@ -238,54 +283,40 @@ fun QuranReaderScreen(
         },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
     ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            when (val state = readerState) {
-                is QuranReaderUiState.Success -> {
-                    val surah = state.surah
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = 32.dp, start = 12.dp, end = 12.dp),
-                        state = listState
-                    ) {
-                        item {
-                            FlowingAyahBlock(
-                                ayahs = surah.ayahs,
-                                fontSize = fontSize,
-                                quranTextAlignment = quranTextAlignment,
-                                bookmarks = bookmarks,
-                                surahIndex = surahIndex,
-                                onTap = { ayah -> viewModel.selectAyah(ayah) },
-                                onTextLayout = { layout -> textLayoutResult = layout },
-                                highlightedAyah = highlightedAyah
-                            )
-                        }
-                    }
-
-                    if (showReadingOptionsDialog) {
-                        QuranReaderOptionsDialog(
-                            selectedFontSize = fontSize,
-                            selectedTextAlignment = quranTextAlignment,
-                            onSelectedFontSize = { viewModel.setFontSize(it) },
-                            onSelectedTextAlignment = { viewModel.setTextAlignment(it) },
-                            onDismiss = { showReadingOptionsDialog = false }
+        when (val state = readerState) {
+            is QuranReaderUiState.Success -> {
+                val surah = state.surah
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentPadding = PaddingValues(bottom = 32.dp, start = 12.dp, end = 12.dp),
+                    state = listState
+                ) {
+                    item {
+                        FlowingAyahBlock(
+                            ayahs = surah.ayahs,
+                            fontSize = fontSize,
+                            quranTextAlignment = quranTextAlignment,
+                            bookmarks = bookmarks,
+                            surahIndex = surahIndex,
+                            onTap = { ayah -> viewModel.selectAyah(ayah) },
+                            onTextLayout = { layout -> textLayoutResult = layout },
+                            highlightedAyah = highlightedAyah
                         )
                     }
                 }
+            }
 
-                QuranReaderUiState.Idle, QuranReaderUiState.Loading -> {
-                    LoadingContent(
-                        modifier = Modifier.fillMaxSize(),
-                        backgroundColor = Color.Transparent
-                    )
-                }
+            QuranReaderUiState.Idle, QuranReaderUiState.Loading -> {
+                LoadingContent(
+                    modifier = Modifier.fillMaxSize(),
+                    backgroundColor = Color.Transparent
+                )
+            }
 
-                is QuranReaderUiState.Error -> {
-                    ErrorContent(message = state.message, modifier = Modifier.fillMaxSize())
-                }
+            is QuranReaderUiState.Error -> {
+                ErrorContent(message = state.message, modifier = Modifier.fillMaxSize())
             }
         }
     }
@@ -598,61 +629,81 @@ private fun AyahBottomSheet(
                     }
                 }
             } else {
-                AyahReciterPickerSheetContent(
-                    selectedReciter = currentReciter,
-                    onDismiss = { showReciterOptions = false },
-                    onSelect = {
-                        onReciterSelect(it)
-                        showReciterOptions = false
-                    },
-                    onBack = { showReciterOptions = false }
-                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 16.dp)
+                        .navigationBarsPadding(),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(
+                            4.dp,
+                            alignment = Alignment.Start
+                        ),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = { showReciterOptions = false }) {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(R.drawable.ic_arrow_back),
+                                contentDescription = null
+                            )
+                        }
+
+                        Text(
+                            text = "Pick Reciter",
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+
+                    }
+
+                    Reciter.entries.forEach { reciter ->
+                        val isSelected = reciter == currentReciter
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            onClick = {
+                                onReciterSelect(currentReciter)
+                                showReciterOptions = false;
+                                onDismiss()
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            color = if (isSelected) MaterialTheme.colorScheme.primaryContainer
+                            else MaterialTheme.colorScheme.surface
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp, horizontal = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column {
+                                    Text(
+                                        text = reciter.nameArabic,
+                                        style = MaterialTheme.typography.bodyLarge
+                                    )
+                                    Text(
+                                        text = reciter.nameEnglish,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                if (isSelected) {
+                                    Icon(
+                                        imageVector = ImageVector.vectorResource(R.drawable.ic_check),
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
             }
         }
     }
 }
 
-@Composable
-private fun BottomSheetButton(
-    modifier: Modifier,
-    onClick: () -> Unit,
-    @DrawableRes icon: Int,
-    title: String,
-    selected: Boolean = false
-) {
-    Surface(
-        color = if (selected) {
-            MaterialTheme.colorScheme.primaryContainer
-        } else {
-            MaterialTheme.colorScheme.surfaceContainerHigh
-        },
-        contentColor = if (selected) {
-            MaterialTheme.colorScheme.onPrimaryContainer
-        } else {
-            MaterialTheme.colorScheme.onSurface
-        },
-        modifier = modifier.height(80.dp),
-        shape = RoundedCornerShape(20.dp),
-        onClick = onClick
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                imageVector = ImageVector.vectorResource(icon),
-                contentDescription = null,
-                modifier = Modifier.size(24.dp)
-            )
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
-}
