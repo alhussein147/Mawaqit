@@ -31,21 +31,26 @@ import androidx.navigation3.ui.NavDisplay
 import com.hussein.mawaqit.R
 import com.hussein.mawaqit.infrastructure.settings.SettingsRepository
 import com.hussein.mawaqit.presentation.azkar.AzkarScreen
-import com.hussein.mawaqit.presentation.azkar.categories.AzkarCategoryScreen
+import com.hussein.mawaqit.presentation.azkar.AzkarCategoriesScreen
 import com.hussein.mawaqit.presentation.home.HomeScreen
 import com.hussein.mawaqit.presentation.navigation.components.BottomBarNestedScrollConnection
 import com.hussein.mawaqit.presentation.navigation.components.FloatingNavBar
 import com.hussein.mawaqit.presentation.navigation.components.rememberBottomBarState
 import com.hussein.mawaqit.presentation.onboarding.OnboardingScreen
 import com.hussein.mawaqit.presentation.quran.bookmarks.BookmarksScreen
-import com.hussein.mawaqit.presentation.quran.list_screen.SurahListScreen
-import com.hussein.mawaqit.presentation.quran.reader.QuranReaderScreen
+import com.hussein.mawaqit.presentation.quran.reading.reading_settings.QuranReadingSettingsScreen
+import com.hussein.mawaqit.presentation.quran.reading.QuranReadingScreen
 import com.hussein.mawaqit.presentation.quran.search.QuranSearchScreen
+import com.hussein.mawaqit.presentation.quran.surah_list.SurahListScreen
 import com.hussein.mawaqit.presentation.quran.tafsir.QuranReaderWithTafsirScreen
 import com.hussein.mawaqit.presentation.radio.RadioChannelListScreen
 import com.hussein.mawaqit.presentation.settings.NotificationSettingsScreen
 import com.hussein.mawaqit.presentation.settings.SettingsScreen
 import com.hussein.mawaqit.presentation.shared.LoadingContent
+import com.hussein.mawaqit.ui.enterTransition
+import com.hussein.mawaqit.ui.exitTransition
+import com.hussein.mawaqit.ui.popEnterTransition
+import com.hussein.mawaqit.ui.popExitTransition
 import org.koin.core.annotation.KoinExperimentalAPI
 
 data class TopLevelDestination(
@@ -144,8 +149,8 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
                 )
             }
 
-            entry<QuranReader> { key ->
-                QuranReaderScreen(
+            entry<QuranReading> { key ->
+                QuranReadingScreen(
                     scrollToAyah = key.scrollToAyah,
                     surahIndex = key.surahIndex,
                     onBack = { backStack.removeAt(backStack.size - 1) },
@@ -165,7 +170,7 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
             }
 
             entry<QuranReaderSettings> {
-                com.hussein.mawaqit.presentation.quran.reader.QuranReaderSettingsScreen(
+                QuranReadingSettingsScreen(
                     onBack = { backStack.removeAt(backStack.size - 1) }
                 )
             }
@@ -173,10 +178,10 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
             entry<QuranSearch> {
                 QuranSearchScreen(
                     onSurahSelected = { surahIndex ->
-                        backStack.add(QuranReader(surahIndex))
+                        backStack.add(QuranReading(surahIndex))
                     },
                     onAyahSelected = { surahIndex, ayahNumber ->
-                        backStack.add(QuranReader(surahIndex, ayahNumber))
+                        backStack.add(QuranReading(surahIndex, ayahNumber))
                     },
                     onBack = { backStack.removeAt(backStack.size - 1) },
                 )
@@ -185,22 +190,22 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
             entry<QuranBookmarks> {
                 BookmarksScreen(
                     onNavigateToAyah = { surahIndex, ayahNumber ->
-                        backStack.add(QuranReader(surahIndex, ayahNumber))
+                        backStack.add(QuranReading(surahIndex, ayahNumber))
                     },
                     onBack = { backStack.removeAt(backStack.size - 1) }
                 )
             }
 
             entry<AzkarCategories> {
-                AzkarCategoryScreen(
-                    onCategorySelected = { index -> backStack.add(AzkarList(index)) },
+                AzkarCategoriesScreen(
+                    onCategorySelected = { id -> backStack.add(AzkarList(id)) },
                     onBack = { backStack.removeAt(backStack.size - 1) },
                 )
             }
 
             entry<AzkarList> { key ->
                 AzkarScreen(
-                    categoryIndex = key.categoryIndex,
+                    categoryId = key.categoryId,
                     onBack = { backStack.removeAt(backStack.size - 1) }
                 )
             }
@@ -298,7 +303,7 @@ private fun TopLevelNavigation(
                         onNavigateToAzkar = { rootBackStack.add(AzkarCategories) },
                         onNavigateToRadio = { rootBackStack.add(RadioChannels) },
                         onNavigateToReader = { index, ayahIndex ->
-                            rootBackStack.add(QuranReader(index, ayahIndex))
+                            rootBackStack.add(QuranReading(index, ayahIndex))
                         },
                         onNavigateToSettings = { navigateToTopLevel(Settings) }
                     )
@@ -315,7 +320,7 @@ private fun TopLevelNavigation(
                     SurahListScreen(
                         modifier = Modifier.nestedScroll(scrollConnection),
                         onSurahSelected = { index, scrollToAyah ->
-                            rootBackStack.add(QuranReader(index, scrollToAyah))
+                            rootBackStack.add(QuranReading(index, scrollToAyah))
                         },
                         onNavigateToSearch = {
                             rootBackStack.add(QuranSearch)

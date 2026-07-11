@@ -76,17 +76,17 @@ fun HomeScreen(
         }
     }
 
-    RootScreenWrapper(topAppBar = {
-        HomeTopAppBar(
-            cityName = state.cityName,
-        )
-    }, content = {
+    RootScreenWrapper(
+        topAppBar = {
+            Spacer(Modifier.statusBarsPadding())
+        },
+        content = {
         when {
             state.isLoading -> LoadingContent(
                 Modifier.fillMaxSize()
             )
 
-            state.error == "Location not set." -> NoLocationContent(
+            state.error == stringResource(R.string.location_not_set) -> NoLocationContent(
                 modifier = Modifier.fillMaxSize(),
                 onNavigateToSettings = onNavigateToSettings
             )
@@ -122,11 +122,13 @@ private fun HomeScreenContent(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
             .then(modifier),
-        contentPadding = PaddingValues(vertical = 8.dp ),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        contentPadding = PaddingValues(start = 16.dp , end = 16.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        item {
+            LocationHeader(cityName = state.cityName)
+        }
         item {
             HeaderSection(state, countdownFlow = countdownFlow)
         }
@@ -147,6 +149,31 @@ private fun HomeScreenContent(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun LocationHeader(cityName: String) {
+    if (cityName.isBlank()) return
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Icon(
+            imageVector = ImageVector.vectorResource(R.drawable.ic_location),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp)
+        )
+        Text(
+            text = cityName,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Black,
+            color = MaterialTheme.colorScheme.onBackground
+        )
     }
 }
 
@@ -180,7 +207,7 @@ private fun HeaderSection(state: HomeUiState, countdownFlow: StateFlow<Countdown
             }
             state.nextPrayer?.let { next ->
                 val label =
-                    if (next.status == PrayerStatus.CURRENT) "Current Prayer" else "Next Prayer"
+                    stringResource(if (next.status == PrayerStatus.CURRENT) R.string.current_prayer else R.string.next_prayer)
 
                 Text(
                     text = label.uppercase(),
@@ -199,7 +226,7 @@ private fun HeaderSection(state: HomeUiState, countdownFlow: StateFlow<Countdown
                 ) {
                     Text(
                         text = next.name,
-                        style = MaterialTheme.typography.displayMedium,
+                        style = MaterialTheme.typography.displaySmall,
                         fontWeight = FontWeight.Black,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -213,6 +240,7 @@ private fun HeaderSection(state: HomeUiState, countdownFlow: StateFlow<Countdown
     }
 }
 
+
 @Composable
 private fun CountdownDisplay(countdownFlow: StateFlow<CountdownTime?>) {
     val countdown by countdownFlow.collectAsStateWithLifecycle()
@@ -220,8 +248,7 @@ private fun CountdownDisplay(countdownFlow: StateFlow<CountdownTime?>) {
 
     Surface(
         shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        shadowElevation = 4.dp
+        color = MaterialTheme.colorScheme.secondaryContainer
     ) {
         Text(
             text = "in $time",
@@ -262,7 +289,7 @@ private fun TodayPrayersSection(
                 ) {
                     Column {
                         Text(
-                            text = "Today's Schedule",
+                            text = stringResource(R.string.todays_schedule),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Black,
                             color = MaterialTheme.colorScheme.onSurface
@@ -359,7 +386,7 @@ private fun PrayerScheduleRow(
                 )
                 if (isCurrent) {
                     Text(
-                        text = "Current prayer",
+                        text = stringResource(R.string.current_prayer),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Black
@@ -417,47 +444,6 @@ private fun PrayerStepIndicator(
     }
 }
 
-@Composable
-private fun HomeTopAppBar(
-    modifier: Modifier = Modifier, cityName: String
-) {
-    Row(
-        modifier = Modifier
-            .statusBarsPadding()
-            .fillMaxWidth()
-            .height(72.dp)
-            .padding(horizontal = 16.dp)
-            .then(modifier),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (cityName.isNotBlank()) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
-                onClick = {}) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = ImageVector.vectorResource(R.drawable.ic_location),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Text(
-                        text = cityName,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Black,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                }
-            }
-        }
-        Spacer(Modifier.weight(1f))
-    }
-}
 
 @Composable
 fun HomeQuickActionsSection(
@@ -526,16 +512,16 @@ fun HomeQuickActionsSection(
         ActionTile(
             modifier = Modifier.weight(1f),
             onClick = onNavigateToAzkar,
-            title = stringResource(R.string.azakr),
-            subtitle = "Daily Zikr",
+            title = stringResource(R.string.azkar),
+            subtitle = stringResource(R.string.daily_zikr),
             icon = R.drawable.ic_tasbih,
             containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f)
         )
         ActionTile(
             modifier = Modifier.weight(1f),
             onClick = onNavigateToRadio,
-            title = "Radio",
-            subtitle = "Quran audio",
+            title = stringResource(R.string.radio),
+            subtitle = stringResource(R.string.live_quran_radio),
             icon = R.drawable.ic_radio,
             containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
         )
@@ -693,3 +679,4 @@ fun AyahOfTheDayCard(
         }
     }
 }
+

@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -61,8 +60,7 @@ import com.hussein.mawaqit.presentation.shared.SettingPickerRow
 import com.hussein.mawaqit.presentation.shared.SettingSectionHeader
 import com.hussein.mawaqit.presentation.shared.SettingToggleRow
 import com.hussein.mawaqit.presentation.util.getPrayersDisplayNames
-import com.hussein.mawaqit.ui.listShapes
-
+import com.hussein.mawaqit.ui.theme.MawaqitTheme.listShapes
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)

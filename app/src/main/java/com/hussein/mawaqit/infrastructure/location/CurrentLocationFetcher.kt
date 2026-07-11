@@ -16,16 +16,13 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
-import io.ktor.client.HttpClient
+import com.hussein.mawaqit.data.remote.RemoteService
 import io.ktor.client.call.body
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
-import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import kotlin.coroutines.resume
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -44,6 +41,9 @@ class CurrentLocationFetcher(private val context: Context) {
     companion object {
         private const val TAG = "CurrentLocationFetcher"
         private const val TIMEOUT_MS = 15_000L
+        private const val GEOCODER_TIMEOUT_MS = 5_000L
+        private const val IP_API_TIMEOUT_MS = 5_000L
+        private const val LAST_KNOWN_TIMEOUT_MS = 2_000L
         private const val IP_API_URL = "http://ip-api.com/json/"
 
         fun isLocationEnabled(context: Context): Boolean {
@@ -59,17 +59,6 @@ class CurrentLocationFetcher(private val context: Context) {
             ) == PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(
                 context, Manifest.permission.ACCESS_COARSE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
-        }
-    }
-
-    private val httpClient by lazy {
-        HttpClient {
-            install(ContentNegotiation) {
-                json(Json {
-                    ignoreUnknownKeys = true
-                    coerceInputValues = true
-                })
-            }
         }
     }
 
@@ -104,7 +93,9 @@ class CurrentLocationFetcher(private val context: Context) {
             }
 
             Log.d(TAG, "Fresh location timed out, trying last known location...")
-            val lastKnown = getLastKnownLocation(fusedClient)
+            val lastKnown = withTimeoutOrNull(LAST_KNOWN_TIMEOUT_MS.milliseconds) {
+                getLastKnownLocation(fusedClient)
+            }
             if (lastKnown != null) {
                 Log.d(TAG, "Last known location obtained: $lastKnown")
                 val cityName = resolveCityName(
@@ -122,7 +113,9 @@ class CurrentLocationFetcher(private val context: Context) {
         }
 
         Log.d(TAG, "Falling back to IP-based location...")
-        val ipLocation = fetchIpLocation()
+        val ipLocation = withTimeoutOrNull(IP_API_TIMEOUT_MS.milliseconds) {
+            fetchIpLocation()
+        }
         if (ipLocation != null) {
             Log.d(TAG, "IP-based location obtained: $ipLocation")
             val cityName = resolveCityName(
@@ -184,7 +177,7 @@ class CurrentLocationFetcher(private val context: Context) {
 
     private suspend fun fetchIpLocation(): Pair<Double, Double>? {
         return try {
-            val response: UserLocation = httpClient.get(IP_API_URL).body()
+            val response: UserLocation = RemoteService.getClient().get(IP_API_URL).body()
             response.latitude to response.longitude
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching IP location: ${e.message}")
@@ -195,26 +188,28 @@ class CurrentLocationFetcher(private val context: Context) {
     private val geocoder = Geocoder(context)
 
     private suspend fun resolveCityName(lat: Double, lng: Double): String {
-        return try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                suspendCancellableCoroutine { cont ->
-                    geocoder.getFromLocation(lat, lng, 1) { addresses ->
-                        cont.resume(
-                            addresses.firstOrNull()?.locality
-                                ?: addresses.firstOrNull()?.adminArea
-                                ?: "Unknown"
-                        )
+        return withTimeoutOrNull(GEOCODER_TIMEOUT_MS.milliseconds) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    suspendCancellableCoroutine { cont ->
+                        geocoder.getFromLocation(lat, lng, 1) { addresses ->
+                            cont.resume(
+                                addresses.firstOrNull()?.locality
+                                    ?: addresses.firstOrNull()?.adminArea
+                                    ?: "Unknown"
+                            )
+                        }
                     }
+                } else {
+                    @Suppress("DEPRECATION")
+                    val addresses = geocoder.getFromLocation(lat, lng, 1)
+                    addresses?.firstOrNull()?.locality
+                        ?: addresses?.firstOrNull()?.adminArea
+                        ?: "Unknown"
                 }
-            } else {
-                @Suppress("DEPRECATION")
-                val addresses = geocoder.getFromLocation(lat, lng, 1)
-                addresses?.firstOrNull()?.locality
-                    ?: addresses?.firstOrNull()?.adminArea
-                    ?: "Unknown"
+            } catch (e: Exception) {
+                "Unknown"
             }
-        } catch (e: Exception) {
-            "Unknown"
-        }
+        } ?: "Unknown"
     }
 }

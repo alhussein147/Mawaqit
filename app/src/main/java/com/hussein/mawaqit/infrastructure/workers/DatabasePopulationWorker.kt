@@ -7,6 +7,7 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.hussein.mawaqit.data.db.AppDatabase.Companion.DB_NAME
 import com.hussein.mawaqit.data.remote.DownloadService
+import com.hussein.mawaqit.infrastructure.notification.NotificationUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -45,9 +46,21 @@ class DatabasePopulationWorker(
                     tempFile.delete()
 
                     Log.d(TAG, "Database population completed successfully")
+                    NotificationUtils.showWorkerCompletionNotification(
+                        applicationContext,
+                        "Database Sync",
+                        "Quran database synced successfully",
+                        true
+                    )
                     Result.success()
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to replace database file", e)
+                    NotificationUtils.showWorkerCompletionNotification(
+                        applicationContext,
+                        "Database Sync",
+                        "Failed to sync database: ${e.message}",
+                        false
+                    )
                     Result.failure(
                         workDataOf(
                             "error" to (e.localizedMessage ?: "File replacement failed")
@@ -57,6 +70,12 @@ class DatabasePopulationWorker(
             },
             onFailure = { e ->
                 Log.e(TAG, "Failed to download Quran database", e)
+                NotificationUtils.showWorkerCompletionNotification(
+                    applicationContext,
+                    "Database Sync",
+                    "Failed to download database: ${e.message}",
+                    false
+                )
                 Result.failure(workDataOf("error" to (e.localizedMessage ?: "Download failed")))
             }
         )

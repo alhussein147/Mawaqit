@@ -11,11 +11,22 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import com.hussein.mawaqit.infrastructure.settings.AppColorScheme
 import com.hussein.mawaqit.infrastructure.settings.AppTheme
+import com.hussein.mawaqit.ui.ListShapes
+import com.hussein.mawaqit.ui.LocalListShapes
+
+object MawaqitTheme {
+    val listShapes: ListShapes
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalListShapes.current
+}
 
 private val greenLightScheme = lightColorScheme(
     primary = primaryLight,
@@ -132,8 +143,12 @@ fun MawaqitTheme(
             }
         }
     }
-    MaterialTheme(
-        colorScheme = colorScheme,
-        content = content
-    )
+    CompositionLocalProvider(
+        LocalListShapes provides ListShapes()
+    ) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            content = content
+        )
+    }
 }

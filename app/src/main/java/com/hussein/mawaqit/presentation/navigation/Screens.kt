@@ -27,7 +27,7 @@ data object Initializing : Screen
 data object AzkarCategories : Screen
 
 @Serializable
-data class AzkarList(val categoryIndex: Int) : Screen
+data class AzkarList(val categoryId: Int) : Screen
 
 @Serializable
 data object QuranSurahList : Screen
@@ -36,7 +36,7 @@ data object QuranSurahList : Screen
 data object QuranSearch : Screen
 
 @Serializable
-data class QuranReader(val surahIndex: Int, val scrollToAyah: Int? = null) : Screen
+data class QuranReading(val surahIndex: Int, val scrollToAyah: Int? = null) : Screen
 
 @Serializable
 data object RadioChannels : Screen
