@@ -55,44 +55,29 @@ A clean, modern Islamic companion app for Android built with Kotlin and Jetpack 
 ## Screenshots
 
 ### Main Experience
-<p align="center">
-  <img src="screenshots/home.jpg" width="250"/>
-  <img src="screenshots/settings.jpg" width="250"/>
-  <img src="screenshots/notification_settings.jpg" width="250"/>
-</p>
+| | | |
+|:---:|:---:|:---:|
+| <img src="screenshots/home.jpg" width="250"/> | <img src="screenshots/settings.jpg" width="250"/> | <img src="screenshots/notification_settings.jpg" width="250"/> |
 
 ### Quran & Reading
-<p align="center">
-  <img src="screenshots/quran_list.jpg" width="250"/>
-  <img src="screenshots/quran_reading.jpg" width="250"/>
-  <img src="screenshots/quran_with_tafsir.jpg" width="250"/>
-  <img src="screenshots/quran_search.jpg" width="250"/>
-</p>
+| | | | |
+|:---:|:---:|:---:|:---:|
+| <img src="screenshots/quran_list.jpg" width="250"/> | <img src="screenshots/quran_reading.jpg" width="250"/> | <img src="screenshots/quran_with_tafsir.jpg" width="250"/> | <img src="screenshots/quran_search.jpg" width="250"/> |
 
 ### Features & Tools
-<p align="center">
-  <img src="screenshots/azkar_categories.jpg" width="250"/>
-  <img src="screenshots/azakr.jpg" width="250"/>
-  <img src="screenshots/radio.jpg" width="250"/>
-  <img src="screenshots/bookmarks.jpg" width="250"/>
-</p>
+| | | | |
+|:---:|:---:|:---:|:---:|
+| <img src="screenshots/azkar_categories.jpg" width="250"/> | <img src="screenshots/azakr.jpg" width="250"/> | <img src="screenshots/radio.jpg" width="250"/> | <img src="screenshots/bookmarks.jpg" width="250"/> |
 
 ### Interactive UI
-<p align="center">
-  <img src="screenshots/ayah_bottom_sheet.jpg" width="250"/>
-  <img src="screenshots/tafsir_sources.jpg" width="250"/>
-  <img src="screenshots/recitier_picker_sheet.jpg" width="250"/>
-  <img src="screenshots/quran_reading_settings.jpg" width="250"/>
-</p>
+| | | | |
+|:---:|:---:|:---:|:---:|
+| <img src="screenshots/ayah_bottom_sheet.jpg" width="250"/> | <img src="screenshots/tafsir_sources.jpg" width="250"/> | <img src="screenshots/recitier_picker_sheet.jpg" width="250"/> | <img src="screenshots/quran_reading_settings.jpg" width="250"/> |
 
 ### Onboarding Flow
-<p align="center">
-  <img src="screenshots/onboarding#1.jpg" width="200"/>
-  <img src="screenshots/onboarding#2.jpg" width="200"/>
-  <img src="screenshots/onboarding#3.jpg" width="200"/>
-  <img src="screenshots/onboarding#4.jpg" width="200"/>
-  <img src="screenshots/onboarding_sheet.jpg" width="200"/>
-</p>
+| | | | | |
+|:---:|:---:|:---:|:---:|:---:|
+| <img src="screenshots/onboarding%231.jpg" width="200"/> | <img src="screenshots/onboarding%232.jpg" width="200"/> | <img src="screenshots/onboarding%233.jpg" width="200"/> | <img src="screenshots/onboarding%234.jpg" width="200"/> | <img src="screenshots/onboarding_sheet.jpg" width="200"/> |
 
 ---
 
