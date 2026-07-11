@@ -20,6 +20,7 @@ import com.hussein.mawaqit.infrastructure.settings.AppTheme
 import com.hussein.mawaqit.infrastructure.settings.NotificationSound
 import com.hussein.mawaqit.infrastructure.settings.SettingsRepository
 import com.hussein.mawaqit.presentation.onboarding.components.OnboardingPage
+import com.hussein.mawaqit.presentation.onboarding.components.PermissionState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,10 +35,10 @@ data class OnboardingUiState(
     val populationProgress: Float = 0f,
     val isQuranPopulating: Boolean = false,
     val quranPopulationFailed: Boolean = false,
-    val isLocationGranted: Boolean = false,
-    val isNotificationGranted: Boolean = false,
-    val isExactAlarmGranted: Boolean = false,
-    val isBatteryOptimizationIgnored: Boolean = false,
+    val locationPermissionState: PermissionState = PermissionState.NOT_REQUESTED,
+    val notificationPermissionState: PermissionState = PermissionState.NOT_REQUESTED,
+    val exactAlarmPermissionState: PermissionState = PermissionState.NOT_REQUESTED,
+    val batteryOptimizationState: PermissionState = PermissionState.NOT_REQUESTED,
     val isOffline: Boolean = false,
     val settings: AppSettings? = null
 )
@@ -95,50 +96,77 @@ class OnboardingViewModel(
         val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
         val batteryIgnored = powerManager.isIgnoringBatteryOptimizations(context.packageName)
 
-        _uiState.update {
-            it.copy(
-                isLocationGranted = locationGranted,
-                isNotificationGranted = notificationGranted,
-                isExactAlarmGranted = exactAlarmGranted,
-                isBatteryOptimizationIgnored = batteryIgnored
+        _uiState.update { state ->
+            state.copy(
+                locationPermissionState = if (locationGranted) PermissionState.GRANTED
+                else if (state.locationPermissionState == PermissionState.PERMANENTLY_DENIED) PermissionState.PERMANENTLY_DENIED
+                else if (state.locationPermissionState == PermissionState.DENIED) PermissionState.DENIED
+                else PermissionState.NOT_REQUESTED,
+
+                notificationPermissionState = if (notificationGranted) PermissionState.GRANTED
+                else if (state.notificationPermissionState == PermissionState.PERMANENTLY_DENIED) PermissionState.PERMANENTLY_DENIED
+                else if (state.notificationPermissionState == PermissionState.DENIED) PermissionState.DENIED
+                else PermissionState.NOT_REQUESTED,
+
+                exactAlarmPermissionState = if (exactAlarmGranted) PermissionState.GRANTED
+                else if (state.exactAlarmPermissionState == PermissionState.PERMANENTLY_DENIED) PermissionState.PERMANENTLY_DENIED
+                else if (state.exactAlarmPermissionState == PermissionState.DENIED) PermissionState.DENIED
+                else PermissionState.NOT_REQUESTED,
+
+                batteryOptimizationState = if (batteryIgnored) PermissionState.GRANTED
+                else if (state.batteryOptimizationState == PermissionState.PERMANENTLY_DENIED) PermissionState.PERMANENTLY_DENIED
+                else if (state.batteryOptimizationState == PermissionState.DENIED) PermissionState.DENIED
+                else PermissionState.NOT_REQUESTED
             )
         }
     }
 
     fun onGetStarted() = advance()
 
-    fun onLocationPermissionResult(granted: Boolean) {
+    fun onLocationPermissionResult(granted: Boolean, permanentlyDenied: Boolean = false) {
         if (granted) {
-            _uiState.update { it.copy(isLocationGranted = true) }
+            _uiState.update { it.copy(locationPermissionState = PermissionState.GRANTED) }
             fetchLocation()
         } else {
             _uiState.update {
                 it.copy(
-                    errorMessage = "Location denied. You can update this in Settings later."
+                    locationPermissionState = if (permanentlyDenied) PermissionState.PERMANENTLY_DENIED else PermissionState.DENIED,
+                    errorMessage = if (permanentlyDenied) "Location permanently denied. Please enable it in Settings."
+                    else "Location denied. You can update this in Settings later."
                 )
             }
         }
     }
 
-    fun onNotificationPermissionResult(granted: Boolean) {
-        _uiState.update { it.copy(isNotificationGranted = granted) }
+    fun onNotificationPermissionResult(granted: Boolean, permanentlyDenied: Boolean = false) {
+        _uiState.update { 
+            it.copy(
+                notificationPermissionState = when {
+                    granted -> PermissionState.GRANTED
+                    permanentlyDenied -> PermissionState.PERMANENTLY_DENIED
+                    else -> PermissionState.DENIED
+                }
+            ) 
+        }
     }
 
     fun onExactAlarmResult(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val alarmManager =
                 context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
-            _uiState.update { it.copy(isExactAlarmGranted = alarmManager.canScheduleExactAlarms()) }
+            val isGranted = alarmManager.canScheduleExactAlarms()
+            _uiState.update { 
+                it.copy(exactAlarmPermissionState = if (isGranted) PermissionState.GRANTED else PermissionState.DENIED) 
+            }
         }
     }
 
     fun onBatteryOptimizationResult(context: Context) {
         val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+        val isIgnored = powerManager.isIgnoringBatteryOptimizations(context.packageName)
         _uiState.update {
             it.copy(
-                isBatteryOptimizationIgnored = powerManager.isIgnoringBatteryOptimizations(
-                    context.packageName
-                )
+                batteryOptimizationState = if (isIgnored) PermissionState.GRANTED else PermissionState.DENIED
             )
         }
     }

@@ -6,40 +6,33 @@ A clean, modern Islamic companion app for Android built with Kotlin and Jetpack 
 
 ## Features
 
-### 🕌 Prayer Times
-
-- Accurate prayer time calculation using the **Adhan** library (Hafs, multiple calculation methods)
-- Real-time countdown to the next prayer
-- Beautiful **arc stepper** that animates continuously between prayers throughout the day
-- Automatic daily scheduling via **WorkManager**
-- Exact alarm support with battery optimization handling
-
-### 📿 Azan
-
-- Azan playback via a **Full screen notification** at the exact prayer time
-- Separate Fajr azan support
-- Smart screen detection — silent notification if the user is already active on their device
-- Respects per-prayer notification preferences
+### 🕌 Prayer Times & Azan
+- **Accurate Calculation**: Uses the **Adhan** library with support for multiple calculation methods (Hafs, MWL, ISNA, etc.).
+- **Visual Progress**: A beautiful **arc stepper** that animates continuously between prayers throughout the day.
+- **Full-Screen Azan**: Azan playback via a full-screen notification at the exact prayer time, including separate Fajr azan support.
+- **Smart Notifications**: Intelligent screen detection to avoid loud azans if the user is already active on their device.
+- **Daily Scheduling**: Automatic daily scheduling via **WorkManager** to ensure reliability.
 
 ### 📖 Quran Reader
+- **Advanced Search**: Support for full Ayah and Surah search.
+- **Rich Interaction**: Tap any Ayah for a bottom sheet offering:
+  - **Tafsir**: Multiple tafsir sources (Tafsir al-Jalalayn, etc.) viewable side-by-side with the Ayah.
+  - **Recitation**: Per-ayah playback with a wide selection of world-class reciters.
+  - **Management**: Copy, share, or bookmark specific verses.
+- **Customization**: Detailed reading settings for font size, font style, and translation visibility.
+- **Offline Ready**: Download entire surah recitations for listening without an internet connection.
 
-- Full Ayah and surah search support
-- Per ayah tafisr and recitation support with multiple reciters
-- Bookmark support
-- Full surah recitation with download support
+### 📿 Azkar & Radio
+- **Categorized Azkar**: Morning, Evening, and After-Prayer azkar with RTL-native layout.
+- **Counter Support**: Visual repeat counts and rewards (fadl) for each zikr.
+- **Live Radio**: Stream a variety of Islamic radio stations directly within the app using a persistent global player.
 
-### 🌙 Azkar
-
-- Morning, Evening, and After-Prayer azkar
-- Full Arabic text with repeat count and reward (fadl) for each zikr
-- RTL-native layout throughout
-
-### ⚙️ Settings & Onboarding
-
-- Guided onboarding flow covering location, notifications, exact alarms, and battery optimization
-- GPS-based location with manual fallback
-- Per-prayer notification and sound preferences
-- Light / Dark / System theme support
+### 🌙 Onboarding & Settings
+- **Guided Onboarding**: A comprehensive flow to set up:
+  - **Location**: Auto-fetching via IP/GPS with manual fallback.
+  - **Permissions**: Intelligent handling of Location, Notification, Exact Alarm, and Battery Optimization permissions, including redirection to settings for permanently denied states.
+  - **Initial Preferences**: Set calculation methods and themes from the start.
+- **Theming**: Full support for Light, Dark, and System themes using Material 3.
 
 ---
 
@@ -51,26 +44,63 @@ A clean, modern Islamic companion app for Android built with Kotlin and Jetpack 
 | UI                 | Jetpack Compose + Material 3 |
 | Navigation         | Navigation3 (Nav3)           |
 | Prayer Calculation | adhan-kotlin (KMP)           |
-| Persistence        | DataStore Preferences        |
+| Persistence        | DataStore Preferences + Room |
 | Background Work    | WorkManager                  |
 | Date & Time        | kotlinx.datetime             |
 | Serialization      | kotlinx.serialization        |
-| Cache              | Room database                |
 | Minimum SDK        | 29 (Android 9.0)             |
 
 ---
 
 ## Screenshots
 
-  <img src="screenshots/main.jpg" width="250"/> | <img src="screenshots/settings.jpg" width="250"/> | <img src="screenshots/quran.jpg" width="250"/> | <img src="screenshots/quran_list.jpg" width="250"/> | <img src="screenshots/tafsir.jpg" width="250"/> | <img src="screenshots/azkar.jpg" width="250"/> | <img src="screenshots/azkar_categories.jpg" width="250"/> | <img src="screenshots/search.jpg" width="250"/> | <img src="screenshots/radio.jpg" width="250"/> | <img src="screenshots/reader_bottom_sheet.jpg" width="250"/> | <img src="screenshots/reciters.jpg" width="250"/> | <img src="screenshots/%5Bonboarding%5D-welcome.jpg" width="250"/> | <img src="screenshots/%5Bonboarding%5D-location.jpg" width="250"/> | <img src="screenshots/%5Bonboarding%5D-notification.jpg" width="250"/> | <img src="screenshots/%5Bonboarding%5D-done.jpg" width="250"/>
+### Main Experience
+<p align="center">
+  <img src="screenshots/home.jpg" width="250"/>
+  <img src="screenshots/settings.jpg" width="250"/>
+  <img src="screenshots/notification_settings.jpg" width="250"/>
+</p>
+
+### Quran & Reading
+<p align="center">
+  <img src="screenshots/quran_list.jpg" width="250"/>
+  <img src="screenshots/quran_reading.jpg" width="250"/>
+  <img src="screenshots/quran_with_tafsir.jpg" width="250"/>
+  <img src="screenshots/quran_search.jpg" width="250"/>
+</p>
+
+### Features & Tools
+<p align="center">
+  <img src="screenshots/azkar_categories.jpg" width="250"/>
+  <img src="screenshots/azakr.jpg" width="250"/>
+  <img src="screenshots/radio.jpg" width="250"/>
+  <img src="screenshots/bookmarks.jpg" width="250"/>
+</p>
+
+### Interactive UI
+<p align="center">
+  <img src="screenshots/ayah_bottom_sheet.jpg" width="250"/>
+  <img src="screenshots/tafsir_sources.jpg" width="250"/>
+  <img src="screenshots/recitier_picker_sheet.jpg" width="250"/>
+  <img src="screenshots/quran_reading_settings.jpg" width="250"/>
+</p>
+
+### Onboarding Flow
+<p align="center">
+  <img src="screenshots/onboarding#1.jpg" width="200"/>
+  <img src="screenshots/onboarding#2.jpg" width="200"/>
+  <img src="screenshots/onboarding#3.jpg" width="200"/>
+  <img src="screenshots/onboarding#4.jpg" width="200"/>
+  <img src="screenshots/onboarding_sheet.jpg" width="200"/>
+</p>
 
 ---
 
 ## Getting Started
 
-1. Clone the repo
-2. Open in Android Studio Hedgehog or newer
-3. Sync Gradle and run on a device or emulator (API 26+)
+1. Clone the repo.
+2. Open in Android Studio Hedgehog or newer.
+3. Sync Gradle and run on a device or emulator (API 29+).
 
 ---
 

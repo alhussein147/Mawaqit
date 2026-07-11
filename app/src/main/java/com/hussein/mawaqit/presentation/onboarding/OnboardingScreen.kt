@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -81,13 +82,24 @@ fun OnboardingScreen(
     ) { results ->
         val granted = results[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
                 results[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-        viewModel.onLocationPermissionResult(granted)
+        
+        val activity = context as? android.app.Activity
+        val permanentlyDenied = !granted && activity != null && 
+                !ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.ACCESS_FINE_LOCATION) &&
+                !ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.ACCESS_COARSE_LOCATION)
+        
+        viewModel.onLocationPermissionResult(granted, permanentlyDenied)
     }
 
     val notificationLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
-        viewModel.onNotificationPermissionResult(granted)
+        val activity = context as? android.app.Activity
+        val permanentlyDenied = !granted && activity != null && 
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                !ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.POST_NOTIFICATIONS)
+        
+        viewModel.onNotificationPermissionResult(granted, permanentlyDenied)
     }
 
     val exactAlarmLauncher = rememberLauncherForActivityResult(
@@ -115,7 +127,7 @@ fun OnboardingScreen(
                 currentPage = state.page,
                 modifier = Modifier.padding(top = 16.dp)
             )
-            BackHandler(enabled = pagerState.currentPage != 0) {
+            BackHandler(enabled = pagerState.currentPage != 0 && !state.isQuranPopulating && !state.isLoadingLocation && state.settings != null) {
                 coroutineScope.launch {
                     pagerState.animateScrollToPage(pagerState.currentPage - 1)
                 }
@@ -123,7 +135,7 @@ fun OnboardingScreen(
 
             HorizontalPager(
                 state = pagerState,
-                userScrollEnabled = !state.isQuranPopulating,
+                userScrollEnabled = !state.isQuranPopulating && !state.isLoadingLocation && state.settings != null,
                 modifier = Modifier.weight(1f),
                 key = { OnboardingPage.entries[it].name },
                 contentPadding = PaddingValues(horizontal = 0.dp)
@@ -135,10 +147,10 @@ fun OnboardingScreen(
                     when (OnboardingPage.entries[pageIndex]) {
                         OnboardingPage.WELCOME -> WelcomePage()
                         OnboardingPage.PERMISSIONS -> PermissionsPage(
-                            isLocationGranted = state.isLocationGranted,
-                            isNotificationGranted = state.isNotificationGranted,
-                            isExactAlarmGranted = state.isExactAlarmGranted,
-                            isBatteryOptimizationIgnored = state.isBatteryOptimizationIgnored,
+                            locationState = state.locationPermissionState,
+                            notificationState = state.notificationPermissionState,
+                            exactAlarmState = state.exactAlarmPermissionState,
+                            batteryOptimizationState = state.batteryOptimizationState,
                             onLocationClick = {
                                 locationLauncher.launch(
                                     arrayOf(
@@ -169,6 +181,12 @@ fun OnboardingScreen(
                                         data = "package:${context.packageName}".toUri()
                                     }
                                 )
+                            },
+                            onOpenSettings = {
+                                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                    data = "package:${context.packageName}".toUri()
+                                }
+                                context.startActivity(intent)
                             },
                             isLoadingLocation = state.isLoadingLocation
                         )

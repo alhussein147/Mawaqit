@@ -33,13 +33,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hussein.mawaqit.R
+import com.hussein.mawaqit.presentation.onboarding.components.PermissionState
 
 @Composable
 fun PermissionsPage(
-    isLocationGranted: Boolean,
-    isNotificationGranted: Boolean,
-    isExactAlarmGranted: Boolean,
-    isBatteryOptimizationIgnored: Boolean,
+    locationState: PermissionState,
+    notificationState: PermissionState,
+    exactAlarmState: PermissionState,
+    batteryOptimizationState: PermissionState,
     onLocationClick: () -> Unit,
     onNotificationClick: () -> Unit,
     onExactAlarmClick: () -> Unit,
@@ -75,7 +76,7 @@ fun PermissionsPage(
             title = stringResource(R.string.onboarding_location_title),
             description = stringResource(R.string.onboarding_location_description),
             iconRes = R.drawable.ic_location,
-            isGranted = isLocationGranted,
+            state = locationState,
             onClick = onLocationClick,
             isLoading = isLoadingLocation
         )
@@ -84,7 +85,7 @@ fun PermissionsPage(
             title = stringResource(R.string.onboarding_notification_title),
             description = stringResource(R.string.onboarding_notification_description),
             iconRes = R.drawable.ic_notification,
-            isGranted = isNotificationGranted,
+            state = notificationState,
             onClick = onNotificationClick
         )
 
@@ -93,7 +94,7 @@ fun PermissionsPage(
                 title = stringResource(R.string.onboarding_exact_alarm_title),
                 description = stringResource(R.string.onboarding_exact_alarm_description),
                 iconRes = R.drawable.ic_alarm,
-                isGranted = isExactAlarmGranted,
+                state = exactAlarmState,
                 onClick = onExactAlarmClick
             )
         }
@@ -102,7 +103,7 @@ fun PermissionsPage(
             title = stringResource(R.string.onboarding_battery_optimization_title),
             description = stringResource(R.string.onboarding_battery_optimization_description),
             iconRes = R.drawable.ic_battery,
-            isGranted = isBatteryOptimizationIgnored,
+            state = batteryOptimizationState,
             onClick = onBatteryClick
         )
         
@@ -115,18 +116,24 @@ private fun PermissionItem(
     title: String,
     description: String,
     iconRes: Int,
-    isGranted: Boolean,
+    state: PermissionState,
     onClick: () -> Unit,
     isLoading: Boolean = false
 ) {
+    val isGranted = state.isGranted
+    val isDenied = state.isDenied
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp)
             .clip(RoundedCornerShape(24.dp))
             .clickable(enabled = !isGranted && !isLoading) { onClick() },
-        color = if (isGranted) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
-        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+        color = when {
+            isGranted -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+            isDenied -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
+            else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+        },
         shape = RoundedCornerShape(24.dp)
     ) {
         Row(
@@ -138,8 +145,11 @@ private fun PermissionItem(
                     .size(48.dp)
                     .clip(CircleShape)
                     .background(
-                        if (isGranted) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                        when {
+                            isGranted -> MaterialTheme.colorScheme.primary
+                            isDenied -> MaterialTheme.colorScheme.error
+                            else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                        }
                     ),
                 contentAlignment = Alignment.Center
             ) {
@@ -151,9 +161,18 @@ private fun PermissionItem(
                     )
                 } else {
                     Icon(
-                        painter = painterResource(if (isGranted) R.drawable.ic_check else iconRes),
+                        painter = painterResource(
+                            when {
+                                isGranted -> R.drawable.ic_check
+                                isDenied -> R.drawable.ic_error
+                                else -> iconRes
+                            }
+                        ),
                         contentDescription = null,
-                        tint = if (isGranted) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
+                        tint = when {
+                            isGranted || isDenied -> MaterialTheme.colorScheme.onPrimary
+                            else -> MaterialTheme.colorScheme.primary
+                        },
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -166,7 +185,11 @@ private fun PermissionItem(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = if (isGranted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                    color = when {
+                        isGranted -> MaterialTheme.colorScheme.primary
+                        isDenied -> MaterialTheme.colorScheme.error
+                        else -> MaterialTheme.colorScheme.onSurface
+                    }
                 )
                 Text(
                     text = description,
@@ -178,10 +201,11 @@ private fun PermissionItem(
 
             if (!isGranted && !isLoading) {
                 Icon(
-                    painter = painterResource(R.drawable.ic_chevron_right),
+                    painter = painterResource(if (isDenied) R.drawable.ic_close else R.drawable.ic_chevron_right),
                     contentDescription = null,
                     modifier = Modifier.size(20.dp),
-                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                    tint = if (isDenied) MaterialTheme.colorScheme.error.copy(alpha = 0.6f)
+                    else MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
                 )
             }
         }

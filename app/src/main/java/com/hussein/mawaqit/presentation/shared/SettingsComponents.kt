@@ -505,7 +505,7 @@ fun ExpressiveSheetOptionItem(
             .fillMaxWidth()
             .padding(vertical = 4.dp),
         color = when {
-            isSelected -> MaterialTheme.colorScheme.primaryContainer
+            isSelected -> MaterialTheme.colorScheme.secondaryContainer
             downloadProgress != null -> MaterialTheme.colorScheme.surfaceContainerHigh
             else -> MaterialTheme.colorScheme.surfaceContainerLow
         },
@@ -526,13 +526,13 @@ fun ExpressiveSheetOptionItem(
                         text = title,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
-                        color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                        color = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface
                     )
                     if (subtitle != null) {
                         Text(
                             text = subtitle,
                             style = MaterialTheme.typography.labelMedium,
-                            color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f) 
+                            color = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
                                     else MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = FontWeight.Medium
                         )
