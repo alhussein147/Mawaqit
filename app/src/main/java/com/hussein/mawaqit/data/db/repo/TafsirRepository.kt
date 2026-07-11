@@ -9,14 +9,12 @@ import com.hussein.mawaqit.data.remote.RemoteService
 import com.hussein.mawaqit.data.remote.dto.TafsirSourceDto
 import com.hussein.mawaqit.domain.models.AyahWithTafsir
 import com.hussein.mawaqit.domain.models.Tafsir
-import com.hussein.mawaqit.infrastructure.settings.QuranReaderPreferences
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import kotlinx.coroutines.flow.Flow
 
 class TafsirRepository(
-    val db: AppDatabase,
-    private val quranReaderPreferences: QuranReaderPreferences
+    val db: AppDatabase
 ) {
 
     private val tafsirDao = db.tafsirDao()
