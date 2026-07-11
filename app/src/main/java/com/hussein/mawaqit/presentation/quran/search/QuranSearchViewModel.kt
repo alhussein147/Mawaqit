@@ -1,5 +1,6 @@
 package com.hussein.mawaqit.presentation.quran.search
 
+import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hussein.mawaqit.data.db.entities.SurahEntity
@@ -8,6 +9,7 @@ import com.hussein.mawaqit.data.db.repo.QuranDatabaseRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -15,8 +17,8 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.stateIn
 import kotlin.time.Duration.Companion.milliseconds
 
 data class SearchResults(
@@ -33,6 +35,12 @@ sealed interface SearchState {
     data object Empty : SearchState
 }
 
+@Stable
+data class QuranSearchUiState(
+    val query: String = "",
+    val searchState: SearchState = SearchState.Idle
+)
+
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 class QuranSearchViewModel(
     private val repo: QuranDatabaseRepository
@@ -41,32 +49,31 @@ class QuranSearchViewModel(
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
 
-    private val _state = MutableStateFlow<SearchState>(SearchState.Idle)
-    val state: StateFlow<SearchState> = _state.asStateFlow()
-
-
-    init {
-        _query
-            .debounce(300.milliseconds)
-            .distinctUntilChanged()
-            .flatMapLatest { q ->
-                if (q.isBlank()) {
-                    _state.value = SearchState.Idle
-                    return@flatMapLatest flowOf(null)
-                }
-                _state.value = SearchState.Loading
+    private val searchFlow = _query
+        .debounce(300.milliseconds)
+        .distinctUntilChanged()
+        .flatMapLatest { q ->
+            if (q.isBlank()) {
+                flowOf(SearchState.Idle)
+            } else {
                 combine(
                     repo.searchSurahs(q),
                     repo.searchAyahs(q)
-                ) { surahs, ayahs -> SearchResults(surahs, ayahs) }
+                ) { surahs, ayahs ->
+                    val results = SearchResults(surahs, ayahs)
+                    if (results.isEmpty) SearchState.Empty
+                    else SearchState.Results(results)
+                }.onStart { emit(SearchState.Loading) }
             }
-            .onEach { results ->
-                if (results == null) return@onEach
-                _state.value = if (results.isEmpty) SearchState.Empty
-                else SearchState.Results(results)
-            }
-            .launchIn(viewModelScope)
-    }
+        }
+
+    val uiState: StateFlow<QuranSearchUiState> = combine(_query, searchFlow) { q, state ->
+        QuranSearchUiState(q, state)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = QuranSearchUiState()
+    )
 
     fun onQueryChanged(q: String) {
         _query.value = q

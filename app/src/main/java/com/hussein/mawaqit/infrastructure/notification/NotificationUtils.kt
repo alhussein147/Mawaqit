@@ -18,6 +18,12 @@ object NotificationUtils {
     const val AZAN_CHANNEL_ID = "azan_player"
     const val AZAN_CHANNEL_NAME = "Azan Player"
 
+    const val SYNC_CHANNEL_ID = "data_sync"
+    const val SYNC_CHANNEL_NAME = "Data Synchronization"
+
+    const val OTHERS_CHANNEL_ID = "others"
+    const val OTHERS_CHANNEL_NAME = "Others"
+
     private val Context.notificationManager: NotificationManager
         get() = getSystemService(NotificationManager::class.java)
 
@@ -88,7 +94,44 @@ object NotificationUtils {
             lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
         }
 
-        manager.createNotificationChannels(listOf(prayerChannel, azanChannel))
+        // Sync Channel: Low importance for background tasks
+        val syncChannel = NotificationChannel(
+            SYNC_CHANNEL_ID,
+            SYNC_CHANNEL_NAME,
+            NotificationManager.IMPORTANCE_LOW
+        ).apply {
+            description = "Channel for background data synchronization tasks"
+        }
+
+        // Others Channel: Default importance for misc tasks
+        val othersChannel = NotificationChannel(
+            OTHERS_CHANNEL_ID,
+            OTHERS_CHANNEL_NAME,
+            NotificationManager.IMPORTANCE_DEFAULT
+        ).apply {
+            description = "Channel for various background tasks status"
+        }
+
+        manager.createNotificationChannels(listOf(prayerChannel, azanChannel, syncChannel, othersChannel))
+    }
+
+    fun showWorkerCompletionNotification(
+        context: Context,
+        title: String,
+        message: String,
+        isSuccess: Boolean
+    ) {
+        ensureChannelsCreated(context)
+
+        val notification = NotificationCompat.Builder(context, OTHERS_CHANNEL_ID)
+            .setSmallIcon(if (isSuccess) R.drawable.ic_check else R.drawable.ic_error) // Assuming ic_error exists or fallback
+            .setContentTitle(title)
+            .setContentText(message)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setAutoCancel(true)
+            .build()
+
+        context.notificationManager.notify(title.hashCode(), notification)
     }
 
     fun showFullScreenPrayerNotification(

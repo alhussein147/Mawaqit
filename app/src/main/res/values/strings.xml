@@ -9,6 +9,12 @@
     <string name="onboarding_notification_description">Get notified at each of the 5 prayer times so you never miss one.</string>
     <string name="onboarding_exact_alarm_title">Precise Prayer Alarms</string>
     <string name="onboarding_battery_optimization_title">Reliable Notifications</string>
+
+    <string name="onboarding_quran_error">Error happened while loading data</string>
+    <string name="onboarding_done_title">All Set</string>
+    <string name="onboarding_finding_location">Finding your location…</string>
+    <string name="onboarding_takes_moment">This only takes a moment</string>
+
     <string name="get_started">Get Started</string>
     <string name="allow_location">Allow Location</string>
     <string name="allow_notifications">Allow Notifications</string>
@@ -17,18 +23,9 @@
     <string name="disable_optimization">Disable Optimization</string>
     <string name="skip_for_now">Skip for now</string>
     <string name="onboarding_quran_title">Loading Quran Data</string>
-    <string name="onboarding_quran_error">Error happened while loading data</string>
-    <string name="onboarding_done_title">All Set</string>
-    <string name="onboarding_finding_location">Finding your location…</string>
-    <string name="onboarding_takes_moment">This only takes a moment</string>
+
     <string name="load_quran_data">Load Quran Data</string>
-    <string name="finish">Finish!</string>
-    <string name="quran">Quran</string>
-    <string name="azakr">Azakr</string>
-    <string name="no_internet_connection">No internet connection</string>
-    <string name="bookmark">Bookmark</string>
-    <string name="remove_bookmark">Remove Bookmark</string>
-    <string name="tafsir">Tafsir</string>
+
 
     <!-- Notifications -->
     <string name="notification_prayer_title">🕌 %1$s</string>
@@ -36,9 +33,78 @@
     <string name="notification_channel_prayers_description">Notifications for each of the 5 daily prayer times</string>
     <string name="notification_channel_azan_description">Plays azan audio at prayer times</string>
 
-    <string-array name="azkar_titles">
-        <item>Morning Azkar</item>
-        <item>Night Azkar</item>
-        <item>Post-Prayer Azkar</item>
-    </string-array>
+    <!--nouns-->
+    <string name="alQuran">Al-Quran</string>
+    <string name="tafsir">Tafsir</string>
+    <string name="azkar">Azkar</string>
+    <string name="settings">Settings</string>
+    <string name="radio">Radio</string>
+    <string name="location">Location</string>
+    <string name="method">Method</string>
+    <string name="theme">Theme</string>
+    <string name="calculation_method">Calculation Method</string>
+    <string name="color_scheme">Color Scheme</string>
+    <string name="appearance">Appearance</string>
+
+    <!--informational-->
+
+    <string name="no_internet_connection">No internet connection</string>
+    <string name="live_quran_radio">Live Quran radio</string>
+    <string name="current_prayer">Current prayer</string>
+    <string name="next_prayer">Next Prayer</string>
+    <string name="location_not_set">Location not set.</string>
+    <string name="pick_a_reciter">Pick a Reciter</string>
+    <string name="basmallah">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</string>
+    <string name="font_size">Font Size</string>
+    <string name="text_alignment">Text Alignment</string>
+    <string name="todays_schedule">Today\'s Schedule</string>
+    <string name="remove_bookmark">Remove Bookmark</string>
+    <string name="daily_zikr">Daily Zikr</string>
+    <string name="quran_reading_settings">Reading Settings</string>
+    <string name="quran_reading_preview">Preview</string>
+    <string name="ayah_reference">%1$s Ayah %2$d</string>
+    <string name="ayah_number">Ayah %1$d</string>
+
+    <string name="gps_is_disabled">GPS is Disabled</string>
+    <string name="gps_off_description">Location services are turned off. Please enable GPS to update your prayer location.</string>
+
+    <string name="location_permission_needed">Location Permission Needed</string>
+    <string name="location_permission_denied_description">Prayer times are calculated from your coordinates. Your location is stored only on this device and never shared.</string>
+    <string name="location_permission_permenently_denied">Permission is denied</string>
+    <string name="location_permission_permenently_denied_description">You have permanently denied location permission. To update your location accurately, please enable it in the app settings.</string>
+    <string name="prayer_notifications">Prayer Notifications</string>
+    <string name="notification_settings">Notification Settings</string>
+    <string name="control_sounds_and_specific_prayer_alerts">Control sounds and specific prayer alerts</string>
+
+
+    <string name="no_location">No location set</string>
+    <string name="configure_location_description">Configure to see prayer times</string>
+
+    <!--verbs-->
+    <string name="update">Update</string>
+    <string name="set">Set</string>
+    <string name="allow">Allow</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="open_settings">Open Settings</string>
+    <string name="cancel">Cancel</string>
+    <string name="stop">Stop</string>
+    <string name="play">Play</string>
+    <string name="finish">Finish!</string>
+    <string name="bookmark">Bookmark</string>
+    <string name="close">Close</string>
+    <string name="copy_ayah">Copy Ayah</string>
+
+    <string name="permission_missing_and_gps_disabled"><![CDATA[Permission missing & GPS disabled]]></string>
+    <string name="location_permission_not_granted">Location permission not granted</string>
+    <string name="gps_is_not_enabled">GPS is not enabled</string>
+
+    <string name="personalize_your_experience_before_we_begin">Personalize your experience before we begin.</string>
+    <string name="notification_style">Notification Style</string>
+
+    <string name="onboarding_done_page_subtitle">You are all set! May your prayers be accepted and your journey with the Quran be blessed.</string>
+    <string name="onboarding_battery_optimization_description">Ensure notifications are not delayed by the system.</string>
+    <string name="onboarding_exact_alarm_description">Required for exact prayer times notifications.</string>
+    <string name="onboarding_permissions_page_header">Grant these permissions to ensure the app works correctly.</string>
+    <string name="continue_reading">Continue Reading</string>
+
 </resources>

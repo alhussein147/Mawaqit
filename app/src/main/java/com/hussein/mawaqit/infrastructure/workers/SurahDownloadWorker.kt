@@ -7,9 +7,9 @@ import androidx.work.CoroutineWorker
 import androidx.work.Data
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
-import com.hussein.mawaqit.domain.models.FullSurahReciter
 import com.hussein.mawaqit.data.quran.recitation.SurahDownloadRepository
 import com.hussein.mawaqit.data.remote.DownloadService
+import com.hussein.mawaqit.domain.models.FullSurahReciter
 import java.io.File
 
 class SurahDownloadWorker(

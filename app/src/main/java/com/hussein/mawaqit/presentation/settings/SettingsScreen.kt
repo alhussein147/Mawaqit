@@ -46,6 +46,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -59,7 +60,6 @@ import com.hussein.mawaqit.infrastructure.location.CurrentLocationFetcher
 import com.hussein.mawaqit.infrastructure.settings.AppColorScheme
 import com.hussein.mawaqit.infrastructure.settings.AppSettings
 import com.hussein.mawaqit.infrastructure.settings.AppTheme
-import com.hussein.mawaqit.infrastructure.settings.PrayerNotificationSettings
 import com.hussein.mawaqit.presentation.shared.LoadingContent
 import com.hussein.mawaqit.presentation.shared.RootScreenWrapper
 import com.hussein.mawaqit.presentation.shared.SettingNavigationRow
@@ -68,6 +68,7 @@ import com.hussein.mawaqit.presentation.shared.SettingSectionHeader
 import com.hussein.mawaqit.presentation.util.hasLocationPermission
 import com.hussein.mawaqit.presentation.util.isLocationPermanentlyDenied
 import com.hussein.mawaqit.presentation.util.openAppSettings
+import com.hussein.mawaqit.ui.theme.MawaqitTheme
 import org.koin.androidx.compose.koinViewModel
 
 
@@ -135,7 +136,7 @@ fun SettingsScreen(
     RootScreenWrapper(
         topAppBar = {
             LargeTopAppBar(
-                title = { Text("Settings", fontWeight = FontWeight.Black) },
+                title = { Text(stringResource(R.string.settings), fontWeight = FontWeight.Black) },
                 scrollBehavior = topAppBarScrollBehavior,
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
@@ -162,7 +163,8 @@ fun SettingsScreen(
                     onNavigateToNotificationSettings = onNavigateToNotificationSettings,
                     modifier = Modifier
                         .fillMaxSize()
-                        .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection).then(modifier)
+                        .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
+                        .then(modifier)
                 )
             }
         }
@@ -173,16 +175,20 @@ fun SettingsScreen(
         LocationAction.ShowGpsDialog -> {
             AlertDialog(
                 onDismissRequest = { pendingAction = LocationAction.None },
-                title = { Text("GPS is Disabled") },
-                text = { Text("Location services are turned off. Please enable GPS to update your prayer location.") },
+                title = { Text(stringResource(R.string.gps_is_disabled)) },
+                text = { Text(stringResource(R.string.gps_off_description)) },
                 confirmButton = {
                     TextButton(onClick = {
                         pendingAction = LocationAction.None
                         context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
-                    }) { Text("Open Settings") }
+                    }) { Text(stringResource(R.string.open_settings)) }
                 },
                 dismissButton = {
-                    TextButton(onClick = { pendingAction = LocationAction.None }) { Text("Cancel") }
+                    TextButton(onClick = { pendingAction = LocationAction.None }) {
+                        Text(
+                            stringResource(R.string.cancel)
+                        )
+                    }
                 }
             )
         }
@@ -190,8 +196,8 @@ fun SettingsScreen(
         LocationAction.ShowRationaleDialog -> {
             AlertDialog(
                 onDismissRequest = { pendingAction = LocationAction.None },
-                title = { Text("Location Permission Needed") },
-                text = { Text("Prayer times are calculated from your coordinates. Your location is stored only on this device and never shared.") },
+                title = { Text(stringResource(R.string.location_permission_needed)) },
+                text = { Text(stringResource(R.string.location_permission_denied_description)) },
                 confirmButton = {
                     TextButton(onClick = {
                         pendingAction = LocationAction.None
@@ -202,11 +208,15 @@ fun SettingsScreen(
                             )
                         )
                     }) {
-                        Text("Allow")
+                        Text(stringResource(R.string.allow))
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { pendingAction = LocationAction.None }) { Text("Cancel") }
+                    TextButton(onClick = { pendingAction = LocationAction.None }) {
+                        Text(
+                            stringResource(R.string.cancel)
+                        )
+                    }
                 }
             )
         }
@@ -214,8 +224,8 @@ fun SettingsScreen(
         LocationAction.ShowSettingsDialog -> {
             AlertDialog(
                 onDismissRequest = { pendingAction = LocationAction.None },
-                title = { Text("Permission Needed") },
-                text = { Text("You have permanently denied location permission. To update your location accurately, please enable it in the app settings.") },
+                title = { Text(stringResource(R.string.location_permission_permenently_denied)) },
+                text = { Text(stringResource(R.string.location_permission_permenently_denied_description)) },
                 confirmButton = {
                     TextButton(onClick = {
                         pendingAction = LocationAction.None
@@ -225,7 +235,11 @@ fun SettingsScreen(
                     }
                 },
                 dismissButton = {
-                    TextButton(onClick = { pendingAction = LocationAction.None }) { Text("Cancel") }
+                    TextButton(onClick = { pendingAction = LocationAction.None }) {
+                        Text(
+                            stringResource(R.string.cancel)
+                        )
+                    }
                 }
             )
         }
@@ -252,23 +266,22 @@ private fun SettingsContent(
     LazyColumn(
         modifier = modifier,
         contentPadding = PaddingValues(
-            start = 16.dp,
-            end = 16.dp
+            start = 16.dp , end = 16.dp, bottom = 24.dp
         ),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         item {
-            SettingSectionHeader("Prayer Notifications")
+            SettingSectionHeader(stringResource(R.string.prayer_notifications))
             SettingNavigationRow(
-                label = "Notification Settings",
-                subLabel = "Control sounds and specific prayer alerts",
+                label = stringResource(R.string.notification_settings),
+                subLabel = stringResource(R.string.control_sounds_and_specific_prayer_alerts),
                 onClick = onNavigateToNotificationSettings,
                 icon = ImageVector.vectorResource(R.drawable.ic_notification)
             )
         }
 
         item {
-            SettingSectionHeader("Location")
+            SettingSectionHeader(stringResource(R.string.location))
             LocationRow(
                 locationState = locationState,
                 savedLocation = savedLocation,
@@ -278,12 +291,11 @@ private fun SettingsContent(
         }
 
         item {
-            SettingSectionHeader("Calculation Method")
+            SettingSectionHeader(stringResource(R.string.calculation_method))
             SettingPickerRow(
-                label = "Method",
+                label = stringResource(R.string.method),
                 currentValue = settings.calculationMethod.displayName(),
-                options = CalculationMethod.entries.filter { it != CalculationMethod.OTHER }
-                    .map { it.displayName() },
+                options = CalculationMethod.entries.map { it.displayName() }.filter { it.isNotEmpty() },
                 onOptionSelected = { name ->
                     val method = CalculationMethod.entries.first { it.displayName() == name }
                     onMethodChanged(method)
@@ -292,35 +304,23 @@ private fun SettingsContent(
         }
 
         item {
-            SettingSectionHeader("Appearance")
+            SettingSectionHeader(stringResource(R.string.appearance))
             SettingPickerRow(
-                label = "Theme",
+                label = stringResource(R.string.theme),
                 currentValue = settings.appTheme.displayName,
                 options = AppTheme.entries.map { it.displayName },
                 onOptionSelected = { name ->
                     onThemeChanged(AppTheme.entries.first { it.displayName == name })
                 },
-                shape = RoundedCornerShape(
-                    topStart = 24.dp,
-                    topEnd = 24.dp,
-                    bottomStart = 4.dp,
-                    bottomEnd = 4.dp
-                )
-            )
+                shape = MawaqitTheme.listShapes.topItem            )
             SettingPickerRow(
-                label = "Color Scheme",
+                label = stringResource(R.string.color_scheme),
                 currentValue = settings.appColorScheme.displayName,
                 options = AppColorScheme.entries.map { it.displayName },
                 onOptionSelected = { name ->
                     onColorSchemeChanged(AppColorScheme.entries.first { it.displayName == name })
                 },
-                shape = RoundedCornerShape(
-                    topStart = 4.dp,
-                    topEnd = 4.dp,
-                    bottomStart = 24.dp,
-                    bottomEnd = 24.dp
-                )
-            )
+                shape = MawaqitTheme.listShapes.bottomItem            )
         }
     }
 }
@@ -375,14 +375,19 @@ private fun LocationRow(
                                 shape = CircleShape,
                                 color = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(16.dp),
-                                border = BorderStroke(2.dp, MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp))
-                            ) {}
+                                border = BorderStroke(
+                                    2.dp,
+                                    MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp)
+                                ),
+                                content = {}
+                            )
                         }
                     }
 
                     Column(modifier = Modifier.padding(start = 16.dp)) {
                         Text(
-                            text = displayLocation?.cityName ?: "No location set",
+                            text = displayLocation?.cityName
+                                ?: stringResource(R.string.no_location),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
@@ -400,7 +405,7 @@ private fun LocationRow(
                             )
                         } else {
                             Text(
-                                text = "Configure to see prayer times",
+                                text = stringResource(R.string.configure_location_description),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -416,7 +421,7 @@ private fun LocationRow(
                         shape = RoundedCornerShape(12.dp),
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                     ) {
-                        Text(if (displayLocation != null) "Update" else "Set")
+                        Text(text = stringResource(if (displayLocation != null) R.string.update else R.string.set))
                     }
                 }
             }
@@ -434,7 +439,7 @@ private fun LocationRow(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            imageVector = ImageVector.vectorResource(R.drawable.ic_check), // Or another icon
+                            imageVector = ImageVector.vectorResource(R.drawable.ic_error), // Or another icon
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(16.dp)
@@ -442,9 +447,9 @@ private fun LocationRow(
                         Spacer(Modifier.width(8.dp))
                         Text(
                             text = when {
-                                !hasPermission && !isGpsEnabled -> "Permission missing & GPS disabled"
-                                !hasPermission -> "Location permission missing"
-                                else -> "GPS is disabled"
+                                !hasPermission && !isGpsEnabled -> stringResource(R.string.permission_missing_and_gps_disabled)
+                                !hasPermission -> stringResource(R.string.location_permission_not_granted)
+                                else -> stringResource(R.string.gps_is_not_enabled)
                             },
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onErrorContainer
@@ -466,7 +471,7 @@ private fun LocationRow(
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.weight(1f)
                     )
-                    TextButton(onClick = onErrorDismissed) { Text("Dismiss") }
+                    TextButton(onClick = onErrorDismissed) { Text(stringResource(R.string.dismiss)) }
                 }
             }
         }
@@ -480,14 +485,6 @@ private sealed interface LocationAction {
     data object ShowSettingsDialog : LocationAction
 }
 
-private fun PrayerNotificationSettings.isEnabledFor(prayer: String): Boolean = when (prayer) {
-    "Fajr" -> fajr
-    "Dhuhr" -> dhuhr
-    "Asr" -> asr
-    "Maghrib" -> maghrib
-    "Isha" -> isha
-    else -> true
-}
 
 private fun CalculationMethod.displayName(): String = when (this) {
     CalculationMethod.MUSLIM_WORLD_LEAGUE -> "Muslim World League"
@@ -503,3 +500,5 @@ private fun CalculationMethod.displayName(): String = when (this) {
     CalculationMethod.TURKEY -> "Turkey"
     CalculationMethod.OTHER -> ""
 }
+
+

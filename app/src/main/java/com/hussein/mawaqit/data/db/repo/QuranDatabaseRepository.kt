@@ -4,14 +4,15 @@ import com.hussein.mawaqit.data.db.dao.AyahDao
 import com.hussein.mawaqit.data.db.dao.BookmarkDao
 import com.hussein.mawaqit.data.db.dao.SurahDao
 import com.hussein.mawaqit.data.db.entities.BookmarkEntity
-import com.hussein.mawaqit.data.db.entities.SurahEntity
 import com.hussein.mawaqit.data.db.relations.AyahWithSurah
 import com.hussein.mawaqit.data.mappers.toAyah
 import com.hussein.mawaqit.data.mappers.toAyahOfTheDay
 import com.hussein.mawaqit.data.mappers.toBookmark
+import com.hussein.mawaqit.data.mappers.toSurah
 import com.hussein.mawaqit.data.quran.ArabicSearchNormalizer
 import com.hussein.mawaqit.domain.models.AyahOfTheDay
 import com.hussein.mawaqit.domain.models.Bookmark
+import com.hussein.mawaqit.domain.models.Surah
 import com.hussein.mawaqit.domain.models.SurahDetail
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -27,7 +28,8 @@ class QuranDatabaseRepository(
     private val bookmarkDao: BookmarkDao
 ) {
 
-    fun getAllSurahs(): Flow<List<SurahEntity>> = surahDao.getAllSurahs()
+    fun getAllSurahs(): Flow<List<Surah>> = surahDao.getAllSurahs()
+        .map { entities -> entities.map { surahEntity -> surahEntity.toSurah() } }
 
 
     suspend fun loadSurah(surahNumber: Int): SurahDetail {

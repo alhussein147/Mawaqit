@@ -42,6 +42,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -54,6 +56,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.mawaqit.data.db.entities.SurahEntity
 import com.hussein.mawaqit.data.db.relations.AyahWithSurah
 import com.hussein.mawaqit.presentation.shared.BackButton
+import com.hussein.mawaqit.ui.theme.quranFontFamily
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -64,10 +67,12 @@ fun QuranSearchScreen(
     viewModel: QuranSearchViewModel = koinViewModel(),
     onBack: () -> Unit
 ) {
-    val query by viewModel.query.collectAsStateWithLifecycle()
-    val state by viewModel.state.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val query = uiState.query
+    val state = uiState.searchState
 
     val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
 
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
@@ -81,6 +86,7 @@ fun QuranSearchScreen(
                 ),
                 title = {
                     TextField(
+                        singleLine = true,
                         value = query,
                         onValueChange = { viewModel.onQueryChanged(it) },
                         placeholder = { 
@@ -117,7 +123,9 @@ fun QuranSearchScreen(
                             }
                         },
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                        keyboardActions = KeyboardActions(onSearch = { }),
+                        keyboardActions = KeyboardActions(onSearch = { 
+                            focusManager.clearFocus()
+                        }),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(end = 16.dp)
@@ -263,7 +271,8 @@ private fun SurahSearchRow(
                 text = surah.nameArabic,
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primary,
+                fontFamily = quranFontFamily
             )
         }
     }
@@ -295,11 +304,12 @@ private fun AyahSearchRow(
                 shape = CircleShape
             ) {
                 Text(
-                    text = "${ayah.surahNameArabic} • آية ${ayah.numberInSurah}",
+                    text = stringResource(com.hussein.mawaqit.R.string.ayah_reference, ayah.surahNameArabic, ayah.numberInSurah),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                    fontFamily = quranFontFamily
                 )
             }
             Spacer(Modifier.height(8.dp))
@@ -308,7 +318,8 @@ private fun AyahSearchRow(
                 text = ayah.text,
                 style = MaterialTheme.typography.bodyLarge.copy(
                     textDirection = TextDirection.Rtl,
-                    lineHeight = 32.sp
+                    lineHeight = 32.sp,
+                    fontFamily = quranFontFamily
                 ),
                 textAlign = TextAlign.End,
                 maxLines = 3,

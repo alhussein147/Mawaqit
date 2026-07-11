@@ -14,6 +14,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import com.hussein.mawaqit.R
 
@@ -24,7 +25,7 @@ fun BackButton(
     @DrawableRes icon: Int = R.drawable.ic_arrow_back,
 ) {
     FilledTonalIconButton(
-        modifier = modifier,
+        modifier = Modifier.size(IconButtonDefaults.smallContainerSize()).then(modifier),
         onClick = onClick,
         shapes = IconButtonDefaults.shapes(
             shape = IconButtonDefaults.filledShape,
@@ -34,7 +35,7 @@ fun BackButton(
         Icon(
             modifier = Modifier.size(IconButtonDefaults.mediumIconSize),
             imageVector = ImageVector.vectorResource(icon),
-            contentDescription = "Settings"
+            contentDescription = stringResource(R.string.settings)
         )
     }
 

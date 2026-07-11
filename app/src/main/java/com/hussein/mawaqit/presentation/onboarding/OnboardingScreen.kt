@@ -24,20 +24,19 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.hussein.mawaqit.presentation.onboarding.components.DonePage
 import com.hussein.mawaqit.presentation.onboarding.components.OnboardingActions
 import com.hussein.mawaqit.presentation.onboarding.components.OnboardingPage
-import com.hussein.mawaqit.presentation.onboarding.components.OptionsPage
-import com.hussein.mawaqit.presentation.onboarding.components.PermissionsPage
-import com.hussein.mawaqit.presentation.onboarding.components.QuranSetupPage
 import com.hussein.mawaqit.presentation.onboarding.components.StepIndicator
-import com.hussein.mawaqit.presentation.onboarding.components.WelcomePage
+import com.hussein.mawaqit.presentation.onboarding.components.pages.DonePage
+import com.hussein.mawaqit.presentation.onboarding.components.pages.OptionsPage
+import com.hussein.mawaqit.presentation.onboarding.components.pages.PermissionsPage
+import com.hussein.mawaqit.presentation.onboarding.components.pages.WelcomePage
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -173,20 +172,12 @@ fun OnboardingScreen(
                             },
                             isLoadingLocation = state.isLoadingLocation
                         )
-
                         OnboardingPage.OPTIONS -> OptionsPage(
                             settings = state.settings,
                             onCalculationMethodChanged = viewModel::onCalculationMethodChanged,
                             onNotificationSoundChanged = viewModel::onNotificationSoundChanged,
                             onAppThemeChanged = viewModel::onAppThemeChanged
                         )
-
-                        OnboardingPage.QURAN_SETUP -> QuranSetupPage(
-                            progress = state.populationProgress,
-                            failed = state.quranPopulationFailed,
-                            isOffline = state.isOffline
-                        )
-
                         OnboardingPage.DONE -> DonePage()
                     }
                 }
@@ -198,20 +189,15 @@ fun OnboardingScreen(
                     when (state.page) {
                         OnboardingPage.WELCOME -> viewModel.onGetStarted()
                         OnboardingPage.PERMISSIONS -> viewModel.onPermissionsContinue()
-                        OnboardingPage.OPTIONS -> viewModel.onPermissionsContinue() // reuse advance logic
-                        OnboardingPage.QURAN_SETUP -> {
-                            viewModel.startDatabasePopulation()
-
-                        }
+                        OnboardingPage.OPTIONS -> viewModel.onPermissionsContinue()
                         OnboardingPage.DONE -> {
-                            viewModel.onOnboardingComplete()
-                            onFinished()
+                            viewModel.onOnboardingComplete(); onFinished()
                         }
                     }
                 },
                 onSkipClick = viewModel::onSkipQuranSetup,
                 primaryButtonEnabled = !state.isLoadingLocation && !state.isQuranPopulating &&
-                        (state.page != OnboardingPage.QURAN_SETUP || !state.isOffline),
+                        (!state.isOffline),
                 modifier = Modifier.padding(bottom = 16.dp)
             )
         }

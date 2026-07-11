@@ -5,7 +5,6 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
-// TODO:  create a domain model for this entity
 @Entity(
     tableName = "bookmarks",
     foreignKeys = [ForeignKey(

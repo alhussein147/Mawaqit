@@ -19,16 +19,10 @@ enum class OnboardingPage(
         titleRes = R.string.onboarding_options_title,
         iconRes = R.drawable.ic_settings
     ),
-    QURAN_SETUP(
-        titleRes = R.string.onboarding_quran_title,
-        iconRes = R.drawable.ic_cloud_download
-    ),
     DONE(
         titleRes = R.string.onboarding_done_title,
-        iconRes = R.drawable.ic_check
-    );
+        iconRes = R.drawable.ic_check,
+        subtitleRes = R.string.onboarding_done_page_subtitle
+    ),
 
-    companion object {
-        val pages = entries.toList()
-    }
 }

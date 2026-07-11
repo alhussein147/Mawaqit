@@ -53,8 +53,6 @@ class SettingsViewModel(
     fun onPrayerNotificationToggled(prayerName: String, enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setPrayerNotificationEnabled(prayerName, enabled)
-            // Reschedule alarms so the change takes effect immediately
-
         }
     }
 
@@ -85,15 +83,6 @@ class SettingsViewModel(
         }
     }
 
-    // location updating
-    // ---------------------------------------------------------------------------
-    // Location update
-    // ---------------------------------------------------------------------------
-
-    /**
-     * Called by the screen once location permission is confirmed granted.
-     * Fetches the current position and persists it.
-     */
     fun fetchAndSaveLocation() {
         viewModelScope.launch {
             _locationState.update { LocationUpdateState.Fetching }

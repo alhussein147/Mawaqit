@@ -1,5 +1,6 @@
 package com.hussein.mawaqit.presentation.onboarding
 
+import android.app.AlarmManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
@@ -8,24 +9,16 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkInfo
-import androidx.work.WorkManager
 import com.batoulapps.adhan2.CalculationMethod
 import com.hussein.core.LocationRepository
 import com.hussein.core.models.SavedLocation
 import com.hussein.mawaqit.data.prayer.PrayerSchedulerManager
-import com.hussein.mawaqit.infrastructure.location.CurrentLocationFetcher
 import com.hussein.mawaqit.infrastructure.connectivity.NetworkObserver
+import com.hussein.mawaqit.infrastructure.location.CurrentLocationFetcher
 import com.hussein.mawaqit.infrastructure.settings.AppSettings
 import com.hussein.mawaqit.infrastructure.settings.AppTheme
 import com.hussein.mawaqit.infrastructure.settings.NotificationSound
 import com.hussein.mawaqit.infrastructure.settings.SettingsRepository
-import com.hussein.mawaqit.infrastructure.workers.DatabasePopulationWorker
-import com.hussein.mawaqit.infrastructure.workers.DatabasePopulationWorker.Companion.DATABASE_POPULATION_WORK_NAME
-import com.hussein.mawaqit.infrastructure.workers.local_population_workers.QuranPopulationWorker
-import com.hussein.mawaqit.infrastructure.workers.local_population_workers.TafsirPopulationWorker
 import com.hussein.mawaqit.presentation.onboarding.components.OnboardingPage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -53,19 +46,15 @@ class OnboardingViewModel(
     private val locationRepo: LocationRepository,
     private val settingsRepository: SettingsRepository,
     private val locationFetcher: CurrentLocationFetcher,
-    private val workerManager: WorkManager,
     private val prayerSchedulerManager: PrayerSchedulerManager,
     private val networkObserver: NetworkObserver
 ) : ViewModel() {
-
-    private val LOCAL_LOAD = false
 
     private val TAG = "OnboardingViewModel"
     private val _uiState = MutableStateFlow(OnboardingUiState())
     val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
 
     init {
-        observeDatabasePopulation()
         observeNetwork()
         observeSettings()
     }
@@ -86,57 +75,6 @@ class OnboardingViewModel(
         }
     }
 
-    // todo : remove
-    private fun observeDatabasePopulation() {
-        viewModelScope.launch {
-            workerManager.getWorkInfosForUniqueWorkFlow(DATABASE_POPULATION_WORK_NAME)
-                .collect { infos ->
-                    val info = infos.firstOrNull() ?: return@collect
-                    when (info.state) {
-                        WorkInfo.State.RUNNING, WorkInfo.State.ENQUEUED -> {
-                            val progress = info.progress
-                                .getFloat(DatabasePopulationWorker.DATABASE_POPULATION_PROGRESS, 0f)
-                            _uiState.update {
-                                it.copy(
-                                    populationProgress = progress,
-                                    quranPopulationFailed = false,
-                                    isQuranPopulating = true
-                                )
-                            }
-                            Log.d(TAG, "Quran population progress: $progress")
-                        }
-
-                        WorkInfo.State.SUCCEEDED -> {
-                            settingsRepository.setQuranPopulated()
-                            Log.d(TAG, "Quran population FINISHED")
-                            _uiState.update { it.copy(isQuranPopulating = false) }
-                            if (_uiState.value.page == OnboardingPage.QURAN_SETUP) {
-                                advance()
-                            }
-                        }
-
-                        WorkInfo.State.FAILED -> {
-                            val error = info.outputData.getString("error")
-                                ?: info.progress.getString("error")
-                            Log.e(TAG, "Quran population FAILED: $error")
-                            _uiState.update {
-                                it.copy(
-                                    quranPopulationFailed = true,
-                                    isQuranPopulating = false
-                                )
-                            }
-                        }
-
-                        WorkInfo.State.CANCELLED -> {
-                            _uiState.update { it.copy(isQuranPopulating = false) }
-                        }
-
-                        else -> Unit
-                    }
-                }
-        }
-    }
-
     fun refreshPermissionStatuses(context: Context) {
         val locationGranted = ContextCompat.checkSelfPermission(
             context, android.Manifest.permission.ACCESS_COARSE_LOCATION
@@ -150,7 +88,7 @@ class OnboardingViewModel(
 
         val exactAlarmGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val alarmManager =
-                context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+                context.getSystemService(AlarmManager::class.java)
             alarmManager.canScheduleExactAlarms()
         } else true
 
@@ -205,7 +143,7 @@ class OnboardingViewModel(
         }
     }
 
-    fun onPermissionsContinue() = advance(to = if (LOCAL_LOAD) OnboardingPage.QURAN_SETUP else OnboardingPage.DONE )
+    fun onPermissionsContinue() = advance()
 
     fun onCalculationMethodChanged(method: CalculationMethod) {
         viewModelScope.launch {
@@ -235,11 +173,7 @@ class OnboardingViewModel(
         }
     }
 
-    private fun advance(to: OnboardingPage? = null) {
-        if (to!= null){
-            _uiState.update { it.copy(page = to) }
-            return
-        }
+    private fun advance() {
         val current = _uiState.value.page
         val nextOrdinal = current.ordinal + 1
         if (nextOrdinal < OnboardingPage.entries.size) {
@@ -303,30 +237,6 @@ class OnboardingViewModel(
                 }
             }
         }
-    }
-
-    fun startLocalDatabasePopulation() {
-        workerManager.enqueueUniqueWork(
-            QuranPopulationWorker.LOCAL_QURAN_POPULATION_WORK_NAME,
-            ExistingWorkPolicy.KEEP,
-            OneTimeWorkRequestBuilder<QuranPopulationWorker>().build()
-        )
-
-        workerManager.enqueueUniqueWork(
-            TafsirPopulationWorker.TAFSIR_POPULATION_WORK_NAME,
-            ExistingWorkPolicy.KEEP,
-            OneTimeWorkRequestBuilder<TafsirPopulationWorker>().build()
-        )
-        advance()
-
-    }
-
-    fun startDatabasePopulation() {
-        workerManager.enqueueUniqueWork(
-            DATABASE_POPULATION_WORK_NAME,
-            ExistingWorkPolicy.KEEP,
-            OneTimeWorkRequestBuilder<DatabasePopulationWorker>().build()
-        )
     }
 
 }

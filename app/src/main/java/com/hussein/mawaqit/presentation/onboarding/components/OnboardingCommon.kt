@@ -24,7 +24,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -134,11 +133,11 @@ fun OnboardingActions(
         OnboardingPage.WELCOME -> stringResource(R.string.get_started)
         OnboardingPage.PERMISSIONS -> stringResource(R.string.continue_)
         OnboardingPage.OPTIONS -> stringResource(R.string.continue_)
-        OnboardingPage.QURAN_SETUP -> stringResource(R.string.load_quran_data)
+//        OnboardingPage.QURAN_SETUP -> stringResource(R.string.load_quran_data)
         OnboardingPage.DONE -> stringResource(R.string.finish)
     }
 
-    val showSkip = page == OnboardingPage.QURAN_SETUP
+//    val showSkip = page == OnboardingPage.QURAN_SETUP
 
     Column(
         modifier = modifier
@@ -162,19 +161,19 @@ fun OnboardingActions(
             )
         }
 
-        if (showSkip) {
-            Spacer(Modifier.height(12.dp))
-            TextButton(
-                onClick = onSkipClick,
-                modifier = Modifier.height(48.dp)
-            ) {
-                Text(
-                    stringResource(R.string.skip_for_now),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-        }
+//        if (showSkip) {
+//            Spacer(Modifier.height(12.dp))
+//            TextButton(
+//                onClick = onSkipClick,
+//                modifier = Modifier.height(48.dp)
+//            ) {
+//                Text(
+//                    stringResource(R.string.skip_for_now),
+//                    style = MaterialTheme.typography.labelLarge,
+//                    color = MaterialTheme.colorScheme.primary
+//                )
+//            }
+//        }
     }
 }
 
@@ -183,7 +182,7 @@ fun StepIndicator(
     currentPage: OnboardingPage,
     modifier: Modifier = Modifier
 ) {
-    val visiblePages = OnboardingPage.entries.filter { it != OnboardingPage.DONE }
+    val visiblePages = OnboardingPage.entries
     val activeIndex = visiblePages.indexOf(currentPage).coerceAtLeast(0)
 
     Row(
