@@ -6,14 +6,16 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.hussein.mawaqit.data.db.dao.AudioSourceDao
 import com.hussein.mawaqit.data.db.dao.AyahDao
 import com.hussein.mawaqit.data.db.dao.AzkarDao
 import com.hussein.mawaqit.data.db.dao.BookmarkDao
 import com.hussein.mawaqit.data.db.dao.SurahDao
 import com.hussein.mawaqit.data.db.dao.TafsirDao
+import com.hussein.mawaqit.data.db.entities.AudioSourceEntity
 import com.hussein.mawaqit.data.db.entities.AyahEntity
-import com.hussein.mawaqit.data.db.entities.AzkarCategoryEntity
-import com.hussein.mawaqit.data.db.entities.AzkarItemEntity
+import com.hussein.mawaqit.data.db.entities.invocation.AzkarCategoryEntity
+import com.hussein.mawaqit.data.db.entities.invocation.AzkarItemEntity
 import com.hussein.mawaqit.data.db.entities.BookmarkEntity
 import com.hussein.mawaqit.data.db.entities.SurahEntity
 import com.hussein.mawaqit.data.db.entities.TafsirEntity
@@ -28,9 +30,10 @@ import com.hussein.mawaqit.data.db.entities.TafsirSourceEntity
         TafsirEntity::class,
         TafsirSourceEntity::class,
         AzkarCategoryEntity::class,
-        AzkarItemEntity::class
+        AzkarItemEntity::class,
+        AudioSourceEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -40,6 +43,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun bookmarkDao(): BookmarkDao
     abstract fun tafsirDao(): TafsirDao
     abstract fun azkarDao(): AzkarDao
+    abstract fun audioSourceDao(): AudioSourceDao
 
     companion object {
         const val DB_NAME = "mawaqit.db"

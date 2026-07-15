@@ -12,13 +12,14 @@ import androidx.lifecycle.viewModelScope
 import com.batoulapps.adhan2.CalculationMethod
 import com.hussein.core.LocationRepository
 import com.hussein.core.models.SavedLocation
-import com.hussein.mawaqit.data.prayer.PrayerSchedulerManager
 import com.hussein.mawaqit.infrastructure.connectivity.NetworkObserver
 import com.hussein.mawaqit.infrastructure.location.CurrentLocationFetcher
 import com.hussein.mawaqit.infrastructure.settings.AppSettings
 import com.hussein.mawaqit.infrastructure.settings.AppTheme
 import com.hussein.mawaqit.infrastructure.settings.NotificationSound
 import com.hussein.mawaqit.infrastructure.settings.SettingsRepository
+import com.hussein.mawaqit.infrastructure.workers.prayer.PrayerSchedulerManager
+import com.hussein.mawaqit.domain.location.RefreshLocationUseCase
 import com.hussein.mawaqit.presentation.onboarding.components.OnboardingPage
 import com.hussein.mawaqit.presentation.onboarding.components.PermissionState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,7 +49,8 @@ class OnboardingViewModel(
     private val settingsRepository: SettingsRepository,
     private val locationFetcher: CurrentLocationFetcher,
     private val prayerSchedulerManager: PrayerSchedulerManager,
-    private val networkObserver: NetworkObserver
+    private val networkObserver: NetworkObserver,
+    private val refreshLocationUseCase: RefreshLocationUseCase
 ) : ViewModel() {
 
     private val TAG = "OnboardingViewModel"
@@ -234,35 +236,22 @@ class OnboardingViewModel(
     private fun fetchLocation() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoadingLocation = true, errorMessage = null) }
-            try {
-                val userLocation = locationFetcher.fetch()
-                if (userLocation != null) {
-                    val saved = locationRepo.saveLocation(
-                        latitude = userLocation.latitude,
-                        longitude = userLocation.longitude,
-                        cityName = userLocation.city
-                    )
-                    _uiState.update {
+            val result = refreshLocationUseCase.execute(fallbackToIp = true)
+            _uiState.update {
+                result.fold(
+                    onSuccess = { location ->
                         it.copy(
                             isLoadingLocation = false,
-                            savedLocation = saved
+                            savedLocation = location
                         )
-                    }
-                } else {
-                    _uiState.update {
+                    },
+                    onFailure = { error ->
                         it.copy(
                             isLoadingLocation = false,
-                            errorMessage = "Could not determine your location."
+                            errorMessage = error.message
                         )
                     }
-                }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        isLoadingLocation = false,
-                        errorMessage = "Location error: ${e.message}"
-                    )
-                }
+                )
             }
         }
     }

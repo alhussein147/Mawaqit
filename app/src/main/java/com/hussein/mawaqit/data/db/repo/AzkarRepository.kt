@@ -1,10 +1,9 @@
-package com.hussein.mawaqit.data.azkar
-
+package com.hussein.mawaqit.data.db.repo
 
 import android.content.Context
 import com.hussein.mawaqit.data.db.dao.AzkarDao
-import com.hussein.mawaqit.data.db.entities.AzkarCategoryEntity
-import com.hussein.mawaqit.data.db.entities.AzkarItemEntity
+import com.hussein.mawaqit.data.db.entities.invocation.AzkarCategoryEntity
+import com.hussein.mawaqit.data.db.entities.invocation.AzkarItemEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext

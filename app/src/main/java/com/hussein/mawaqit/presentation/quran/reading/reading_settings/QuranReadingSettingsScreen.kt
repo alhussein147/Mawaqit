@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -89,7 +88,7 @@ fun QuranReadingSettingsScreen(
             item {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(32.dp),
+                    shape = MawaqitTheme.appShapes.large,
                     color = MaterialTheme.colorScheme.surfaceContainerHighest
                 ) {
                     Column(
@@ -126,7 +125,7 @@ fun QuranReadingSettingsScreen(
                 SettingSectionHeader(stringResource(R.string.font_size))
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
+                    shape = MawaqitTheme.appShapes.medium,
                     color = MaterialTheme.colorScheme.surfaceContainerLow
                 ) {
                     Row(
@@ -150,7 +149,7 @@ fun QuranReadingSettingsScreen(
                 SettingSectionHeader(stringResource(R.string.text_alignment))
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
+                    shape = MawaqitTheme.appShapes.medium,
                     color = MaterialTheme.colorScheme.surfaceContainerLow
                 ) {
                     Row(
@@ -170,7 +169,7 @@ fun QuranReadingSettingsScreen(
                             ) {
                                 Surface(
                                     modifier = Modifier.fillMaxSize(),
-                                    shape = RoundedCornerShape(16.dp),
+                                    shape = MawaqitTheme.appShapes.small,
                                     color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
@@ -197,7 +196,7 @@ fun QuranReadingSettingsScreen(
                 SettingSectionHeader(title = "Source Settings")
 
                 TafsirSourceSettingRow(
-                    shape = MawaqitTheme.listShapes.topItem,
+                    shape = MawaqitTheme.appShapes.listShapes.topItem,
                     selectedSourceId = selectedTafsirSourceId,
                     availableSources = availableTafsirSources,
                     downloadingSources = downloadingSources,
@@ -206,7 +205,7 @@ fun QuranReadingSettingsScreen(
 
                 // Language Picker
                 SettingPickerRow(
-                    shape = MawaqitTheme.listShapes.bottomItem,
+                    shape = MawaqitTheme.appShapes.listShapes.bottomItem,
                     label = "Quran Language",
                     currentValue = selectedLanguage,
                     options = quranLanguages,

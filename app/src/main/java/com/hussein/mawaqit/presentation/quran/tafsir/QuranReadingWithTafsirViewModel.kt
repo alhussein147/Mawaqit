@@ -11,7 +11,7 @@ import androidx.work.WorkInfo
 import com.hussein.mawaqit.data.db.entities.TafsirSourceEntity
 import com.hussein.mawaqit.data.db.repo.TafsirRepository
 import com.hussein.mawaqit.domain.models.AyahWithTafsir
-import com.hussein.mawaqit.infrastructure.workers.local_population_workers.GenericPopulationWorker
+import com.hussein.mawaqit.infrastructure.workers.population_workers.GenericPopulationWorker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow

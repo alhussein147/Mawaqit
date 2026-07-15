@@ -1,5 +1,6 @@
 package com.hussein.mawaqit.presentation.home
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -13,11 +14,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,6 +27,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,6 +37,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -52,6 +54,7 @@ import com.hussein.mawaqit.presentation.shared.ErrorContent
 import com.hussein.mawaqit.presentation.shared.LoadingContent
 import com.hussein.mawaqit.presentation.shared.RootScreenWrapper
 import com.hussein.mawaqit.presentation.util.formatTime
+import com.hussein.mawaqit.ui.theme.MawaqitTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import org.koin.androidx.compose.koinViewModel
@@ -65,9 +68,30 @@ fun HomeScreen(
     onNavigateToRadio: () -> Unit = {},
     onNavigateToReader: (surahIndex: Int, ayahIndex: Int) -> Unit,
     onNavigateToSettings: () -> Unit = {},
+    onNavigateToQiblah: () -> Unit = {},
     viewModel: HomeViewModel = koinViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val refreshResult = state.refreshResult
+    val context = LocalContext.current
+
+    LaunchedEffect(refreshResult) {
+        if (refreshResult != null) {
+            when (refreshResult) {
+                is RefreshLocationResult.Success -> {
+                    Toast.makeText(
+                        context,
+                        "Location set to ${refreshResult.cityName}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+
+                is RefreshLocationResult.Error -> {
+                    Toast.makeText(context, refreshResult.message, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -77,34 +101,33 @@ fun HomeScreen(
     }
 
     RootScreenWrapper(
-        topAppBar = {
-            Spacer(Modifier.statusBarsPadding())
-        },
+        modifier =  Modifier.systemBarsPadding(),
         content = {
-        when {
-            state.isLoading -> LoadingContent(
-                Modifier.fillMaxSize()
-            )
+            when {
+                state.isLoading -> LoadingContent(
+                    Modifier.fillMaxSize()
+                )
 
-            state.error == stringResource(R.string.location_not_set) -> NoLocationContent(
-                modifier = Modifier.fillMaxSize(),
-                onNavigateToSettings = onNavigateToSettings
-            )
+                state.error == stringResource(R.string.location_not_set) -> NoLocationContent(
+                    modifier = Modifier.fillMaxSize(), onNavigateToSettings = onNavigateToSettings
+                )
 
-            state.error != null -> ErrorContent(
-                modifier = Modifier.fillMaxSize(), message = state.error!!
-            )
+                state.error != null -> ErrorContent(
+                    modifier = Modifier.fillMaxSize(), message = state.error!!
+                )
 
-            else -> HomeScreenContent(
-                modifier = modifier,
-                state = state,
-                countdownFlow = viewModel.countdown,
-                onNavigateToAzkar = onNavigateToAzkar,
-                onNavigateToRadio = onNavigateToRadio,
-                onNavigateToReader = onNavigateToReader
-            )
-        }
-    })
+                else -> HomeScreenContent(
+                    modifier = modifier,
+                    state = state,
+                    countdownFlow = viewModel.countdown,
+                    onNavigateToAzkar = onNavigateToAzkar,
+                    onNavigateToRadio = onNavigateToRadio,
+                    onNavigateToReader = onNavigateToReader,
+                    onNavigateToQiblah = onNavigateToQiblah,
+                    onRefresh = { viewModel.refreshLocation() }
+                )
+            }
+        })
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -115,41 +138,48 @@ private fun HomeScreenContent(
     countdownFlow: StateFlow<CountdownTime?>,
     onNavigateToAzkar: () -> Unit = {},
     onNavigateToRadio: () -> Unit = {},
+    onNavigateToQiblah: () -> Unit = {},
+    onRefresh: () -> Unit = {},
     onNavigateToReader: (surahIndex: Int, ayahIndex: Int) -> Unit,
 ) {
 
-
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .then(modifier),
-        contentPadding = PaddingValues(start = 16.dp , end = 16.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+    PullToRefreshBox(
+        modifier = Modifier.fillMaxSize(),
+        isRefreshing = state.isRefreshing,
+        onRefresh = onRefresh
     ) {
-        item {
-            LocationHeader(cityName = state.cityName)
-        }
-        item {
-            HeaderSection(state, countdownFlow = countdownFlow)
-        }
-        item {
-            TodayPrayersSection(prayers = state.prayers)
-        }
-        item {
-            HomeQuickActionsSection(
-                onNavigateToAzkar = onNavigateToAzkar,
-                onNavigateToRadio = onNavigateToRadio,
-            )
-        }
-        item {
-            state.ayahOfTheDay?.let {
-                AyahOfTheDayCard(
-                    ayah = it,
-                    onClick = onNavigateToReader,
+
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .then(modifier),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp, top = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item {
+                HeaderSection(state, countdownFlow = countdownFlow)
+            }
+            item {
+                TodayPrayersSection(hijriDate = state.hijriDate, prayers = state.prayers)
+            }
+            item {
+                HomeQuickActionsSection(
+                    onNavigateToAzkar = onNavigateToAzkar,
+                    onNavigateToRadio = onNavigateToRadio,
+                    onNavigateToQiblah = onNavigateToQiblah
                 )
+            }
+            item {
+                state.ayahOfTheDay?.let {
+                    AyahOfTheDayCard(
+                        ayah = it,
+                        onClick = onNavigateToReader,
+                    )
+                }
             }
         }
     }
+
 }
 
 @Composable
@@ -182,57 +212,65 @@ private fun HeaderSection(state: HomeUiState, countdownFlow: StateFlow<Countdown
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.primaryContainer,
-        shape = RoundedCornerShape(32.dp),
-        shadowElevation = 2.dp
+        shape = MawaqitTheme.appShapes.large,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(24.dp), horizontalAlignment = Alignment.Start
+                .padding(16.dp),
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            if (state.hijriDate.isNotBlank()) {
-                Surface(
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f),
-                    shape = CircleShape
-                ) {
-                    Text(
-                        text = state.hijriDate,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        fontWeight = FontWeight.ExtraBold,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
-                    )
-                }
-                Spacer(Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = ImageVector.vectorResource(R.drawable.ic_location),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Text(
+                    text = state.cityName,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Black,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
             }
+
             state.nextPrayer?.let { next ->
                 val label =
                     stringResource(if (next.status == PrayerStatus.CURRENT) R.string.current_prayer else R.string.next_prayer)
 
-                Text(
-                    text = label.uppercase(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
-                    letterSpacing = 1.5.sp,
-                    fontWeight = FontWeight.Black
-                )
 
-                Spacer(Modifier.height(8.dp))
-
-                Row(
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    verticalArrangement = Arrangement.SpaceAround
                 ) {
                     Text(
-                        text = next.name,
-                        style = MaterialTheme.typography.displaySmall,
-                        fontWeight = FontWeight.Black,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        text = label.uppercase(),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
+                        letterSpacing = 1.5.sp,
+                        fontWeight = FontWeight.Black
                     )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.Bottom,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = next.name,
+                            style = MaterialTheme.typography.displaySmall,
+                            fontWeight = FontWeight.Black,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
 
-                    if (next.status == PrayerStatus.UPCOMING) {
-                        CountdownDisplay(countdownFlow = countdownFlow)
+                        if (next.status == PrayerStatus.UPCOMING) {
+                            CountdownDisplay(countdownFlow = countdownFlow)
+                        }
                     }
                 }
             }
@@ -247,7 +285,7 @@ private fun CountdownDisplay(countdownFlow: StateFlow<CountdownTime?>) {
     val time = countdown ?: return
 
     Surface(
-        shape = RoundedCornerShape(24.dp),
+        shape = MawaqitTheme.appShapes.medium,
         color = MaterialTheme.colorScheme.secondaryContainer
     ) {
         Text(
@@ -264,16 +302,13 @@ private fun CountdownDisplay(countdownFlow: StateFlow<CountdownTime?>) {
 
 @Composable
 private fun TodayPrayersSection(
-    prayers: List<PrayerUiModel>, modifier: Modifier = Modifier
+    prayers: List<PrayerUiModel>, modifier: Modifier = Modifier, hijriDate: String
 ) {
     if (prayers.isEmpty()) return
     val completedCount = prayers.count { it.status == PrayerStatus.PASSED }
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Surface(
-            modifier = modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(
-                topStart = 32.dp, topEnd = 32.dp, bottomEnd = 4.dp, bottomStart = 4.dp
-            ),
+            modifier = modifier.fillMaxWidth(), shape = MawaqitTheme.appShapes.listShapes.topItem,
             color = MaterialTheme.colorScheme.surfaceContainerHigh
         ) {
             Column(
@@ -289,10 +324,10 @@ private fun TodayPrayersSection(
                 ) {
                     Column {
                         Text(
-                            text = stringResource(R.string.todays_schedule),
+                            text = hijriDate,
                             style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Black,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            fontWeight = FontWeight.ExtraBold
                         )
                         Text(
                             text = "$completedCount of ${prayers.size} prayers completed",
@@ -304,11 +339,11 @@ private fun TodayPrayersSection(
 
                     val activePrayer = prayers.firstOrNull { it.status == PrayerStatus.CURRENT }
                         ?: prayers.firstOrNull { it.status == PrayerStatus.UPCOMING }
+
                     activePrayer?.let { prayer ->
                         Surface(
                             shape = CircleShape,
                             color = MaterialTheme.colorScheme.primary,
-                            shadowElevation = 4.dp
                         ) {
                             Text(
                                 text = prayer.time.formatTime(),
@@ -325,9 +360,8 @@ private fun TodayPrayersSection(
 
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(
-                bottomEnd = 32.dp, bottomStart = 32.dp, topEnd = 4.dp, topStart = 4.dp
-            ), color = MaterialTheme.colorScheme.surfaceContainerHigh
+            shape = MawaqitTheme.appShapes.listShapes.bottomItem,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh
 
         ) {
             Column(modifier = Modifier.padding(8.dp)) {
@@ -359,7 +393,7 @@ private fun PrayerScheduleRow(
         modifier = Modifier
             .fillMaxWidth()
             .height(64.dp)
-            .clip(RoundedCornerShape(24.dp))
+            .clip(MawaqitTheme.appShapes.medium)
             .background(backgroundColor)
             .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -447,8 +481,7 @@ private fun PrayerStepIndicator(
 
 @Composable
 fun HomeQuickActionsSection(
-    onNavigateToAzkar: () -> Unit,
-    onNavigateToRadio: () -> Unit,
+    onNavigateToAzkar: () -> Unit, onNavigateToRadio: () -> Unit, onNavigateToQiblah: () -> Unit
 ) {
     @Composable
     fun ActionTile(
@@ -463,7 +496,7 @@ fun HomeQuickActionsSection(
             modifier = Modifier
                 .height(100.dp)
                 .then(modifier),
-            shape = RoundedCornerShape(28.dp),
+            shape = MawaqitTheme.appShapes.large,
             color = containerColor,
             onClick = onClick
         ) {
@@ -474,7 +507,7 @@ fun HomeQuickActionsSection(
             ) {
                 Surface(
                     modifier = Modifier.size(52.dp),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = MawaqitTheme.appShapes.small,
                     color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
@@ -504,28 +537,40 @@ fun HomeQuickActionsSection(
         }
     }
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         ActionTile(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.fillMaxWidth(),
             onClick = onNavigateToAzkar,
             title = stringResource(R.string.azkar),
-            subtitle = stringResource(R.string.daily_zikr),
+            subtitle = stringResource(R.string.azkar),
             icon = R.drawable.ic_tasbih,
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f)
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
         )
-        ActionTile(
-            modifier = Modifier.weight(1f),
-            onClick = onNavigateToRadio,
-            title = stringResource(R.string.radio),
-            subtitle = stringResource(R.string.live_quran_radio),
-            icon = R.drawable.ic_radio,
-            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
-        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            ActionTile(
+                modifier = Modifier.weight(1f),
+                onClick = onNavigateToQiblah,
+                title = stringResource(R.string.qiblah),
+                subtitle = "Find Qiblah Direction",
+                icon = R.drawable.ic_kabaa,
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f)
+            )
+            ActionTile(
+                modifier = Modifier.weight(1f),
+                onClick = onNavigateToRadio,
+                title = stringResource(R.string.radio),
+                subtitle = stringResource(R.string.live_quran_radio),
+                icon = R.drawable.ic_radio,
+                containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
+            )
+        }
     }
+
 }
 
 @Composable
@@ -577,7 +622,7 @@ fun NoLocationContent(
 
         Button(
             onClick = onNavigateToSettings,
-            shape = RoundedCornerShape(16.dp),
+            shape = MawaqitTheme.appShapes.small,
             contentPadding = PaddingValues(horizontal = 32.dp, vertical = 12.dp)
         ) {
             Icon(
@@ -600,7 +645,7 @@ fun AyahOfTheDayCard(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(32.dp),
+        shape = MawaqitTheme.appShapes.large,
         color = MaterialTheme.colorScheme.surfaceContainerHighest,
         onClick = {
             ayah?.let {
@@ -679,4 +724,3 @@ fun AyahOfTheDayCard(
         }
     }
 }
-

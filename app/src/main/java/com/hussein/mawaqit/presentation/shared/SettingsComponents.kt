@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hussein.mawaqit.R
 import com.hussein.mawaqit.data.db.entities.TafsirSourceEntity
+import com.hussein.mawaqit.ui.theme.MawaqitTheme
 
 @Composable
 fun SettingSectionHeader(
@@ -69,7 +70,7 @@ fun SettingToggleRow(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    shape: RoundedCornerShape = RoundedCornerShape(28.dp),
+    shape: RoundedCornerShape = MawaqitTheme.appShapes.large,
     icon: ImageVector? = null
 ) {
     Surface(
@@ -135,7 +136,7 @@ fun SettingPickerRow(
     onOptionSelected: (String) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    shape: RoundedCornerShape = RoundedCornerShape(28.dp),
+    shape: RoundedCornerShape = MawaqitTheme.appShapes.large,
     icon: ImageVector? = null
 ) {
     var showSheet by remember { mutableStateOf(false) }
@@ -249,7 +250,7 @@ fun TafsirSourceSettingRow(
     onSelect: (TafsirSourceEntity) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    shape: RoundedCornerShape = RoundedCornerShape(28.dp),
+    shape: RoundedCornerShape = MawaqitTheme.appShapes.large,
     icon: ImageVector? = null
 ) {
     var showSheet by remember { mutableStateOf(false) }
@@ -419,7 +420,7 @@ fun SettingNavigationRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    shape: RoundedCornerShape = RoundedCornerShape(28.dp),
+    shape: RoundedCornerShape = MawaqitTheme.appShapes.large,
     icon: ImageVector? = null,
     subLabel: String? = null
 ) {
@@ -500,7 +501,7 @@ fun ExpressiveSheetOptionItem(
     )
 
     Surface(
-        shape = RoundedCornerShape(28.dp),
+        shape = MawaqitTheme.appShapes.large,
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),

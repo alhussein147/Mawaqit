@@ -7,11 +7,11 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.workDataOf
-import com.hussein.mawaqit.data.azkar.AzkarRepository
-import com.hussein.mawaqit.data.db.entities.AzkarCategoryEntity
-import com.hussein.mawaqit.data.db.entities.AzkarItemEntity
+import com.hussein.mawaqit.data.db.repo.AzkarRepository
+import com.hussein.mawaqit.data.db.entities.invocation.AzkarCategoryEntity
+import com.hussein.mawaqit.data.db.entities.invocation.AzkarItemEntity
 import com.hussein.mawaqit.infrastructure.connectivity.NetworkObserver
-import com.hussein.mawaqit.infrastructure.workers.local_population_workers.GenericPopulationWorker
+import com.hussein.mawaqit.infrastructure.workers.population_workers.GenericPopulationWorker
 import com.hussein.mawaqit.presentation.shared.SyncStatus
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow

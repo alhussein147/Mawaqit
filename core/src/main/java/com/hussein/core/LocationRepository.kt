@@ -57,11 +57,5 @@ class LocationRepository(private val context: Context) {
             }
             SavedLocation(latitude, longitude, cityName)
         }
-
-    /** Clears all stored location data (e.g. when user resets the app). */
-    suspend fun clearLocation() {
-        context.locationDataStore.edit { it.clear() }
-    }
-
 }
 

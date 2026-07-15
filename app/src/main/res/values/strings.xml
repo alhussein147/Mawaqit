@@ -22,6 +22,7 @@
     <string name="allow_exact_alarms">Allow Exact Alarms</string>
     <string name="disable_optimization">Disable Optimization</string>
     <string name="skip_for_now">Skip for now</string>
+    <string name="back">Back</string>
     <string name="onboarding_quran_title">Loading Quran Data</string>
 
     <string name="load_quran_data">Load Quran Data</string>
@@ -39,6 +40,7 @@
     <string name="azkar">Azkar</string>
     <string name="settings">Settings</string>
     <string name="radio">Radio</string>
+    <string name="qiblah">Qiblah</string>
     <string name="location">Location</string>
     <string name="method">Method</string>
     <string name="theme">Theme</string>
@@ -60,6 +62,7 @@
     <string name="todays_schedule">Today\'s Schedule</string>
     <string name="remove_bookmark">Remove Bookmark</string>
     <string name="daily_zikr">Daily Zikr</string>
+    <string name="daily_zikr_description">Find peace and rewards with authentic supplications from the Sunnah for your morning and evening.</string>
     <string name="quran_reading_settings">Reading Settings</string>
     <string name="quran_reading_preview">Preview</string>
     <string name="ayah_reference">%1$s Ayah %2$d</string>
@@ -91,6 +94,7 @@
     <string name="play">Play</string>
     <string name="finish">Finish!</string>
     <string name="bookmark">Bookmark</string>
+    <string name="bookmarks">Bookmarks</string>
     <string name="close">Close</string>
     <string name="copy_ayah">Copy Ayah</string>
 

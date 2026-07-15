@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ContainedLoadingIndicator
@@ -56,6 +55,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.mawaqit.data.db.entities.SurahEntity
 import com.hussein.mawaqit.data.db.relations.AyahWithSurah
 import com.hussein.mawaqit.presentation.shared.BackButton
+import com.hussein.mawaqit.ui.theme.MawaqitTheme
 import com.hussein.mawaqit.ui.theme.quranFontFamily
 import org.koin.androidx.compose.koinViewModel
 
@@ -251,7 +251,7 @@ private fun SurahSearchRow(
     Surface(
         onClick = onClick,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = RoundedCornerShape(20.dp),
+        shape = MawaqitTheme.appShapes.medium,
         modifier = modifier
     ) {
         Row(
@@ -289,7 +289,7 @@ private fun AyahSearchRow(
     Surface(
         onClick = onClick,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = RoundedCornerShape(20.dp),
+        shape = MawaqitTheme.appShapes.medium,
         modifier = modifier
     ) {
         Column(

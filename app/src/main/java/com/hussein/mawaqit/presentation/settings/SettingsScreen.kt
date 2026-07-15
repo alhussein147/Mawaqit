@@ -16,12 +16,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -134,6 +134,7 @@ fun SettingsScreen(
     }
 
     RootScreenWrapper(
+       modifier =  Modifier.navigationBarsPadding(),
         topAppBar = {
             LargeTopAppBar(
                 title = { Text(stringResource(R.string.settings), fontWeight = FontWeight.Black) },
@@ -276,7 +277,7 @@ private fun SettingsContent(
                 label = stringResource(R.string.notification_settings),
                 subLabel = stringResource(R.string.control_sounds_and_specific_prayer_alerts),
                 onClick = onNavigateToNotificationSettings,
-                icon = ImageVector.vectorResource(R.drawable.ic_notification)
+                icon = ImageVector.vectorResource(R.drawable.ic_bell)
             )
         }
 
@@ -312,7 +313,7 @@ private fun SettingsContent(
                 onOptionSelected = { name ->
                     onThemeChanged(AppTheme.entries.first { it.displayName == name })
                 },
-                shape = MawaqitTheme.listShapes.topItem            )
+                shape = MawaqitTheme.appShapes.listShapes.topItem            )
             SettingPickerRow(
                 label = stringResource(R.string.color_scheme),
                 currentValue = settings.appColorScheme.displayName,
@@ -320,7 +321,7 @@ private fun SettingsContent(
                 onOptionSelected = { name ->
                     onColorSchemeChanged(AppColorScheme.entries.first { it.displayName == name })
                 },
-                shape = MawaqitTheme.listShapes.bottomItem            )
+                shape = MawaqitTheme.appShapes.listShapes.bottomItem            )
         }
     }
 }
@@ -343,7 +344,7 @@ private fun LocationRow(
     }
     Surface(
         color = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),
-        shape = RoundedCornerShape(24.dp)
+        shape = MawaqitTheme.appShapes.large
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Row(
@@ -418,7 +419,7 @@ private fun LocationRow(
                 } else {
                     Button(
                         onClick = onUpdateTapped,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = MawaqitTheme.appShapes.small,
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                     ) {
                         Text(text = stringResource(if (displayLocation != null) R.string.update else R.string.set))
@@ -430,7 +431,7 @@ private fun LocationRow(
                 Spacer(Modifier.height(16.dp))
                 Surface(
                     color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = MawaqitTheme.appShapes.small
                 ) {
                     Row(
                         modifier = Modifier

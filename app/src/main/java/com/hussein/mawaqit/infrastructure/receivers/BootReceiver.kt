@@ -1,13 +1,12 @@
 package com.hussein.mawaqit.infrastructure.receivers
 
-import com.hussein.mawaqit.data.prayer.PrayerSchedulerManager
+import com.hussein.mawaqit.infrastructure.workers.prayer.PrayerSchedulerManager
 
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import androidx.work.WorkManager
 import org.koin.java.KoinJavaComponent.inject
 
 /**

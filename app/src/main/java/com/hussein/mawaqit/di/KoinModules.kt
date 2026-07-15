@@ -2,35 +2,42 @@ package com.hussein.mawaqit.di
 
 import androidx.work.WorkManager
 import com.hussein.core.LocationRepository
-import com.hussein.mawaqit.data.azkar.AzkarRepository
+import com.hussein.mawaqit.data.RecitationRepository
 import com.hussein.mawaqit.data.db.AppDatabase
 import com.hussein.mawaqit.data.db.entities.TafsirSourceEntity
+import com.hussein.mawaqit.data.db.repo.AzkarRepository
 import com.hussein.mawaqit.data.db.repo.QuranDatabaseRepository
 import com.hussein.mawaqit.data.db.repo.TafsirRepository
-import com.hussein.mawaqit.data.prayer.PrayerSchedulerManager
-import com.hussein.mawaqit.data.quran.recitation.SurahDownloadRepository
+import com.hussein.mawaqit.domain.location.RefreshLocationUseCase
+import com.hussein.mawaqit.infrastructure.alarm_manager.PrayerAlarmManager
 import com.hussein.mawaqit.infrastructure.connectivity.NetworkObserver
+import com.hussein.mawaqit.infrastructure.fonts.DynamicFontManager
 import com.hussein.mawaqit.infrastructure.location.CurrentLocationFetcher
 import com.hussein.mawaqit.infrastructure.media.AyahPlayer
 import com.hussein.mawaqit.infrastructure.settings.QuranReaderPreferences
 import com.hussein.mawaqit.infrastructure.settings.SettingsRepository
 import com.hussein.mawaqit.infrastructure.workers.DatabasePopulationWorker
+import com.hussein.mawaqit.infrastructure.workers.FontDownloadWorker
 import com.hussein.mawaqit.infrastructure.workers.SurahDownloadWorker
-import com.hussein.mawaqit.infrastructure.workers.local_population_workers.DataPopulationStrategy
-import com.hussein.mawaqit.infrastructure.workers.local_population_workers.GenericPopulationWorker
-import com.hussein.mawaqit.infrastructure.workers.local_population_workers.strategies.AzkarPopulationStrategy
-import com.hussein.mawaqit.infrastructure.workers.local_population_workers.strategies.QuranPopulationStrategy
-import com.hussein.mawaqit.infrastructure.workers.local_population_workers.strategies.TafsirPopulationStrategy
+import com.hussein.mawaqit.infrastructure.workers.population_workers.DataPopulationStrategy
+import com.hussein.mawaqit.infrastructure.workers.population_workers.GenericPopulationWorker
+import com.hussein.mawaqit.infrastructure.workers.population_workers.strategies.AudioSourcePopulationStrategy
+import com.hussein.mawaqit.infrastructure.workers.population_workers.strategies.AzkarPopulationStrategy
+import com.hussein.mawaqit.infrastructure.workers.population_workers.strategies.QuranPopulationStrategy
+import com.hussein.mawaqit.infrastructure.workers.population_workers.strategies.TafsirPopulationStrategy
 import com.hussein.mawaqit.infrastructure.workers.prayer.DailyPrayerWorker
+import com.hussein.mawaqit.infrastructure.workers.prayer.PrayerSchedulerManager
 import com.hussein.mawaqit.presentation.azkar.AzkarViewModel
 import com.hussein.mawaqit.presentation.home.HomeViewModel
 import com.hussein.mawaqit.presentation.onboarding.OnboardingViewModel
+import com.hussein.mawaqit.presentation.qiblah.QiblahViewModel
 import com.hussein.mawaqit.presentation.quran.bookmarks.BookmarksViewModel
 import com.hussein.mawaqit.presentation.quran.reading.QuranReadingViewModel
 import com.hussein.mawaqit.presentation.quran.reading.reading_settings.QuranSettingsViewModel
 import com.hussein.mawaqit.presentation.quran.search.QuranSearchViewModel
 import com.hussein.mawaqit.presentation.quran.surah_list.SurahListViewModel
 import com.hussein.mawaqit.presentation.quran.tafsir.QuranReadingWithTafsirViewModel
+import com.hussein.mawaqit.presentation.radio.RadioViewModel
 import com.hussein.mawaqit.presentation.settings.SettingsViewModel
 import com.hussein.mawaqit.presentation.util.GlobalPlayerViewModel
 import org.koin.android.ext.koin.androidApplication
@@ -46,15 +53,18 @@ import org.koin.dsl.module
 val appModule = module {
     // Infrastructure & Settings
     single { SettingsRepository(androidContext()) }
+    single { DynamicFontManager(androidContext(), get()) }
     single { CurrentLocationFetcher(androidContext()) }
+    single { RefreshLocationUseCase(get(), get(), get()) }
     single { WorkManager.getInstance(androidContext()) }
     factory { PrayerSchedulerManager(get()) }
     factory { LocationRepository(context = androidContext()) }
     factory { NetworkObserver(androidContext()) }
+    factory { PrayerAlarmManager(androidContext()) }
 
     // Repositories & Data
     factory { AzkarRepository(androidContext(), get()) }
-    single { SurahDownloadRepository(androidContext()) }
+    single { RecitationRepository(androidContext(), get()) }
     factory { TafsirRepository(get()) }
     factory { QuranReaderPreferences(androidContext()) }
     factory { AyahPlayer(androidContext()) }
@@ -66,6 +76,7 @@ val appModule = module {
     single { get<AppDatabase>().bookmarkDao() }
     single { get<AppDatabase>().tafsirDao() }
     single { get<AppDatabase>().azkarDao() }
+    single { get<AppDatabase>().audioSourceDao() }
     factory { QuranDatabaseRepository(get(), get(), get()) }
 
     // Population Strategies
@@ -75,6 +86,7 @@ val appModule = module {
         get<TafsirPopulationStrategy> { parametersOf(params.getOrNull<TafsirSourceEntity>() ?: TafsirSourceEntity.MUKHTASAR) }
     }
     factory<DataPopulationStrategy>(named("azkar")) { AzkarPopulationStrategy(get()) }
+    factory<DataPopulationStrategy>(named("audio_source")) { AudioSourcePopulationStrategy(get()) }
     single { getAll<DataPopulationStrategy>() }
 
     // ViewModels
@@ -83,7 +95,8 @@ val appModule = module {
             settingsRepository = get<SettingsRepository>(),
             locationRepository = get(),
             currentLocationFetcher = get(),
-            prayerSchedulerManager = get()
+            prayerSchedulerManager = get(),
+            prayerAlarmManager = get(),
         )
     }
     viewModel {
@@ -91,6 +104,7 @@ val appModule = module {
             locationRepo = get(),
             settingsRepository = get(),
             quranDatabaseRepository = get(),
+            refreshLocationUseCase = get()
         )
     }
     viewModel {
@@ -102,7 +116,7 @@ val appModule = module {
     }
     viewModel {
         QuranReadingViewModel(
-            surahDownloadRepository = get(),
+            recitationRepository = get(),
             tafsirRepository = get(),
             quranReaderPreferences = get(),
             networkObserver = get(),
@@ -130,7 +144,7 @@ val appModule = module {
             locationRepo = get(),
             settingsRepository = get(),
             locationFetcher = get(),
-            prayerSchedulerManager = get(), networkObserver = get()
+            prayerSchedulerManager = get(), networkObserver = get(), get()
         )
     }
     viewModel {
@@ -146,10 +160,24 @@ val appModule = module {
         BookmarksViewModel(quranDatabaseRepository = get())
     }
 
+    viewModel {
+        RadioViewModel(
+            recitationRepository = get(),
+            workManager = get()
+        )
+    }
+
+    viewModel {
+        QiblahViewModel(
+            locationRepository = get(),
+            context = androidContext()
+        )
+    }
+
     single {
         GlobalPlayerViewModel(
             application = androidApplication(),
-            surahDownloadRepository = get(),
+            recitationRepository = get(),
             workManager = get()
         )
     }
@@ -159,4 +187,5 @@ val appModule = module {
     worker { DatabasePopulationWorker(context = androidContext(), params = get()) }
     worker { DailyPrayerWorker(appContext = androidContext(), params = get()) }
     worker { GenericPopulationWorker(context = androidContext(), params = get()) }
+    worker { FontDownloadWorker(context = androidContext(), params = get()) }
 }

@@ -1,10 +1,10 @@
 package com.hussein.mawaqit.presentation.onboarding.components.pages
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -24,6 +24,7 @@ import com.hussein.mawaqit.infrastructure.settings.AppSettings
 import com.hussein.mawaqit.infrastructure.settings.AppTheme
 import com.hussein.mawaqit.infrastructure.settings.NotificationSound
 import com.hussein.mawaqit.presentation.shared.SettingPickerRow
+import com.hussein.mawaqit.ui.theme.MawaqitTheme
 
 @Composable
 fun OptionsPage(
@@ -42,19 +43,17 @@ fun OptionsPage(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 4.dp),
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = stringResource(R.string.onboarding_options_title),
             style = MaterialTheme.typography.displaySmall,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Black,
             textAlign = TextAlign.Center
         )
-
-        Spacer(Modifier.height(12.dp))
-
         Text(
             text = stringResource(R.string.personalize_your_experience_before_we_begin),
             style = MaterialTheme.typography.bodyLarge,
@@ -63,41 +62,47 @@ fun OptionsPage(
             modifier = Modifier.padding(horizontal = 24.dp)
         )
 
-        Spacer(Modifier.height(32.dp))
 
-        SettingPickerRow(
-            label = stringResource(R.string.calculation_method),
-            currentValue = settings.calculationMethod.displayName(),
-            options = CalculationMethod.entries.filter { it != CalculationMethod.OTHER }.map { it.displayName() },
-            onOptionSelected = { name ->
-                val method = CalculationMethod.entries.first { it.displayName() == name }
-                onCalculationMethodChanged(method)
-            }
-        )
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
 
-        Spacer(Modifier.height(16.dp))
+            SettingPickerRow(
+                shape = MawaqitTheme.appShapes.large,
+                label = stringResource(R.string.calculation_method),
+                currentValue = settings.calculationMethod.displayName(),
+                options = CalculationMethod.entries.filter { it != CalculationMethod.OTHER }
+                    .map { it.displayName() },
+                onOptionSelected = { name ->
+                    val method = CalculationMethod.entries.first { it.displayName() == name }
+                    onCalculationMethodChanged(method)
+                }
+            )
 
-        SettingPickerRow(
-            label = stringResource(R.string.notification_style),
-            currentValue = settings.notificationSound.displayName,
-            options = NotificationSound.entries.map { it.displayName },
-            onOptionSelected = { name ->
-                onNotificationSoundChanged(NotificationSound.entries.first { it.displayName == name })
-            }
-        )
+            SettingPickerRow(
+                shape = MawaqitTheme.appShapes.large,
+                label = stringResource(R.string.notification_style),
+                currentValue = settings.notificationSound.displayName,
+                options = NotificationSound.entries.map { it.displayName },
+                onOptionSelected = { name ->
+                    onNotificationSoundChanged(NotificationSound.entries.first { it.displayName == name })
+                }
+            )
 
-        Spacer(Modifier.height(16.dp))
+            SettingPickerRow(
+                shape = MawaqitTheme.appShapes.large,
+                label = "App Theme",
+                currentValue = settings.appTheme.displayName,
+                options = AppTheme.entries.map { it.displayName },
+                onOptionSelected = { name ->
+                    onAppThemeChanged(AppTheme.entries.first { it.displayName == name })
+                }
+            )
+        }
 
-        SettingPickerRow(
-            label = "App Theme",
-            currentValue = settings.appTheme.displayName,
-            options = AppTheme.entries.map { it.displayName },
-            onOptionSelected = { name ->
-                onAppThemeChanged(AppTheme.entries.first { it.displayName == name })
-            }
-        )
-        
-        Spacer(Modifier.height(32.dp))
+
+
     }
 }
 

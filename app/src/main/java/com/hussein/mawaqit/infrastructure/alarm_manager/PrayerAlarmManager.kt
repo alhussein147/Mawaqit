@@ -1,7 +1,5 @@
 package com.hussein.mawaqit.infrastructure.alarm_manager
 
-import kotlin.jvm.java
-
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
@@ -15,7 +13,7 @@ import kotlin.time.ExperimentalTime
 
 class PrayerAlarmManager(private val context: Context) {
 
-    private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    private val alarmManager = context.getSystemService(AlarmManager::class.java)
 
     companion object {
         private const val TAG = "PrayerAlarmManager"

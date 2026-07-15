@@ -4,12 +4,12 @@ import android.util.Log
 import androidx.compose.runtime.Stable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hussein.mawaqit.data.RecitationRepository
+import com.hussein.mawaqit.data.db.entities.AudioSourceEntity
 import com.hussein.mawaqit.data.db.repo.QuranDatabaseRepository
 import com.hussein.mawaqit.data.db.repo.TafsirRepository
-import com.hussein.mawaqit.data.quran.recitation.SurahDownloadRepository
 import com.hussein.mawaqit.domain.models.Ayah
 import com.hussein.mawaqit.domain.models.Bookmark
-import com.hussein.mawaqit.domain.models.Reciter
 import com.hussein.mawaqit.domain.models.SurahDetail
 import com.hussein.mawaqit.infrastructure.connectivity.NetworkObserver
 import com.hussein.mawaqit.infrastructure.media.AyahPlayer
@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -56,12 +57,13 @@ data class QuranReaderScreenState(
     val tafsirState: TafsirState = TafsirState.Idle,
     val recitationState: AyahRecitationState = AyahRecitationState.Idle,
     val playingAyah: Int? = null,
-    val selectedReciter: Reciter = Reciter.YASSER,
+    val selectedReciter: AudioSourceEntity? = null,
+    val availableReciters: List<AudioSourceEntity> = emptyList(),
     val isNetworkAvailable: Boolean = true
 )
 
 class QuranReadingViewModel(
-    private val surahDownloadRepository: SurahDownloadRepository,
+    private val recitationRepository: RecitationRepository,
     private val tafsirRepository: TafsirRepository,
     private val quranReaderPreferences: QuranReaderPreferences,
     private val networkObserver: NetworkObserver,
@@ -79,7 +81,8 @@ class QuranReadingViewModel(
     
     private val ayahRecitationState = ayahPlayer.state
     private val playingAyah = ayahPlayer.playingAyah
-    private val _selectedReciter = MutableStateFlow(Reciter.YASSER)
+    private val _selectedReciter = MutableStateFlow<AudioSourceEntity?>(null)
+    private val _availableReciters = recitationRepository.getAyahReciters()
     private val _tafsirState = MutableStateFlow<TafsirState>(TafsirState.Idle)
     private val _selectedAyah = MutableStateFlow<Ayah?>(null)
 
@@ -92,6 +95,7 @@ class QuranReadingViewModel(
         ayahRecitationState,
         playingAyah,
         _selectedReciter,
+        _availableReciters,
         _tafsirState,
         _selectedAyah
     ) { args ->
@@ -103,9 +107,10 @@ class QuranReadingViewModel(
             bookmarks = args[4] as List<Bookmark>,
             recitationState = args[5] as AyahRecitationState,
             playingAyah = args[6] as Int?,
-            selectedReciter = args[7] as Reciter,
-            tafsirState = args[8] as TafsirState,
-            selectedAyah = args[9] as Ayah?
+            selectedReciter = args[7] as AudioSourceEntity?,
+            availableReciters = args[8] as List<AudioSourceEntity>,
+            tafsirState = args[9] as TafsirState,
+            selectedAyah = args[10] as Ayah?
         )
     }.stateIn(
         scope = viewModelScope,
@@ -114,6 +119,16 @@ class QuranReadingViewModel(
     )
 
     private var loadedSurahIndex = -1
+
+    init {
+        viewModelScope.launch {
+            _availableReciters.filter { it.isNotEmpty() }.first().let { list ->
+                if (_selectedReciter.value == null) {
+                    _selectedReciter.value = list.firstOrNull { it.name.contains("ياسر") } ?: list.firstOrNull()
+                }
+            }
+        }
+    }
 
     fun loadSurah(index: Int) {
         if (loadedSurahIndex == index && _readerState.value is QuranReaderUiState.Success) return
@@ -144,7 +159,12 @@ class QuranReadingViewModel(
     }
 
     fun playAyah(surahNumber: Int, ayahNumber: Int) {
-        val url = surahDownloadRepository.ayahUrl(_selectedReciter.value, surahNumber, ayahNumber)
+        val reciter = _selectedReciter.value ?: return
+        val url = recitationRepository.ayahUrl(reciter, surahNumber, ayahNumber)
+        if (url == null) {
+            Log.e(TAG, "playAyah: URL is null for reciter ${reciter.name}")
+            return
+        }
         Log.d(TAG, "playAyah:$url ")
         ayahPlayer.play(
             url = url,
@@ -157,7 +177,7 @@ class QuranReadingViewModel(
         ayahPlayer.stop()
     }
 
-    fun selectReciter(reciter: Reciter) {
+    fun selectReciter(reciter: AudioSourceEntity) {
         stopAyah()
         _selectedReciter.value = reciter
     }

@@ -10,22 +10,26 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.hussein.mawaqit.infrastructure.fonts.DynamicFontManager
 import com.hussein.mawaqit.infrastructure.settings.AppColorScheme
 import com.hussein.mawaqit.infrastructure.settings.AppTheme
-import com.hussein.mawaqit.ui.ListShapes
-import com.hussein.mawaqit.ui.LocalListShapes
+import com.hussein.mawaqit.ui.AppShapes
+import com.hussein.mawaqit.ui.LocalAppShapes
+import org.koin.compose.koinInject
 
 object MawaqitTheme {
-    val listShapes: ListShapes
+    val appShapes: AppShapes
         @Composable
         @ReadOnlyComposable
-        get() = LocalListShapes.current
+        get() = LocalAppShapes.current
 }
 
 private val greenLightScheme = lightColorScheme(
@@ -108,8 +112,11 @@ private val greenDarkScheme = darkColorScheme(
 fun MawaqitTheme(
     appTheme: AppTheme = AppTheme.SYSTEM,
     appColorScheme: AppColorScheme = AppColorScheme.DYNAMIC,
+    dynamicFontManager: DynamicFontManager = koinInject(),
     content: @Composable () -> Unit
 ) {
+    val quranFontFamily by dynamicFontManager.fontFamily.collectAsStateWithLifecycle()
+
     val darkTheme = when (appTheme) {
         AppTheme.DARK -> true
         AppTheme.LIGHT -> false
@@ -144,7 +151,8 @@ fun MawaqitTheme(
         }
     }
     CompositionLocalProvider(
-        LocalListShapes provides ListShapes()
+        LocalAppShapes provides AppShapes(),
+        LocalQuranFontFamily provides quranFontFamily
     ) {
         MaterialTheme(
             colorScheme = colorScheme,

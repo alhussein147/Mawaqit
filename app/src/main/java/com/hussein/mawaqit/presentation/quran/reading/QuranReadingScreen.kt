@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BottomSheetDefaults
@@ -73,13 +72,14 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.mawaqit.R
+import com.hussein.mawaqit.data.db.entities.AudioSourceEntity
 import com.hussein.mawaqit.domain.models.Ayah
 import com.hussein.mawaqit.domain.models.Bookmark
-import com.hussein.mawaqit.domain.models.Reciter
 import com.hussein.mawaqit.infrastructure.settings.QuranTextAlignment
 import com.hussein.mawaqit.presentation.shared.BackButton
 import com.hussein.mawaqit.presentation.shared.ErrorContent
 import com.hussein.mawaqit.presentation.shared.LoadingContent
+import com.hussein.mawaqit.ui.theme.MawaqitTheme
 import com.hussein.mawaqit.ui.theme.quranFontFamily
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
@@ -205,6 +205,7 @@ fun QuranReadingScreen(
             isBookmarked = isBookmarked,
             isPlaying = playingAyah == ayah.numberInSurah && recitationState is AyahRecitationState.Playing,
             currentReciter = selectedReciter,
+            availableReciters = uiState.availableReciters,
             onTafsir = { viewModel.fetchTafsir(surahIndex, ayah) },
             onBookmark = {
                 viewModel.toggleBookmark(
@@ -238,6 +239,7 @@ fun QuranReadingScreen(
     }
 
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
@@ -280,8 +282,7 @@ fun QuranReadingScreen(
                 ),
                 scrollBehavior = scrollBehavior
             )
-        },
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
+        }
     ) { paddingValues ->
         when (val state = readerState) {
 
@@ -291,7 +292,7 @@ fun QuranReadingScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues),
-                    contentPadding = PaddingValues(bottom = 32.dp, start = 12.dp, end = 12.dp),
+                    contentPadding = PaddingValues(bottom = 32.dp, start = 6.dp, end = 6.dp),
                     state = listState
                 ) {
                     item {
@@ -398,14 +399,6 @@ private fun FlowingAyahBlock(
     )
 }
 
-
-private fun ayahMarker(number: Int): String {
-    val arabicNumber = number.toString().map { ch ->
-        if (ch.isDigit()) '٠' + (ch - '0') else ch
-    }.joinToString("")
-    return " ﴿$arabicNumber﴾ "
-}
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun AyahBottomSheet(
@@ -418,8 +411,9 @@ private fun AyahBottomSheet(
     onPlayPause: () -> Unit,
     onDismiss: () -> Unit,
     playEnabled: Boolean,
-    currentReciter: Reciter,
-    onReciterSelect: (Reciter) -> Unit,
+    currentReciter: AudioSourceEntity?,
+    availableReciters: List<AudioSourceEntity>,
+    onReciterSelect: (AudioSourceEntity) -> Unit,
     onAyahCopy: (String) -> Unit
 ) {
     ModalBottomSheet(
@@ -468,7 +462,7 @@ private fun AyahBottomSheet(
                                 } else {
                                     MaterialTheme.colorScheme.surfaceContainerHigh
                                 },
-                                RoundedCornerShape(12.dp)
+                                MawaqitTheme.appShapes.medium
                             )
                         ) {
                             Icon(
@@ -481,7 +475,7 @@ private fun AyahBottomSheet(
                             onClick = { onAyahCopy(ayah.text) },
                             modifier = Modifier.background(
                                 MaterialTheme.colorScheme.surfaceVariant,
-                                RoundedCornerShape(12.dp)
+                                MawaqitTheme.appShapes.medium
                             )
                         ) {
                             Icon(
@@ -494,7 +488,7 @@ private fun AyahBottomSheet(
                             onClick = onDismiss,
                             modifier = Modifier.background(
                                 MaterialTheme.colorScheme.surfaceVariant,
-                                RoundedCornerShape(12.dp)
+                                MawaqitTheme.appShapes.medium
                             )
                         ) {
                             Icon(
@@ -508,14 +502,14 @@ private fun AyahBottomSheet(
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        shape = RoundedCornerShape(24.dp)
+                        shape = MawaqitTheme.appShapes.medium
                     ) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .heightIn(max = 200.dp)
                                 .verticalScroll(rememberScrollState())
-                                .padding(20.dp)
+                                .padding(16.dp)
                         ) {
                             Text(
                                 text = ayah.text,
@@ -534,14 +528,14 @@ private fun AyahBottomSheet(
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                        shape = RoundedCornerShape(24.dp)
+                        shape = MawaqitTheme.appShapes.medium
                     ) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .heightIn(max = 300.dp)
                                 .verticalScroll(rememberScrollState())
-                                .padding(20.dp),
+                                .padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Text(
@@ -555,8 +549,9 @@ private fun AyahBottomSheet(
                                 is TafsirState.Success -> {
                                     Text(
                                         text = tafsirState.text,
-                                        style = MaterialTheme.typography.bodyLarge.copy(
-                                            lineHeight = 28.sp,
+                                        style = MaterialTheme.typography.titleMedium.copy(
+                                            textDirection = TextDirection.Rtl,
+                                            lineHeight = 38.sp,
                                             textAlign = TextAlign.Center,
                                             fontFamily = quranFontFamily
                                         ),
@@ -598,10 +593,10 @@ private fun AyahBottomSheet(
                                 .height(56.dp),
                             onClick = { showReciterOptions = true },
                             enabled = playEnabled,
-                            shape = RoundedCornerShape(20.dp)
+                            shape = MawaqitTheme.appShapes.medium
                         ) {
                             Text(
-                                text = currentReciter.nameEnglish,
+                                text = currentReciter?.name ?: stringResource(R.string.pick_a_reciter),
                                 modifier = Modifier.basicMarquee(),
                                 maxLines = 1,
                                 style = MaterialTheme.typography.labelLarge
@@ -613,7 +608,7 @@ private fun AyahBottomSheet(
                                 .height(56.dp),
                             onClick = onPlayPause,
                             enabled = playEnabled,
-                            shape = RoundedCornerShape(20.dp)
+                            shape = MawaqitTheme.appShapes.medium
                         ) {
                             Icon(
                                 imageVector = ImageVector.vectorResource(
@@ -661,10 +656,10 @@ private fun AyahBottomSheet(
 
                     }
 
-                    Reciter.entries.forEach { reciter ->
-                        val isSelected = reciter == currentReciter
+                    availableReciters.forEach { reciter ->
+                        val isSelected = reciter.id == currentReciter?.id
                         Surface(
-                            shape = RoundedCornerShape(16.dp),
+                            shape = MawaqitTheme.appShapes.small,
                             onClick = {
                                 onReciterSelect(reciter)
                                 showReciterOptions = false;
@@ -683,15 +678,17 @@ private fun AyahBottomSheet(
                             ) {
                                 Column {
                                     Text(
-                                        text = reciter.nameArabic,
+                                        text = reciter.name,
                                         style = MaterialTheme.typography.bodyLarge,
                                         fontFamily = quranFontFamily
                                     )
-                                    Text(
-                                        text = reciter.nameEnglish,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                    reciter.language?.let {
+                                        Text(
+                                            text = it,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
                                 }
                                 if (isSelected) {
                                     Icon(
@@ -710,3 +707,10 @@ private fun AyahBottomSheet(
     }
 }
 
+
+fun ayahMarker(number: Int): String {
+    val arabicNumber = number.toString().map { ch ->
+        if (ch.isDigit()) '٠' + (ch - '0') else ch
+    }.joinToString("")
+    return " ﴿$arabicNumber﴾ "
+}

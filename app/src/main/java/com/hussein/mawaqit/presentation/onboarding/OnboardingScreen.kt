@@ -8,14 +8,14 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -38,6 +38,7 @@ import com.hussein.mawaqit.presentation.onboarding.components.pages.DonePage
 import com.hussein.mawaqit.presentation.onboarding.components.pages.OptionsPage
 import com.hussein.mawaqit.presentation.onboarding.components.pages.PermissionsPage
 import com.hussein.mawaqit.presentation.onboarding.components.pages.WelcomePage
+import com.hussein.mawaqit.presentation.shared.RootScreenWrapper
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -112,95 +113,18 @@ fun OnboardingScreen(
 
     val coroutineScope = rememberCoroutineScope()
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 24.dp, vertical = 48.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-
-            StepIndicator(
-                currentPage = state.page,
-                modifier = Modifier.padding(top = 16.dp)
-            )
-            BackHandler(enabled = pagerState.currentPage != 0 && !state.isQuranPopulating && !state.isLoadingLocation && state.settings != null) {
-                coroutineScope.launch {
-                    pagerState.animateScrollToPage(pagerState.currentPage - 1)
-                }
+    RootScreenWrapper(
+        modifier = Modifier.padding(16.dp).navigationBarsPadding(),
+        topAppBar = {
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxWidth()) {
+                StepIndicator(
+                    pagerState = pagerState,
+                    pageCount = OnboardingPage.entries.size,
+                    modifier = Modifier.statusBarsPadding()
+                )
             }
-
-            HorizontalPager(
-                state = pagerState,
-                userScrollEnabled = !state.isQuranPopulating && !state.isLoadingLocation && state.settings != null,
-                modifier = Modifier.weight(1f),
-                key = { OnboardingPage.entries[it].name },
-                contentPadding = PaddingValues(horizontal = 0.dp)
-            ) { pageIndex ->
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    when (OnboardingPage.entries[pageIndex]) {
-                        OnboardingPage.WELCOME -> WelcomePage()
-                        OnboardingPage.PERMISSIONS -> PermissionsPage(
-                            locationState = state.locationPermissionState,
-                            notificationState = state.notificationPermissionState,
-                            exactAlarmState = state.exactAlarmPermissionState,
-                            batteryOptimizationState = state.batteryOptimizationState,
-                            onLocationClick = {
-                                locationLauncher.launch(
-                                    arrayOf(
-                                        Manifest.permission.ACCESS_FINE_LOCATION,
-                                        Manifest.permission.ACCESS_COARSE_LOCATION
-                                    )
-                                )
-                            },
-                            onNotificationClick = {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                    notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                } else {
-                                    viewModel.onNotificationPermissionResult(true)
-                                }
-                            },
-                            onExactAlarmClick = {
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                                    exactAlarmLauncher.launch(
-                                        Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
-                                            data = "package:${context.packageName}".toUri()
-                                        }
-                                    )
-                                }
-                            },
-                            onBatteryClick = {
-                                batteryOptLauncher.launch(
-                                    Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                                        data = "package:${context.packageName}".toUri()
-                                    }
-                                )
-                            },
-                            onOpenSettings = {
-                                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                                    data = "package:${context.packageName}".toUri()
-                                }
-                                context.startActivity(intent)
-                            },
-                            isLoadingLocation = state.isLoadingLocation
-                        )
-                        OnboardingPage.OPTIONS -> OptionsPage(
-                            settings = state.settings,
-                            onCalculationMethodChanged = viewModel::onCalculationMethodChanged,
-                            onNotificationSoundChanged = viewModel::onNotificationSoundChanged,
-                            onAppThemeChanged = viewModel::onAppThemeChanged
-                        )
-                        OnboardingPage.DONE -> DonePage()
-                    }
-                }
-            }
-
+        },
+        bottomBar = {
             OnboardingActions(
                 page = state.page,
                 onPrimaryClick = {
@@ -213,11 +137,85 @@ fun OnboardingScreen(
                         }
                     }
                 },
-                onSkipClick = viewModel::onSkipQuranSetup,
+                onBackClick = {
+                    coroutineScope.launch {
+                        pagerState.animateScrollToPage(pagerState.currentPage - 1)
+                    }
+                },
                 primaryButtonEnabled = !state.isLoadingLocation && !state.isQuranPopulating &&
                         (!state.isOffline),
-                modifier = Modifier.padding(bottom = 16.dp)
+                showBackButton = pagerState.currentPage != 0 && !state.isQuranPopulating && !state.isLoadingLocation && state.settings != null
             )
+
+        },
+        content = {
+        BackHandler(enabled = pagerState.currentPage != 0 && !state.isQuranPopulating && !state.isLoadingLocation && state.settings != null) {
+            coroutineScope.launch {
+                pagerState.animateScrollToPage(pagerState.currentPage - 1)
+            }
         }
-    }
+
+        HorizontalPager(
+            state = pagerState,
+            userScrollEnabled = !state.isQuranPopulating && !state.isLoadingLocation && state.settings != null,
+            modifier = Modifier.fillMaxSize(),
+            key = { OnboardingPage.entries[it].name },
+            contentPadding = PaddingValues(0.dp)
+        ) { pageIndex ->
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                when (OnboardingPage.entries[pageIndex]) {
+                    OnboardingPage.WELCOME -> WelcomePage()
+                    OnboardingPage.PERMISSIONS -> PermissionsPage(
+                        locationState = state.locationPermissionState,
+                        notificationState = state.notificationPermissionState,
+                        exactAlarmState = state.exactAlarmPermissionState,
+                        batteryOptimizationState = state.batteryOptimizationState,
+                        onLocationClick = {
+                            locationLauncher.launch(
+                                arrayOf(
+                                    Manifest.permission.ACCESS_FINE_LOCATION,
+                                    Manifest.permission.ACCESS_COARSE_LOCATION
+                                )
+                            )
+                        },
+                        onNotificationClick = {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            } else {
+                                viewModel.onNotificationPermissionResult(true)
+                            }
+                        },
+                        onExactAlarmClick = {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                exactAlarmLauncher.launch(
+                                    Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                                        data = "package:${context.packageName}".toUri()
+                                    }
+                                )
+                            }
+                        },
+                        onBatteryClick = {
+                            batteryOptLauncher.launch(
+                                Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                                    data = "package:${context.packageName}".toUri()
+                                }
+                            )
+                        },
+                        isLoadingLocation = state.isLoadingLocation
+                    )
+                    OnboardingPage.OPTIONS -> OptionsPage(
+                        settings = state.settings,
+                        onCalculationMethodChanged = viewModel::onCalculationMethodChanged,
+                        onNotificationSoundChanged = viewModel::onNotificationSoundChanged,
+                        onAppThemeChanged = viewModel::onAppThemeChanged
+                    )
+                    OnboardingPage.DONE -> DonePage()
+                }
+            }
+        }
+
+    })
 }

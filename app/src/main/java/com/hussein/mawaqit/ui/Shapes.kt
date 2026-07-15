@@ -8,8 +8,8 @@ import androidx.compose.ui.unit.dp
 @Immutable
 data class ListShapes(
     val topItem: RoundedCornerShape = RoundedCornerShape(
-        topStart = 24.dp,
-        topEnd = 24.dp,
+        topStart = 28.dp,
+        topEnd = 28.dp,
         bottomEnd = 2.dp,
         bottomStart = 2.dp
     ),
@@ -22,12 +22,19 @@ data class ListShapes(
     val bottomItem: RoundedCornerShape = RoundedCornerShape(
         topStart = 2.dp,
         topEnd = 2.dp,
-        bottomEnd = 24.dp,
-        bottomStart = 24.dp
+        bottomEnd = 28.dp,
+        bottomStart = 28.dp
     )
 )
 
-val independentListItemShape = RoundedCornerShape(28.dp)
 
-val LocalListItemShape = staticCompositionLocalOf { independentListItemShape }
-val LocalListShapes = staticCompositionLocalOf { ListShapes() }
+
+data class AppShapes(
+    val small: RoundedCornerShape = RoundedCornerShape(16.dp),
+    val medium: RoundedCornerShape = RoundedCornerShape(24.dp),
+    val large: RoundedCornerShape = RoundedCornerShape(28.dp),
+    val circle: RoundedCornerShape = RoundedCornerShape(50),
+    val listShapes: ListShapes = ListShapes()
+)
+
+val LocalAppShapes = staticCompositionLocalOf { AppShapes() }

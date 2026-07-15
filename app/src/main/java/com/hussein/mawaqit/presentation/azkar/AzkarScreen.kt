@@ -10,10 +10,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -31,10 +30,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.mawaqit.R
-import com.hussein.mawaqit.data.db.entities.AzkarItemEntity
+import com.hussein.mawaqit.data.db.entities.invocation.AzkarItemEntity
 import com.hussein.mawaqit.presentation.shared.BackButton
 import com.hussein.mawaqit.presentation.shared.ErrorContent
 import com.hussein.mawaqit.presentation.shared.LoadingContent
+import com.hussein.mawaqit.ui.theme.MawaqitTheme
 import com.hussein.mawaqit.ui.theme.quranFontFamily
 import org.koin.androidx.compose.koinViewModel
 
@@ -56,11 +56,13 @@ fun AzkarScreen(
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            MediumTopAppBar(
+            CenterAlignedTopAppBar(
                 title = {
                     Text(
                         modifier = Modifier.padding(4.dp),
-                       text = uiState.currentCategory?.title ?: stringResource(R.string.azkar)
+                        text = uiState.currentCategory?.title ?: stringResource(R.string.azkar),
+                        fontFamily = quranFontFamily,
+                        fontWeight = FontWeight.Medium
                     )
                 },
                 navigationIcon = {
@@ -71,9 +73,13 @@ fun AzkarScreen(
         }
     ) { padding ->
         if (uiState.isLoadingItems) {
-            LoadingContent(modifier = Modifier.fillMaxSize().padding(padding))
+            LoadingContent(modifier = Modifier
+                .fillMaxSize()
+                .padding(padding))
         } else if (uiState.itemsError != null) {
-            ErrorContent(message = uiState.itemsError!!, modifier = Modifier.fillMaxSize().padding(padding))
+            ErrorContent(message = uiState.itemsError!!, modifier = Modifier
+                .fillMaxSize()
+                .padding(padding))
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -105,7 +111,7 @@ fun ZikrItem(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
+        shape = MawaqitTheme.appShapes.medium,
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
         border = null // Can add border if needed for more expressive look
     ) {
@@ -116,7 +122,7 @@ fun ZikrItem(
         ) {
             // Index badge
             Surface(
-                shape = RoundedCornerShape(50),
+                shape = MawaqitTheme.appShapes.circle,
                 color = MaterialTheme.colorScheme.primaryContainer
             ) {
                 Text(
@@ -148,7 +154,7 @@ fun ZikrItem(
                 Spacer(Modifier.height(20.dp))
                 Surface(
                     modifier = Modifier.align(Alignment.CenterHorizontally),
-                    shape = RoundedCornerShape(50.dp),
+                    shape = MawaqitTheme.appShapes.circle,
                     color = MaterialTheme.colorScheme.secondaryContainer
                 ) {
                     Text(

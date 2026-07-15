@@ -3,6 +3,8 @@
 
     <style name="Theme.Mawaqit.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_screen_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/avd_anim</item>
+        <item name="windowSplashScreenAnimationDuration">1000</item>
         <item name="postSplashScreenTheme">@style/Theme.Mawaqit</item>
     </style>
 </resources>

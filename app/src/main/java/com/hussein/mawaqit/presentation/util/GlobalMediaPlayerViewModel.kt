@@ -12,13 +12,12 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import com.google.common.util.concurrent.MoreExecutors
-import com.hussein.mawaqit.data.quran.recitation.SurahDownloadRepository
-import com.hussein.mawaqit.domain.models.FullSurahReciter
+import com.hussein.mawaqit.data.RecitationRepository
+import com.hussein.mawaqit.data.db.entities.AudioSourceEntity
 import com.hussein.mawaqit.infrastructure.services.GlobalPlayerService
 import com.hussein.mawaqit.infrastructure.services.PlaybackSource
 import com.hussein.mawaqit.infrastructure.workers.SurahDownloadWorker
@@ -41,12 +40,13 @@ data class GlobalPlaybackUiState(
     val isControllerReady: Boolean = false,
     val isPlaying: Boolean = false,
     val isBuffering: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val availableReciters: List<AudioSourceEntity> = emptyList()
 )
 
 class GlobalPlayerViewModel(
     application: Application,
-    private val surahDownloadRepository: SurahDownloadRepository,
+    private val recitationRepository: RecitationRepository,
     private val workManager: WorkManager
 ) : AndroidViewModel(application) {
 
@@ -54,7 +54,7 @@ class GlobalPlayerViewModel(
         const val TAG = "GlobalPlayerViewModel"
     }
 
-    val selectedReciter = MutableStateFlow(FullSurahReciter.Husr)
+    val selectedReciter = MutableStateFlow<AudioSourceEntity?>(null)
 
     private val source = MutableStateFlow<PlaybackSource>(PlaybackSource.None)
 
@@ -104,7 +104,19 @@ class GlobalPlayerViewModel(
 
     init {
         initMediaController(application)
-        refreshDownloadStates()
+        observeAvailableReciters()
+    }
+
+    private fun observeAvailableReciters() {
+        viewModelScope.launch {
+            recitationRepository.getSurahReciters().collect { list ->
+                _playbackState.value = _playbackState.value.copy(availableReciters = list)
+                if (selectedReciter.value == null && list.isNotEmpty()) {
+                    selectedReciter.value = list.firstOrNull { it.name.contains("الحصري") } ?: list.firstOrNull()
+                    refreshDownloadStates()
+                }
+            }
+        }
     }
 
     private fun initMediaController(context: Context) {
@@ -140,7 +152,8 @@ class GlobalPlayerViewModel(
     }
 
     fun playSurah(surahNumber: Int) {
-        val file = surahDownloadRepository.surahFile(selectedReciter.value, surahNumber)
+        val reciter = selectedReciter.value ?: return
+        val file = recitationRepository.surahFile(reciter.id, surahNumber)
         if (!file.exists()) {
             clearPlaybackError()
             updateSurahState(surahNumber, SurahItemState.NotDownloaded)
@@ -150,7 +163,7 @@ class GlobalPlayerViewModel(
         val source = PlaybackSource.Surah(surahNumber)
         val mediaItem = MediaItem.Builder()
             .setUri(Uri.fromFile(file))
-            .setMediaId("surah:${selectedReciter.value.id}:$surahNumber")
+            .setMediaId("surah:${reciter.id}:$surahNumber")
             .build()
         playMediaItem(source, mediaItem)
     }
@@ -186,7 +199,11 @@ class GlobalPlayerViewModel(
         mediaController?.stop()
         source.value = PlaybackSource.None
         _isPlaying.value = false
-        _playbackState.value = GlobalPlaybackUiState(isControllerReady = mediaController != null)
+        _playbackState.value = _playbackState.value.copy(
+            source = PlaybackSource.None,
+            isPlaying = false,
+            isBuffering = false
+        )
         clearSourceState(previousSource)
     }
 
@@ -217,17 +234,18 @@ class GlobalPlayerViewModel(
     }
 
     fun downloadSurah(surahNumber: Int) {
-        val uniqueWorkName = "surah_download_${selectedReciter.value.id}_$surahNumber"
+        val reciter = selectedReciter.value ?: return
+        val uniqueWorkName = "surah_download_${reciter.id}_$surahNumber"
         val request = OneTimeWorkRequestBuilder<SurahDownloadWorker>().setInputData(
             SurahDownloadWorker.inputData(
                 surahNumber,
-                selectedReciter.value.id
+                reciter.id
             )
         ).build()
 
         workManager.enqueueUniqueWork(
             uniqueWorkName,
-            ExistingWorkPolicy.KEEP,
+            androidx.work.ExistingWorkPolicy.KEEP,
             request
         )
 
@@ -262,14 +280,15 @@ class GlobalPlayerViewModel(
 
     fun cancelDownload(workId: UUID) = workManager.cancelWorkById(workId)
 
-    fun selectReciter(reciter: FullSurahReciter) {
-        if (selectedReciter.value == reciter) return
+    fun selectReciter(reciter: AudioSourceEntity) {
+        if (selectedReciter.value?.id == reciter.id) return
         stop()
         selectedReciter.value = reciter
         refreshDownloadStates()
     }
 
     private fun refreshDownloadStates() {
+        val reciter = selectedReciter.value ?: return
         viewModelScope.launch {
             val currentSource = source.value
             val isCurrentSurahPlaying = _isPlaying.value
@@ -277,13 +296,13 @@ class GlobalPlayerViewModel(
                 surahNumber to when {
                     currentSource is PlaybackSource.Surah &&
                             currentSource.surahNumber == surahNumber &&
-                            surahDownloadRepository.isSurahCached(
-                                selectedReciter.value,
+                            recitationRepository.isSurahCached(
+                                reciter.id,
                                 surahNumber
                             ) ->
                         if (isCurrentSurahPlaying) SurahItemState.Playing else SurahItemState.Paused
 
-                    surahDownloadRepository.isSurahCached(selectedReciter.value, surahNumber) ->
+                    recitationRepository.isSurahCached(reciter.id, surahNumber) ->
                         SurahItemState.Downloaded
 
                     else -> SurahItemState.NotDownloaded
@@ -309,11 +328,12 @@ class GlobalPlayerViewModel(
     }
 
     private fun clearSourceState(source: PlaybackSource) {
+        val reciter = selectedReciter.value ?: return
         if (source is PlaybackSource.Surah) {
             updateSurahState(
                 source.surahNumber,
-                if (surahDownloadRepository.isSurahCached(
-                        selectedReciter.value,
+                if (recitationRepository.isSurahCached(
+                        reciter.id,
                         source.surahNumber
                     )
                 ) {

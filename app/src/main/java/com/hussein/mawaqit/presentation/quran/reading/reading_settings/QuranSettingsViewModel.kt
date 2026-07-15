@@ -12,15 +12,11 @@ import com.hussein.mawaqit.data.db.entities.TafsirSourceEntity
 import com.hussein.mawaqit.data.db.repo.TafsirRepository
 import com.hussein.mawaqit.infrastructure.settings.QuranReaderPreferences
 import com.hussein.mawaqit.infrastructure.settings.QuranTextAlignment
-import com.hussein.mawaqit.infrastructure.workers.local_population_workers.GenericPopulationWorker
-import kotlinx.coroutines.flow.Flow
+import com.hussein.mawaqit.infrastructure.workers.population_workers.GenericPopulationWorker
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 

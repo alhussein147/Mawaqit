@@ -30,16 +30,17 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.hussein.mawaqit.R
 import com.hussein.mawaqit.infrastructure.settings.SettingsRepository
-import com.hussein.mawaqit.presentation.azkar.AzkarScreen
 import com.hussein.mawaqit.presentation.azkar.AzkarCategoriesScreen
+import com.hussein.mawaqit.presentation.azkar.AzkarScreen
 import com.hussein.mawaqit.presentation.home.HomeScreen
 import com.hussein.mawaqit.presentation.navigation.components.BottomBarNestedScrollConnection
 import com.hussein.mawaqit.presentation.navigation.components.FloatingNavBar
 import com.hussein.mawaqit.presentation.navigation.components.rememberBottomBarState
 import com.hussein.mawaqit.presentation.onboarding.OnboardingScreen
+import com.hussein.mawaqit.presentation.qiblah.QiblahRoute
 import com.hussein.mawaqit.presentation.quran.bookmarks.BookmarksScreen
-import com.hussein.mawaqit.presentation.quran.reading.reading_settings.QuranReadingSettingsScreen
 import com.hussein.mawaqit.presentation.quran.reading.QuranReadingScreen
+import com.hussein.mawaqit.presentation.quran.reading.reading_settings.QuranReadingSettingsScreen
 import com.hussein.mawaqit.presentation.quran.search.QuranSearchScreen
 import com.hussein.mawaqit.presentation.quran.surah_list.SurahListScreen
 import com.hussein.mawaqit.presentation.quran.tafsir.QuranReaderWithTafsirScreen
@@ -61,7 +62,7 @@ data class TopLevelDestination(
 
 private val topLevelDestinations = listOf(
     TopLevelDestination(Home, "Home", R.drawable.ic_home),
-    TopLevelDestination(QuranSurahList, "Quran", R.drawable.ic_quran2),
+    TopLevelDestination(QuranSurahList, "Quran", R.drawable.ic_quran),
     TopLevelDestination(Settings, "Settings", R.drawable.ic_settings)
 )
 
@@ -79,12 +80,13 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
 
     val backStack: NavBackStack<NavKey> = rememberNavBackStack(Initializing)
 
+    fun goBack() { backStack.removeAt(backStack.size - 1) }
     LaunchedEffect(Unit) {
         if (settingsRepository.isOnboardingDone()) {
-            if (backStack.isNotEmpty()) backStack.removeAt(backStack.size - 1)
+            if (backStack.isNotEmpty()) goBack()
             backStack.add(Main)
         } else {
-            if (backStack.isNotEmpty()) backStack.removeAt(backStack.size - 1)
+            if (backStack.isNotEmpty()) goBack()
             backStack.add(Onboarding)
         }
     }
@@ -136,7 +138,7 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
         backStack = backStack,
-        onBack = { if (backStack.size > 1) backStack.removeAt(backStack.size - 1) },
+        onBack = { if (backStack.size > 1) goBack() },
         entryProvider = entryProvider {
 
             entry<Main> {
@@ -145,7 +147,7 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
 
             entry<NotificationSettings> {
                 NotificationSettingsScreen(
-                    onBack = { backStack.removeAt(backStack.size - 1) }
+                    onBack = { goBack() }
                 )
             }
 
@@ -153,7 +155,7 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
                 QuranReadingScreen(
                     scrollToAyah = key.scrollToAyah,
                     surahIndex = key.surahIndex,
-                    onBack = { backStack.removeAt(backStack.size - 1) },
+                    onBack = { goBack() },
                     onNavigateToSettings = { backStack.add(QuranReaderSettings) },
                     onNavigateToTafsir = { surahName ->
                         backStack.add(QuranReaderWithTafsir(key.surahIndex, surahName))
@@ -165,13 +167,13 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
                 QuranReaderWithTafsirScreen(
                     surahNumber = key.surahIndex,
                     surahName = key.surahName,
-                    onBack = { backStack.removeAt(backStack.size - 1) }
+                    onBack = { goBack() }
                 )
             }
 
             entry<QuranReaderSettings> {
                 QuranReadingSettingsScreen(
-                    onBack = { backStack.removeAt(backStack.size - 1) }
+                    onBack = { goBack() }
                 )
             }
 
@@ -183,7 +185,7 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
                     onAyahSelected = { surahIndex, ayahNumber ->
                         backStack.add(QuranReading(surahIndex, ayahNumber))
                     },
-                    onBack = { backStack.removeAt(backStack.size - 1) },
+                    onBack = { goBack() },
                 )
             }
 
@@ -192,28 +194,32 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
                     onNavigateToAyah = { surahIndex, ayahNumber ->
                         backStack.add(QuranReading(surahIndex, ayahNumber))
                     },
-                    onBack = { backStack.removeAt(backStack.size - 1) }
+                    onBack = { goBack() }
                 )
             }
 
             entry<AzkarCategories> {
                 AzkarCategoriesScreen(
                     onCategorySelected = { id -> backStack.add(AzkarList(id)) },
-                    onBack = { backStack.removeAt(backStack.size - 1) },
+                    onBack = { goBack() },
                 )
             }
 
             entry<AzkarList> { key ->
                 AzkarScreen(
                     categoryId = key.categoryId,
-                    onBack = { backStack.removeAt(backStack.size - 1) }
+                    onBack = { goBack() }
                 )
             }
 
             entry<RadioChannels> {
                 RadioChannelListScreen(
-                    onBack = { backStack.removeAt(backStack.size - 1) }
+                    onBack = { goBack() }
                 )
+            }
+
+            entry<Qiblah> {
+                QiblahRoute(onBack = {goBack()})
             }
 
             entry<Initializing> {
@@ -243,7 +249,7 @@ private fun TopLevelNavigation(
 
     val bottomBarVisible = rememberBottomBarState()
 
-    val scrollConnection = remember {
+    val bottomBarScrollConnection = remember {
         BottomBarNestedScrollConnection(
             onHide = { bottomBarVisible.value = false },
             onShow = { bottomBarVisible.value = true }
@@ -299,9 +305,10 @@ private fun TopLevelNavigation(
             entryProvider = entryProvider {
                 entry<Home> {
                     HomeScreen(
-                        modifier = Modifier.nestedScroll(scrollConnection),
+                        modifier = Modifier.nestedScroll(bottomBarScrollConnection),
                         onNavigateToAzkar = { rootBackStack.add(AzkarCategories) },
                         onNavigateToRadio = { rootBackStack.add(RadioChannels) },
+                        onNavigateToQiblah = { rootBackStack.add(Qiblah) },
                         onNavigateToReader = { index, ayahIndex ->
                             rootBackStack.add(QuranReading(index, ayahIndex))
                         },
@@ -311,14 +318,14 @@ private fun TopLevelNavigation(
 
                 entry<Settings> {
                     SettingsScreen(
-                        modifier = Modifier.nestedScroll(scrollConnection),
+                        modifier = Modifier.nestedScroll(bottomBarScrollConnection),
                         onNavigateToNotificationSettings = { rootBackStack.add(NotificationSettings) }
                     )
                 }
 
                 entry<QuranSurahList> {
                     SurahListScreen(
-                        modifier = Modifier.nestedScroll(scrollConnection),
+                        modifier = Modifier.nestedScroll(bottomBarScrollConnection),
                         onSurahSelected = { index, scrollToAyah ->
                             rootBackStack.add(QuranReading(index, scrollToAyah))
                         },

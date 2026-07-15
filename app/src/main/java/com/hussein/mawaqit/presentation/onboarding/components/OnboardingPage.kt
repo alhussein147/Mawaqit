@@ -9,11 +9,11 @@ enum class OnboardingPage(
 ) {
     WELCOME(
         titleRes = R.string.onboarding_welcome_title,
-        iconRes = R.drawable.ic_placeholder
+        iconRes = R.drawable.ic_new_logo
     ),
     PERMISSIONS(
         titleRes = R.string.onboarding_permissions_title,
-        iconRes = R.drawable.ic_notification
+        iconRes = R.drawable.ic_bell
     ),
     OPTIONS(
         titleRes = R.string.onboarding_options_title,

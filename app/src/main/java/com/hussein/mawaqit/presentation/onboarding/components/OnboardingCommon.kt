@@ -1,5 +1,7 @@
 package com.hussein.mawaqit.presentation.onboarding.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
@@ -14,22 +16,21 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -37,6 +38,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hussein.mawaqit.R
+import com.hussein.mawaqit.ui.theme.MawaqitTheme
 
 @Composable
 fun PageContent(
@@ -72,6 +74,7 @@ fun PageContent(
         Text(
             text = title,
             style = MaterialTheme.typography.headlineLarge,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.ExtraBold,
             textAlign = TextAlign.Center,
             lineHeight = 44.sp
@@ -106,7 +109,7 @@ fun PageContent(
         errorMessage?.takeIf { it.isNotBlank() }?.let { msg ->
             Spacer(Modifier.height(24.dp))
             Surface(
-                shape = RoundedCornerShape(16.dp),
+                shape = MawaqitTheme.appShapes.small,
                 color = MaterialTheme.colorScheme.errorContainer
             ) {
                 Text(
@@ -125,34 +128,36 @@ fun PageContent(
 fun OnboardingActions(
     page: OnboardingPage,
     onPrimaryClick: () -> Unit,
-    onSkipClick: () -> Unit,
+    onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
-    primaryButtonEnabled: Boolean = true
+    primaryButtonEnabled: Boolean = true,
+    showBackButton: Boolean = true
 ) {
     val primaryLabel = when (page) {
         OnboardingPage.WELCOME -> stringResource(R.string.get_started)
         OnboardingPage.PERMISSIONS -> stringResource(R.string.continue_)
         OnboardingPage.OPTIONS -> stringResource(R.string.continue_)
-//        OnboardingPage.QURAN_SETUP -> stringResource(R.string.load_quran_data)
         OnboardingPage.DONE -> stringResource(R.string.finish)
     }
 
-//    val showSkip = page == OnboardingPage.QURAN_SETUP
-
-    Column(
-        modifier = modifier
-            .background(Color.Transparent)
-            .fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(modifier), horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
+        AnimatedVisibility(showBackButton) {
+            TextButton(onClick = onBackClick) { Text("Back") }
+        }
         Button(
             onClick = onPrimaryClick,
             enabled = primaryButtonEnabled,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(64.dp),
-            shape = RoundedCornerShape(32.dp),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp)
+                .animateContentSize()
+                .height(56.dp)
+                .weight(if (showBackButton) 0.60f else 1f),
+            shape = MawaqitTheme.appShapes.large,
         ) {
             Text(
                 primaryLabel,
@@ -161,50 +166,38 @@ fun OnboardingActions(
             )
         }
 
-//        if (showSkip) {
-//            Spacer(Modifier.height(12.dp))
-//            TextButton(
-//                onClick = onSkipClick,
-//                modifier = Modifier.height(48.dp)
-//            ) {
-//                Text(
-//                    stringResource(R.string.skip_for_now),
-//                    style = MaterialTheme.typography.labelLarge,
-//                    color = MaterialTheme.colorScheme.primary
-//                )
-//            }
-//        }
+
     }
+
+
 }
 
 @Composable
 fun StepIndicator(
-    currentPage: OnboardingPage,
+    pagerState: PagerState,
+    pageCount: Int,
     modifier: Modifier = Modifier
 ) {
-    val visiblePages = OnboardingPage.entries
-    val activeIndex = visiblePages.indexOf(currentPage).coerceAtLeast(0)
-
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        visiblePages.forEachIndexed { index, _ ->
-            val isActive = index == activeIndex
+        repeat(pageCount) { index ->
+            val isSelected = pagerState.currentPage == index
             val width by animateFloatAsState(
-                targetValue = if (isActive) 32f else 10f,
+                targetValue = if (isSelected) 32f else 8f,
                 animationSpec = spring(dampingRatio = 0.6f, stiffness = 300f),
                 label = "indicator_width"
             )
 
             Box(
                 modifier = Modifier
-                    .height(10.dp)
+                    .height(8.dp)
                     .width(width.dp)
                     .clip(CircleShape)
                     .background(
-                        if (isActive) MaterialTheme.colorScheme.primary
+                        if (isSelected) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
                     )
             )

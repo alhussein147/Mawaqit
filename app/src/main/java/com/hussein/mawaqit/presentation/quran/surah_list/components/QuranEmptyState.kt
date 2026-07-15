@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -91,8 +90,7 @@ fun QuranEmptyState(
 
             // Selection Rows
             Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
+                modifier = Modifier.fillMaxWidth()
             ) {
                 SettingPickerRow(
                     label = "Quran Language",
@@ -100,7 +98,7 @@ fun QuranEmptyState(
                     options = listOf("Arabic"),
                     onOptionSelected = { /* Hardcoded for now */ },
                     icon = ImageVector.vectorResource(com.hussein.mawaqit.R.drawable.ic_quran),
-                    shape = MawaqitTheme.listShapes.topItem
+                    shape = MawaqitTheme.appShapes.listShapes.topItem
                 )
                 SettingPickerRow(
                     label = "Tafsir Source",
@@ -111,7 +109,7 @@ fun QuranEmptyState(
                             ?.let { onTafsirSourceSelected(it) }
                     },
                     icon = ImageVector.vectorResource(com.hussein.mawaqit.R.drawable.ic_reciter),
-                    shape = MawaqitTheme.listShapes.bottomItem
+                    shape = MawaqitTheme.appShapes.listShapes.bottomItem
                 )
             }
 
@@ -129,7 +127,7 @@ fun QuranEmptyState(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(64.dp),
-                    shape = RoundedCornerShape(20.dp),
+                    shape = MawaqitTheme.appShapes.medium,
                 ) {
                     Icon(
                         imageVector = ImageVector.vectorResource(com.hussein.mawaqit.R.drawable.ic_download),
@@ -164,7 +162,7 @@ private fun SyncProgressBanner(
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        shape = RoundedCornerShape(16.dp),
+        shape = MawaqitTheme.appShapes.small,
         modifier = modifier
     ) {
         Column(modifier = Modifier.padding(16.dp)) {

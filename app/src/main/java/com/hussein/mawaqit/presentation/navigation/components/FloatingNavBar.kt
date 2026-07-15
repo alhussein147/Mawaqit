@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -34,6 +33,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import com.hussein.mawaqit.presentation.navigation.TopLevelDestination
+import com.hussein.mawaqit.ui.theme.MawaqitTheme
 
 @Composable
 fun FloatingNavBar(
@@ -50,7 +50,7 @@ fun FloatingNavBar(
         exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
     ) {
         Surface(
-            shape = RoundedCornerShape(28.dp),
+            shape = MawaqitTheme.appShapes.large,
             shadowElevation = 6.dp,
             modifier = Modifier.padding(16.dp)
         ) {
@@ -86,7 +86,7 @@ private fun FloatingNavItem(
 ) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(50),
+        shape = MawaqitTheme.appShapes.circle,
         tonalElevation = if (selected) 8.dp else 2.dp
     ) {
         Row(

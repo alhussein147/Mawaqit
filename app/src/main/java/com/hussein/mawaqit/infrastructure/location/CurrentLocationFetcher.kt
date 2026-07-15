@@ -32,6 +32,7 @@ data class UserLocation(
     val latitude: Double,
     @SerialName("lon")
     val longitude: Double,
+    val altitude: Double? = null,
     @SerialName("city")
     val city: String
 )
@@ -69,7 +70,7 @@ class CurrentLocationFetcher(private val context: Context) {
      * 2. Location services are disabled.
      * 3. GPS/Network fix fails or times out.
      */
-    suspend fun fetch(): UserLocation? {
+    suspend fun fetch(fallbackToIp: Boolean = false): UserLocation? {
         Log.d(TAG, "Fetching current location...")
 
         if (hasLocationPermission(context) && isLocationEnabled(context)) {
@@ -81,15 +82,7 @@ class CurrentLocationFetcher(private val context: Context) {
             }
             if (fresh != null) {
                 Log.d(TAG, "Fresh location obtained: $fresh")
-                val cityName = resolveCityName(
-                    lat = fresh.first,
-                    lng = fresh.second
-                )
-                return UserLocation(
-                    latitude = fresh.first,
-                    longitude = fresh.second,
-                    city = cityName
-                )
+                return fresh
             }
 
             Log.d(TAG, "Fresh location timed out, trying last known location...")
@@ -98,35 +91,21 @@ class CurrentLocationFetcher(private val context: Context) {
             }
             if (lastKnown != null) {
                 Log.d(TAG, "Last known location obtained: $lastKnown")
-                val cityName = resolveCityName(
-                    lat = lastKnown.first,
-                    lng = lastKnown.second
-                )
-                return UserLocation(
-                    latitude = lastKnown.first,
-                    longitude = lastKnown.second,
-                    city = cityName
-                )
+                return lastKnown
             }
         } else {
             Log.d(TAG, "Location permission missing or service disabled. Skipping GPS/Network.")
         }
 
-        Log.d(TAG, "Falling back to IP-based location...")
-        val ipLocation = withTimeoutOrNull(IP_API_TIMEOUT_MS.milliseconds) {
-            fetchIpLocation()
-        }
-        if (ipLocation != null) {
-            Log.d(TAG, "IP-based location obtained: $ipLocation")
-            val cityName = resolveCityName(
-                lat = ipLocation.first,
-                lng = ipLocation.second
-            )
-            return UserLocation(
-                latitude = ipLocation.first,
-                longitude = ipLocation.second,
-                city = cityName
-            )
+        if (fallbackToIp){
+            Log.d(TAG, "Falling back to IP-based location...")
+            val ipLocation = withTimeoutOrNull(IP_API_TIMEOUT_MS.milliseconds) {
+                fetchIpLocation()
+            }
+            if (ipLocation != null) {
+                Log.d(TAG, "IP-based location obtained: $ipLocation")
+                return ipLocation
+            }
         }
 
         Log.e(TAG, "All location acquisition methods failed.")
@@ -136,49 +115,65 @@ class CurrentLocationFetcher(private val context: Context) {
     @SuppressLint("MissingPermission")
     private suspend fun requestFreshLocation(
         fusedClient: FusedLocationProviderClient
-    ): Pair<Double, Double>? = suspendCancellableCoroutine { cont ->
+    ): UserLocation? {
+        val latLng = suspendCancellableCoroutine<Pair<Double, Double>?> { cont ->
+            val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5_000L)
+                .setMaxUpdates(1)
+                .setWaitForAccurateLocation(false)
+                .build()
 
-        val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5_000L)
-            .setMaxUpdates(1)
-            .setWaitForAccurateLocation(false)
-            .build()
-
-        val callback = object : LocationCallback() {
-            override fun onLocationResult(result: LocationResult) {
-                fusedClient.removeLocationUpdates(this)
-                val loc = result.lastLocation
-                if (cont.isActive) {
-                    cont.resume(loc?.let { it.latitude to it.longitude })
+            val callback = object : LocationCallback() {
+                override fun onLocationResult(result: LocationResult) {
+                    fusedClient.removeLocationUpdates(this)
+                    val loc = result.lastLocation
+                    if (cont.isActive) {
+                        cont.resume(loc?.let { it.latitude to it.longitude })
+                    }
                 }
             }
-        }
 
-        fusedClient.requestLocationUpdates(request, callback, Looper.getMainLooper())
-            .addOnFailureListener {
+            fusedClient.requestLocationUpdates(request, callback, Looper.getMainLooper())
+                .addOnFailureListener {
+                    fusedClient.removeLocationUpdates(callback)
+                    if (cont.isActive) cont.resume(null)
+                }
+
+            cont.invokeOnCancellation {
                 fusedClient.removeLocationUpdates(callback)
-                if (cont.isActive) cont.resume(null)
             }
+        } ?: return null
 
-        cont.invokeOnCancellation {
-            fusedClient.removeLocationUpdates(callback)
-        }
+        return UserLocation(
+            latitude = latLng.first,
+            longitude = latLng.second,
+            city = resolveCityName(latLng.first, latLng.second)
+        )
     }
 
     @SuppressLint("MissingPermission")
     private suspend fun getLastKnownLocation(
         fusedClient: FusedLocationProviderClient
-    ): Pair<Double, Double>? = suspendCancellableCoroutine { cont ->
-        fusedClient.lastLocation.addOnSuccessListener { loc ->
-            if (cont.isActive) cont.resume(loc?.let { it.latitude to it.longitude })
-        }.addOnFailureListener {
-            if (cont.isActive) cont.resume(null)
-        }
+    ): UserLocation? {
+        val latLng = suspendCancellableCoroutine<Pair<Double, Double>?> { cont ->
+            fusedClient.lastLocation.addOnSuccessListener { loc ->
+                if (cont.isActive) cont.resume(loc?.let { it.latitude to it.longitude })
+            }.addOnFailureListener {
+                if (cont.isActive) cont.resume(null)
+            }
+        } ?: return null
+
+        return UserLocation(
+            latitude = latLng.first,
+            longitude = latLng.second,
+            city = resolveCityName(latLng.first, latLng.second)
+        )
     }
 
-    private suspend fun fetchIpLocation(): Pair<Double, Double>? {
+    private suspend fun fetchIpLocation(): UserLocation? {
         return try {
             val response: UserLocation = RemoteService.getClient().get(IP_API_URL).body()
-            response.latitude to response.longitude
+            val cityName = resolveCityName(response.latitude, response.longitude)
+            response.copy(city = cityName)
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching IP location: ${e.message}")
             null

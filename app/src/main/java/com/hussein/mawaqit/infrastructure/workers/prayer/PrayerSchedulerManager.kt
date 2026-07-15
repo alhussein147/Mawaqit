@@ -1,12 +1,9 @@
-package com.hussein.mawaqit.data.prayer
+package com.hussein.mawaqit.infrastructure.workers.prayer
 
-
-import android.content.Context
 import android.util.Log
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import com.hussein.mawaqit.infrastructure.workers.prayer.DailyPrayerWorker
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
@@ -61,9 +58,8 @@ class PrayerSchedulerManager(val workManager: WorkManager) {
     /**
      * Cancels any pending daily worker (e.g. when the user disables notifications).
      */
-    fun cancel(context: Context) {
-        WorkManager.getInstance(context)
-            .cancelUniqueWork(DailyPrayerWorker.WORK_NAME)
+    fun cancel() {
+        workManager.cancelUniqueWork(DailyPrayerWorker.WORK_NAME)
         Log.d(TAG, "Cancelled DailyPrayerWorker")
     }
 

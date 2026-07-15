@@ -6,13 +6,12 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.hussein.core.LocationRepository
 import com.hussein.core.PrayerTimeCalculator
-import com.hussein.mawaqit.data.prayer.PrayerSchedulerManager
 import com.hussein.mawaqit.infrastructure.alarm_manager.PrayerAlarmManager
 import com.hussein.mawaqit.infrastructure.notification.NotificationUtils
 import com.hussein.mawaqit.infrastructure.settings.NotificationSound
 import com.hussein.mawaqit.infrastructure.settings.SettingsRepository
 import kotlinx.coroutines.flow.first
-import org.koin.java.KoinJavaComponent
+import org.koin.java.KoinJavaComponent.inject
 import kotlin.time.ExperimentalTime
 
 /**
@@ -33,7 +32,7 @@ class DailyPrayerWorker(
         const val WORK_NAME = "daily_prayer_scheduler"
     }
 
-    val prayerSchedulerManager by KoinJavaComponent.inject<PrayerSchedulerManager>(
+    val prayerSchedulerManager by inject<PrayerSchedulerManager>(
         PrayerSchedulerManager::class.java
     )
 

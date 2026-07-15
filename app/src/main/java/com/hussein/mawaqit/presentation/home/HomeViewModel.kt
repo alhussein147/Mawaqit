@@ -9,9 +9,11 @@ import com.hussein.core.PrayerTimeCalculator
 import com.hussein.core.models.SavedLocation
 import com.hussein.core.utils.HijriDateCalculator
 import com.hussein.mawaqit.data.db.repo.QuranDatabaseRepository
+import com.hussein.mawaqit.domain.location.RefreshLocationUseCase
 import com.hussein.mawaqit.domain.models.AyahOfTheDay
 import com.hussein.mawaqit.infrastructure.settings.SettingsRepository
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -38,9 +40,15 @@ data class HomeUiState(
     val prayers: List<PrayerUiModel> = emptyList(),
     val nextPrayer: PrayerUiModel? = null,
     val hijriDate: String = "",
-    val ayahOfTheDay: AyahOfTheDay? = null
-
+    val ayahOfTheDay: AyahOfTheDay? = null,
+    val isRefreshing: Boolean = false,
+    val refreshResult: RefreshLocationResult? = null
 )
+
+sealed class RefreshLocationResult {
+    data class Success(val cityName: String) : RefreshLocationResult()
+    data class Error(val message: String) : RefreshLocationResult()
+}
 @Stable
 data class PrayerUiModel @OptIn(ExperimentalTime::class) constructor(
     val name: String,
@@ -60,7 +68,8 @@ enum class PrayerStatus { PASSED, CURRENT, UPCOMING }
 class HomeViewModel(
     val locationRepo: LocationRepository,
     val settingsRepository: SettingsRepository,
-    val quranDatabaseRepository: QuranDatabaseRepository
+    val quranDatabaseRepository: QuranDatabaseRepository,
+    private val refreshLocationUseCase: RefreshLocationUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -195,6 +204,25 @@ class HomeViewModel(
     override fun onCleared() {
         super.onCleared()
         tickerJob?.cancel()
+    }
+
+    fun refreshLocation() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isRefreshing = true, refreshResult = null) }
+            val result = refreshLocationUseCase.execute(fallbackToIp = false)
+            _uiState.update {
+                it.copy(
+                    isRefreshing = false,
+                    refreshResult = result.fold(
+                        onSuccess = { location -> RefreshLocationResult.Success(location.cityName) },
+                        onFailure = { error -> RefreshLocationResult.Error(error.message ?: "Unknown error") }
+                    )
+                )
+            }
+            // Clear the banner after 3 seconds
+            delay(3000)
+            _uiState.update { it.copy(refreshResult = null) }
+        }
     }
 }
 

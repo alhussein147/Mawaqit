@@ -28,14 +28,15 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.hussein.mawaqit.R
-import com.hussein.mawaqit.domain.models.FullSurahReciter
+import com.hussein.mawaqit.data.db.entities.AudioSourceEntity
 import com.hussein.mawaqit.ui.theme.quranFontFamily
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SurahReciterPickerSheet(
-    current: FullSurahReciter?,
-    onSelect: (FullSurahReciter) -> Unit,
+    current: AudioSourceEntity?,
+    available: List<AudioSourceEntity>,
+    onSelect: (AudioSourceEntity) -> Unit,
     onDismiss: () -> Unit
 ) {
     ModalBottomSheet(
@@ -73,8 +74,8 @@ fun SurahReciterPickerSheet(
             
             Spacer(Modifier.height(8.dp))
 
-            FullSurahReciter.entries.forEach { reciter ->
-                val isSelected = reciter == current
+            available.forEach { reciter ->
+                val isSelected = reciter.id == current?.id
                 Surface(
                     shape = MaterialTheme.shapes.largeIncreased,
                     onClick = { 
@@ -97,7 +98,7 @@ fun SurahReciterPickerSheet(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = reciter.nameArabic,
+                                text = reciter.name,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontFamily = quranFontFamily,
                                 color = if (isSelected) {
@@ -106,15 +107,17 @@ fun SurahReciterPickerSheet(
                                     MaterialTheme.colorScheme.onSurface
                                 }
                             )
-                            Text(
-                                text = reciter.nameEnglish,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (isSelected) {
-                                    MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                                } else {
-                                    MaterialTheme.colorScheme.onSecondaryContainer
-                                }
-                            )
+                            reciter.language?.let {
+                                Text(
+                                    text = it,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (isSelected) {
+                                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                                    } else {
+                                        MaterialTheme.colorScheme.onSecondaryContainer
+                                    }
+                                )
+                            }
                         }
                         
                         if (isSelected) {

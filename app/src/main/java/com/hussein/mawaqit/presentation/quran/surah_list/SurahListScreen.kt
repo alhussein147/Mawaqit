@@ -10,13 +10,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -51,6 +51,7 @@ import com.hussein.mawaqit.presentation.shared.LoadingContent
 import com.hussein.mawaqit.presentation.shared.RootScreenWrapper
 import com.hussein.mawaqit.presentation.util.GlobalPlayerViewModel
 import com.hussein.mawaqit.presentation.util.SurahItemState
+import com.hussein.mawaqit.ui.theme.MawaqitTheme
 import com.hussein.mawaqit.ui.theme.quranFontFamily
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
@@ -70,6 +71,7 @@ fun SurahListScreen(
     val uiState by surahListViewModel.uiState.collectAsStateWithLifecycle()
     val surahStates by globalPlayerViewModel.surahStates.collectAsStateWithLifecycle()
     val selectedReciter by globalPlayerViewModel.selectedReciter.collectAsStateWithLifecycle()
+    val playbackState by globalPlayerViewModel.playbackState.collectAsStateWithLifecycle()
 
     var showReciterPicker by remember { mutableStateOf(false) }
     var surahToDownload by remember { mutableStateOf<Int?>(null) }
@@ -79,6 +81,7 @@ fun SurahListScreen(
     if (showReciterPicker) {
         SurahReciterPickerSheet(
             current = selectedReciter,
+            available = playbackState.availableReciters,
             onSelect = { reciter ->
                 globalPlayerViewModel.selectReciter(reciter)
                 surahToDownload?.let { surahNumber ->
@@ -95,6 +98,7 @@ fun SurahListScreen(
 
 
     RootScreenWrapper(
+        modifier = Modifier.navigationBarsPadding(),
         topAppBar = {
             if (!uiState.isLoading && uiState.surahs.isNotEmpty()) {
                 LargeTopAppBar(
@@ -222,7 +226,7 @@ private fun SurahRow(
     Surface(
         onClick = onClick,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = RoundedCornerShape(24.dp),
+        shape = MawaqitTheme.appShapes.medium,
         modifier = modifier
     ) {
         Row(
@@ -233,7 +237,7 @@ private fun SurahRow(
         ) {
             // Surah number badge
             Surface(
-                shape = RoundedCornerShape(12.dp),
+                shape = MawaqitTheme.appShapes.small,
                 color = MaterialTheme.colorScheme.primaryContainer,
                 modifier = Modifier.size(40.dp)
             ) {
@@ -388,7 +392,7 @@ private fun ContinueReadingCard(
     Surface(
         onClick = onClick,
         color = MaterialTheme.colorScheme.primaryContainer,
-        shape = RoundedCornerShape(24.dp),
+        shape = MawaqitTheme.appShapes.medium,
         modifier = modifier
     ) {
         Row(

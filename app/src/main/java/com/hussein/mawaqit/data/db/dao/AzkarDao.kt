@@ -4,8 +4,8 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import com.hussein.mawaqit.data.db.entities.AzkarCategoryEntity
-import com.hussein.mawaqit.data.db.entities.AzkarItemEntity
+import com.hussein.mawaqit.data.db.entities.invocation.AzkarCategoryEntity
+import com.hussein.mawaqit.data.db.entities.invocation.AzkarItemEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao

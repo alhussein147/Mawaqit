@@ -1,4 +1,4 @@
-package com.hussein.mawaqit.infrastructure.workers.local_population_workers
+package com.hussein.mawaqit.infrastructure.workers.population_workers
 
 interface DataPopulationStrategy {
     val name: String

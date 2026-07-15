@@ -41,7 +41,7 @@ object NotificationUtils {
         )
 
         val notification = NotificationCompat.Builder(context, PRAYER_NOTIFICATION_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification_icon)
+            .setSmallIcon(R.drawable.ic_new_logo)
             .setContentTitle(context.getString(R.string.notification_prayer_title, prayerName))
             .setContentIntent(contentPendingIntent)
             .setContentText(context.getString(R.string.notification_prayer_content, prayerName))
@@ -155,7 +155,7 @@ object NotificationUtils {
         )
 
         val notification = NotificationCompat.Builder(context, AZAN_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification)
+            .setSmallIcon(R.drawable.ic_bell)
             .setContentTitle(context.getString(R.string.notification_prayer_title, prayerName))
             .setContentText(context.getString(R.string.notification_prayer_content, prayerName))
             .setPriority(NotificationCompat.PRIORITY_MAX)

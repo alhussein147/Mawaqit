@@ -7,13 +7,14 @@ import androidx.lifecycle.viewModelScope
 import com.batoulapps.adhan2.CalculationMethod
 import com.hussein.core.LocationRepository
 import com.hussein.core.models.SavedLocation
-import com.hussein.mawaqit.data.prayer.PrayerSchedulerManager
+import com.hussein.mawaqit.infrastructure.alarm_manager.PrayerAlarmManager
 import com.hussein.mawaqit.infrastructure.location.CurrentLocationFetcher
 import com.hussein.mawaqit.infrastructure.settings.AppColorScheme
 import com.hussein.mawaqit.infrastructure.settings.AppSettings
 import com.hussein.mawaqit.infrastructure.settings.AppTheme
 import com.hussein.mawaqit.infrastructure.settings.NotificationSound
 import com.hussein.mawaqit.infrastructure.settings.SettingsRepository
+import com.hussein.mawaqit.infrastructure.workers.prayer.PrayerSchedulerManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -26,7 +27,8 @@ class SettingsViewModel(
     private val settingsRepository: SettingsRepository,
     private val locationRepository: LocationRepository,
     private val currentLocationFetcher: CurrentLocationFetcher,
-    private val prayerSchedulerManager: PrayerSchedulerManager
+    private val prayerSchedulerManager: PrayerSchedulerManager,
+    private val prayerAlarmManager: PrayerAlarmManager
 ) : ViewModel() {
     val TAG = "SettingsViewModel"
 
@@ -64,9 +66,16 @@ class SettingsViewModel(
         }
     }
 
-    fun onNotificationSoundChanged(sound: NotificationSound) {
+    fun onNotificationStyleChanged(sound: NotificationSound) {
         viewModelScope.launch {
             settingsRepository.setNotificationSound(sound)
+            if (sound == NotificationSound.NONE) {
+                prayerSchedulerManager.cancel()
+                prayerAlarmManager.cancelAll()
+            } else {
+                // Prayer times notification is enabled — reschedule
+                prayerSchedulerManager.enqueueImmediate()
+            }
         }
     }
 
@@ -87,7 +96,7 @@ class SettingsViewModel(
         viewModelScope.launch {
             _locationState.update { LocationUpdateState.Fetching }
             try {
-                val userLocation = currentLocationFetcher.fetch()
+                val userLocation = currentLocationFetcher.fetch(fallbackToIp = false)
                 if (userLocation != null) {
                     val saved = locationRepository.saveLocation(
                         latitude = userLocation.latitude,

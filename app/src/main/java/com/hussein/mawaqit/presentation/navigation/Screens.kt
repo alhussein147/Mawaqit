@@ -49,3 +49,6 @@ data object QuranBookmarks : Screen
 
 @Serializable
 data class QuranReaderWithTafsir(val surahIndex: Int, val surahName: String) : Screen
+
+@Serializable
+data object Qiblah : Screen

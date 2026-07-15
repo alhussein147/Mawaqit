@@ -1,4 +1,4 @@
-package com.hussein.mawaqit.infrastructure.workers.local_population_workers
+package com.hussein.mawaqit.infrastructure.workers.population_workers
 
 import android.content.Context
 import android.content.pm.ServiceInfo
@@ -10,7 +10,7 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.hussein.mawaqit.R
 import com.hussein.mawaqit.infrastructure.notification.NotificationUtils
-import com.hussein.mawaqit.infrastructure.workers.local_population_workers.strategies.TafsirPopulationStrategy
+import com.hussein.mawaqit.infrastructure.workers.population_workers.strategies.TafsirPopulationStrategy
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
 import org.koin.core.component.inject
@@ -43,7 +43,7 @@ class GenericPopulationWorker(
         )
             .setContentTitle("Syncing $strategyName")
             .setTicker("Syncing $strategyName")
-            .setSmallIcon(R.drawable.ic_notification_icon)
+            .setSmallIcon(R.drawable.ic_new_logo)
             .setOngoing(true)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .build()

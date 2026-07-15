@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -60,7 +59,7 @@ import com.hussein.mawaqit.presentation.shared.SettingPickerRow
 import com.hussein.mawaqit.presentation.shared.SettingSectionHeader
 import com.hussein.mawaqit.presentation.shared.SettingToggleRow
 import com.hussein.mawaqit.presentation.util.getPrayersDisplayNames
-import com.hussein.mawaqit.ui.theme.MawaqitTheme.listShapes
+import com.hussein.mawaqit.ui.theme.MawaqitTheme
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -138,7 +137,7 @@ fun NotificationSettingsScreen(
                         options = NotificationSound.entries.map { it.displayName },
                         enabled = isNotificationEnabled,
                         onOptionSelected = { name ->
-                            viewModel.onNotificationSoundChanged(
+                            viewModel.onNotificationStyleChanged(
                                 NotificationSound.entries.first { it.displayName == name }
                             )
                         }
@@ -157,9 +156,9 @@ fun NotificationSettingsScreen(
                                     onCheckedChange = { viewModel.onPrayerNotificationToggled(prayer, it) },
                                     enabled = isNotificationEnabled,
                                     shape = when (index) {
-                                        0 -> listShapes.topItem
-                                        4 -> listShapes.bottomItem
-                                        else -> listShapes.midItem
+                                        0 -> MawaqitTheme.appShapes.listShapes.topItem
+                                        4 -> MawaqitTheme.appShapes.listShapes.bottomItem
+                                        else -> MawaqitTheme.appShapes.listShapes.midItem
                                     }
                                 )
                             }
@@ -178,7 +177,7 @@ private fun PermissionDeniedBanner(
 ) {
     Surface(
         color = MaterialTheme.colorScheme.errorContainer,
-        shape = RoundedCornerShape(24.dp),
+        shape = MawaqitTheme.appShapes.medium,
         modifier = modifier.fillMaxWidth()
     ) {
         Column(
@@ -196,7 +195,7 @@ private fun PermissionDeniedBanner(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = ImageVector.vectorResource(R.drawable.ic_notification),
+                        imageVector = ImageVector.vectorResource(R.drawable.ic_bell),
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(24.dp)
@@ -223,7 +222,7 @@ private fun PermissionDeniedBanner(
                     containerColor = MaterialTheme.colorScheme.error,
                     contentColor = MaterialTheme.colorScheme.onError
                 ),
-                shape = RoundedCornerShape(16.dp)
+                shape = MawaqitTheme.appShapes.small
             ) {
                 Text("Open Settings", fontWeight = FontWeight.Bold)
             }

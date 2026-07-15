@@ -1,0 +1,120 @@
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt">
+    <aapt:attr name="android:drawable">
+        <vector
+            android:name="vector"
+            android:width="200dp"
+            android:height="200dp"
+            android:viewportWidth="300"
+            android:viewportHeight="300">
+            <group
+                android:name="root_group"
+                android:scaleX="3.8"
+                android:scaleY="3.8"
+                android:translateX="60"
+                android:translateY="60">
+                <path
+                    android:name="path"
+                    android:pathData="M 6.5 10.786 C 6.5 8.765 6.5 7.755 7.128 7.128 C 7.755 6.5 8.765 6.5 10.786 6.5 L 32.214 6.5 C 34.235 6.5 35.245 6.5 35.872 7.128 C 36.5 7.755 36.5 8.765 36.5 10.786 L 36.5 32.214 C 36.5 34.235 36.5 35.245 35.872 35.872 C 35.245 36.5 34.235 36.5 32.214 36.5 L 10.786 36.5 C 8.765 36.5 7.755 36.5 7.128 35.872 C 6.5 35.245 6.5 34.235 6.5 32.214 L 6.5 10.786 Z"
+                    android:strokeWidth="2"
+                    android:strokeColor="#FF000000"
+                    android:strokeLineCap="round" />
+                <path
+                    android:name="path_1"
+                    android:pathData="M 18.518 3.609 C 19.924 2.203 20.627 1.5 21.5 1.5 C 22.373 1.5 23.076 2.203 24.482 3.609 L 39.392 18.518 C 40.797 19.924 41.5 20.627 41.5 21.5 C 41.5 22.373 40.797 23.076 39.392 24.482 L 24.482 39.392 C 23.076 40.797 22.373 41.5 21.5 41.5 C 20.627 41.5 19.924 40.797 18.518 39.392 L 3.609 24.482 C 2.203 23.076 1.5 22.373 1.5 21.5 C 1.5 20.627 2.203 19.924 3.609 18.518 L 18.518 3.609 Z"
+                    android:strokeWidth="2"
+                    android:strokeColor="#FF000000"
+                    android:strokeLineCap="round" />
+                <path
+                    android:name="path_2"
+                    android:pathData="M 21.5 17.5 C 20.44 17.5 19.421 17.922 18.672 18.672 C 17.922 19.421 17.5 20.44 17.5 21.5 C 17.5 22.56 17.922 23.579 18.672 24.328 C 19.421 25.078 20.44 25.5 21.5 25.5 C 22.56 25.5 23.579 25.078 24.328 24.328 C 25.078 23.579 25.5 22.56 25.5 21.5 C 25.5 20.44 25.078 19.421 24.328 18.672 C 23.579 17.922 22.56 17.5 21.5 17.5 Z"
+                    android:strokeWidth="2"
+                    android:strokeColor="#FF000000"
+                    android:strokeLineCap="round" />
+            </group>
+        </vector>
+    </aapt:attr>
+    <target android:name="path">
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator
+                    android:duration="200"
+                    android:interpolator="@android:interpolator/fast_out_slow_in"
+                    android:propertyName="strokeWidth"
+                    android:startOffset="800"
+                    android:valueFrom="2"
+                    android:valueTo="2.5"
+                    android:valueType="floatType" />
+                <objectAnimator
+                    android:duration="850"
+                    android:interpolator="@android:anim/decelerate_interpolator"
+                    android:propertyName="trimPathEnd"
+                    android:valueFrom="0"
+                    android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
+        </aapt:attr>
+    </target>
+    <target android:name="path_1">
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator
+                    android:duration="200"
+                    android:interpolator="@android:interpolator/fast_out_slow_in"
+                    android:propertyName="strokeWidth"
+                    android:startOffset="800"
+                    android:valueFrom="2"
+                    android:valueTo="2.5"
+                    android:valueType="floatType" />
+                <objectAnimator
+                    android:duration="900"
+                    android:interpolator="@android:anim/decelerate_interpolator"
+                    android:propertyName="trimPathEnd"
+                    android:valueFrom="0"
+                    android:valueTo="1"
+                    android:valueType="floatType" />
+            </set>
+        </aapt:attr>
+    </target>
+    <target android:name="path_2">
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator
+                    android:duration="200"
+                    android:interpolator="@android:interpolator/fast_out_slow_in"
+                    android:propertyName="strokeWidth"
+                    android:startOffset="800"
+                    android:valueFrom="2"
+                    android:valueTo="2.5"
+                    android:valueType="floatType" />
+                <objectAnimator
+                    android:duration="900"
+                    android:interpolator="@android:anim/decelerate_interpolator"
+                    android:propertyName="trimPathStart"
+                    android:valueFrom="1"
+                    android:valueTo="0"
+                    android:valueType="floatType" />
+            </set>
+        </aapt:attr>
+    </target>
+    <target android:name="root_group">
+        <aapt:attr name="android:animation">
+            <set>
+                <objectAnimator
+                    android:duration="1000"
+                    android:interpolator="@android:anim/decelerate_interpolator"
+                    android:propertyName="scaleX"
+                    android:valueFrom="3.8"
+                    android:valueTo="4.2"
+                    android:valueType="floatType" />
+                <objectAnimator
+                    android:duration="1000"
+                    android:interpolator="@android:anim/decelerate_interpolator"
+                    android:propertyName="scaleY"
+                    android:valueFrom="3.8"
+                    android:valueTo="4.2"
+                    android:valueType="floatType" />
+            </set>
+        </aapt:attr>
+    </target>
+</animated-vector>

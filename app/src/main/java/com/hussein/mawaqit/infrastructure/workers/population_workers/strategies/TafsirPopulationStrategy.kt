@@ -1,4 +1,4 @@
-package com.hussein.mawaqit.infrastructure.workers.local_population_workers.strategies
+package com.hussein.mawaqit.infrastructure.workers.population_workers.strategies
 
 import android.util.Log
 import com.hussein.mawaqit.data.db.AppDatabase
@@ -6,7 +6,7 @@ import com.hussein.mawaqit.data.db.entities.TafsirEntity
 import com.hussein.mawaqit.data.db.entities.TafsirSourceEntity
 import com.hussein.mawaqit.data.remote.RemoteService
 import com.hussein.mawaqit.data.remote.dto.TafsirDto
-import com.hussein.mawaqit.infrastructure.workers.local_population_workers.DataPopulationStrategy
+import com.hussein.mawaqit.infrastructure.workers.population_workers.DataPopulationStrategy
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 

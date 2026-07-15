@@ -1,4 +1,4 @@
-package com.hussein.mawaqit.data.db.entities
+package com.hussein.mawaqit.data.db.entities.invocation
 
 import androidx.room.Entity
 import androidx.room.ForeignKey

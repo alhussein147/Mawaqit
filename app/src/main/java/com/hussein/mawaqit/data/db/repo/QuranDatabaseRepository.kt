@@ -9,7 +9,6 @@ import com.hussein.mawaqit.data.mappers.toAyah
 import com.hussein.mawaqit.data.mappers.toAyahOfTheDay
 import com.hussein.mawaqit.data.mappers.toBookmark
 import com.hussein.mawaqit.data.mappers.toSurah
-import com.hussein.mawaqit.data.quran.ArabicSearchNormalizer
 import com.hussein.mawaqit.domain.models.AyahOfTheDay
 import com.hussein.mawaqit.domain.models.Bookmark
 import com.hussein.mawaqit.domain.models.Surah
@@ -46,13 +45,13 @@ class QuranDatabaseRepository(
     fun searchAyahs(query: String): Flow<List<AyahWithSurah>> =
         ayahDao.searchAyahs(
             rawQuery = query.trim(),
-            normalizedQuery = ArabicSearchNormalizer.normalize(query)
+            normalizedQuery = normalize(query)
         )
 
     fun searchSurahs(query: String) =
         surahDao.searchSurahs(
             rawQuery = query.trim(),
-            normalizedQuery = ArabicSearchNormalizer.normalize(query)
+            normalizedQuery = normalize(query)
         )
 
 
@@ -93,5 +92,24 @@ class QuranDatabaseRepository(
         )
     }
 
+
+    private fun normalize(value: String): String {
+        val diacritics = Regex("[\\u0610-\\u061A\\u064B-\\u065F\\u0670\\u06D6-\\u06ED]")
+        val whitespace = Regex("\\s+")
+        return value
+            .trim()
+            .replace(diacritics, "")
+            .replace("ـ", "")
+            .replace('ٱ', 'ا')
+            .replace('أ', 'ا')
+            .replace('إ', 'ا')
+            .replace('آ', 'ا')
+            .replace('ى', 'ي')
+            .replace('ؤ', 'و')
+            .replace('ئ', 'ي')
+            .replace('ة', 'ه')
+            .replace(whitespace, " ")
+            .lowercase()
+    }
 
 }

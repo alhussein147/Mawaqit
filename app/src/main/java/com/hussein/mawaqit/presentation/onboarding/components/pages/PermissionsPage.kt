@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -34,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.hussein.mawaqit.R
 import com.hussein.mawaqit.presentation.onboarding.components.PermissionState
+import com.hussein.mawaqit.ui.theme.MawaqitTheme
 
 @Composable
 fun PermissionsPage(
@@ -56,6 +56,7 @@ fun PermissionsPage(
         Text(
             text = stringResource(R.string.onboarding_permissions_title),
             style = MaterialTheme.typography.displaySmall,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Black,
             textAlign = TextAlign.Center
         )
@@ -84,7 +85,7 @@ fun PermissionsPage(
         PermissionItem(
             title = stringResource(R.string.onboarding_notification_title),
             description = stringResource(R.string.onboarding_notification_description),
-            iconRes = R.drawable.ic_notification,
+            iconRes = R.drawable.ic_bell,
             state = notificationState,
             onClick = onNotificationClick
         )
@@ -127,14 +128,14 @@ private fun PermissionItem(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp)
-            .clip(RoundedCornerShape(24.dp))
+            .clip(MawaqitTheme.appShapes.medium)
             .clickable(enabled = !isGranted && !isLoading) { onClick() },
         color = when {
             isGranted -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
             isDenied -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
             else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
         },
-        shape = RoundedCornerShape(24.dp)
+        shape = MawaqitTheme.appShapes.medium
     ) {
         Row(
             modifier = Modifier.padding(20.dp),

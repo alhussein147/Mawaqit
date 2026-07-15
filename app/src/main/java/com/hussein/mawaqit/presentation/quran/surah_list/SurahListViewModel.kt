@@ -13,7 +13,7 @@ import com.hussein.mawaqit.data.db.repo.QuranDatabaseRepository
 import com.hussein.mawaqit.data.db.repo.TafsirRepository
 import com.hussein.mawaqit.domain.models.Surah
 import com.hussein.mawaqit.infrastructure.settings.QuranReaderPreferences
-import com.hussein.mawaqit.infrastructure.workers.local_population_workers.GenericPopulationWorker
+import com.hussein.mawaqit.infrastructure.workers.population_workers.GenericPopulationWorker
 import com.hussein.mawaqit.presentation.shared.SyncStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -137,31 +137,39 @@ class SurahListViewModel(
             workerManager.getWorkInfosByTagFlow(QURAN_SYNC_TAG)
                 .collect { infos ->
                     val info = infos.firstOrNull() ?: return@collect
-                    updateSyncState(info)
+                    updateSyncState(info, stage = 0)
                 }
         }
         viewModelScope.launch {
             workerManager.getWorkInfosByTagFlow(TAFSIR_SYNC_TAG)
                 .collect { infos ->
                     val info = infos.firstOrNull() ?: return@collect
-                    // Only update if tafsir is running or failed, or if it succeeded after quran
                     if (info.state != WorkInfo.State.ENQUEUED) {
-                        updateSyncState(info, isTafsir = true)
+                        updateSyncState(info, stage = 1)
+                    }
+                }
+        }
+        viewModelScope.launch {
+            workerManager.getWorkInfosByTagFlow(AUDIO_SOURCE_SYNC_TAG)
+                .collect { infos ->
+                    val info = infos.firstOrNull() ?: return@collect
+                    if (info.state != WorkInfo.State.ENQUEUED) {
+                        updateSyncState(info, stage = 2)
                     }
                 }
         }
     }
 
-    private fun updateSyncState(info: WorkInfo, isTafsir: Boolean = false) {
+    private fun updateSyncState(info: WorkInfo, stage: Int) {
+        val totalStages = 3
         when (info.state) {
             WorkInfo.State.RUNNING -> {
                 val progress = info.progress.getFloat(GenericPopulationWorker.KEY_PROGRESS, 0f)
-                // If tafsir is running, we consider it the second half (0.5 to 1.0)
-                val totalProgress = if (isTafsir) 0.5f + (progress / 2f) else progress / 2f
+                val totalProgress = (stage + progress) / totalStages
                 _syncStatus.update { it.copy(isSyncing = true, progress = totalProgress, error = null) }
             }
             WorkInfo.State.SUCCEEDED -> {
-                if (isTafsir) {
+                if (stage == totalStages - 1) {
                     _syncStatus.update { it.copy(isSyncing = false, progress = 1f) }
                 }
             }
@@ -191,16 +199,24 @@ class SurahListViewModel(
                 )
                 .build()
 
+            val audioSourceRequest = OneTimeWorkRequestBuilder<GenericPopulationWorker>()
+                .addTag(AUDIO_SOURCE_SYNC_TAG)
+                .setInputData(workDataOf(GenericPopulationWorker.KEY_STRATEGY_NAME to "AudioSource"))
+                .build()
+
             workerManager.beginUniqueWork(
                 "quran_tafsir_population",
                 ExistingWorkPolicy.KEEP,
                 quranRequest
-            ).then(tafsirRequest).enqueue()
+            ).then(tafsirRequest)
+                .then(audioSourceRequest)
+                .enqueue()
         }
     }
 
     companion object {
         private const val QURAN_SYNC_TAG = "quran_sync"
         private const val TAFSIR_SYNC_TAG = "tafsir_sync"
+        private const val AUDIO_SOURCE_SYNC_TAG = "audio_source_sync"
     }
 }

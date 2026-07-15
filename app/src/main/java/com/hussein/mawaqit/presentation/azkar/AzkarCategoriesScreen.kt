@@ -15,12 +15,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -44,6 +43,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.mawaqit.R
 import com.hussein.mawaqit.presentation.shared.BackButton
 import com.hussein.mawaqit.presentation.shared.LoadingContent
+import com.hussein.mawaqit.ui.theme.MawaqitTheme
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,13 +61,14 @@ fun AzkarCategoriesScreen(
     val remainingCategories = categories.filter { !it.highlight }.map { it.id to it.title }
 
     val topAppBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
     Scaffold(
         modifier = Modifier,
         topBar = {
             Column {
-                LargeTopAppBar(
+                CenterAlignedTopAppBar(
                     scrollBehavior = topAppBarScrollBehavior,
-                    title = { Text(stringResource(R.string.azkar)) },
+                    title = { Text(stringResource(R.string.azkar), fontWeight = FontWeight.Black) },
                     navigationIcon = {
                         BackButton(onClick = onBack)
                     },
@@ -169,7 +170,7 @@ private fun EmptyAzkarContent(
         Button(
             onClick = onSync,
             enabled = !isOffline && !isSyncing,
-            shape = RoundedCornerShape(12.dp)
+            shape = MawaqitTheme.appShapes.small
         ) {
             if (isSyncing) {
                 CircularProgressIndicator(
@@ -231,7 +232,7 @@ private fun FeaturedAzkarCard(
         modifier = Modifier
             .width(210.dp)
             .height(132.dp),
-        shape = RoundedCornerShape(24.dp),
+        shape = MawaqitTheme.appShapes.medium,
         color = MaterialTheme.colorScheme.primaryContainer
     ) {
         Column(
@@ -242,7 +243,7 @@ private fun FeaturedAzkarCard(
             horizontalAlignment = Alignment.End
         ) {
             Surface(
-                shape = RoundedCornerShape(50.dp),
+                shape = MawaqitTheme.appShapes.circle,
                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.35f)
             ) {
                 Text(
@@ -274,7 +275,7 @@ private fun CategoryListItem(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
+        shape = MawaqitTheme.appShapes.medium,
         color = MaterialTheme.colorScheme.surfaceContainer,
     ) {
         Row(
@@ -286,7 +287,7 @@ private fun CategoryListItem(
         ) {
             Surface(
                 modifier = Modifier.size(42.dp),
-                shape = RoundedCornerShape(14.dp),
+                shape = MawaqitTheme.appShapes.small,
                 color = MaterialTheme.colorScheme.secondaryContainer
             ) {
                 Row(
@@ -320,7 +321,7 @@ private fun CategoryListItem(
             }
 
             Surface(
-                shape = RoundedCornerShape(50.dp),
+                shape = MawaqitTheme.appShapes.circle,
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
             ) {
                 Text(
