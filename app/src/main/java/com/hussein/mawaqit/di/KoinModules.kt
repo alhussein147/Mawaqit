@@ -62,8 +62,8 @@ val appModule = module {
     factory { NetworkObserver(androidContext()) }
     factory { PrayerAlarmManager(androidContext()) }
 
-    // Repositories & Data
-    factory { AzkarRepository(androidContext(), get()) }
+    // Repositories & Data==
+    factory { AzkarRepository(get()) }
     single { RecitationRepository(androidContext(), get()) }
     factory { TafsirRepository(get()) }
     factory { QuranReaderPreferences(androidContext()) }
@@ -75,8 +75,8 @@ val appModule = module {
     single { get<AppDatabase>().ayahDao() }
     single { get<AppDatabase>().bookmarkDao() }
     single { get<AppDatabase>().tafsirDao() }
-    single { get<AppDatabase>().azkarDao() }
     single { get<AppDatabase>().audioSourceDao() }
+    single { get<AppDatabase>().invocationDao() }
     factory { QuranDatabaseRepository(get(), get(), get()) }
 
     // Population Strategies

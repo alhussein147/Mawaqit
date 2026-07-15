@@ -93,6 +93,7 @@ class GenericPopulationWorker(
             Result.success()
         } catch (e: Exception) {
             Log.e(TAG, "Population failed for ${strategy.name}", e)
+            setProgress(workDataOf("error" to (e.message ?: "Unknown error")))
             NotificationUtils.showWorkerCompletionNotification(
                 applicationContext,
                 "Data Sync",

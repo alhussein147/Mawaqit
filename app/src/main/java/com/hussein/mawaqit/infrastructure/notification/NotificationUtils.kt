@@ -127,7 +127,7 @@ object NotificationUtils {
             .setSmallIcon(if (isSuccess) R.drawable.ic_check else R.drawable.ic_error) // Assuming ic_error exists or fallback
             .setContentTitle(title)
             .setContentText(message)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .setAutoCancel(true)
             .build()
 

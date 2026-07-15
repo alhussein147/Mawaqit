@@ -68,7 +68,7 @@ fun AzkarCategoriesScreen(
             Column {
                 CenterAlignedTopAppBar(
                     scrollBehavior = topAppBarScrollBehavior,
-                    title = { Text(stringResource(R.string.azkar), fontWeight = FontWeight.Black) },
+                    title = { Text(stringResource(R.string.invocation_title), fontWeight = FontWeight.Black) },
                     navigationIcon = {
                         BackButton(onClick = onBack)
                     },
@@ -90,6 +90,7 @@ fun AzkarCategoriesScreen(
             EmptyAzkarContent(
                 isOffline = uiState.isOffline,
                 isSyncing = uiState.isSyncing,
+                error = uiState.error,
                 onSync = { viewModel.syncAzkar() },
                 modifier = Modifier
                     .padding(padding)
@@ -138,6 +139,7 @@ fun AzkarCategoriesScreen(
 private fun EmptyAzkarContent(
     isOffline: Boolean,
     isSyncing: Boolean,
+    error: String?,
     onSync: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -154,17 +156,18 @@ private fun EmptyAzkarContent(
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "No Azkar loaded",
+            text = if (error != null) "Sync Failed" else "No Azkar loaded",
             style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            color = if (error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = if (isOffline) "Please connect to the internet to download Azkar data." 
+            text = error ?: if (isOffline) "Please connect to the internet to download Azkar data." 
                    else "Download Azkar collection to read them offline anytime.",
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = if (error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(modifier = Modifier.height(24.dp))
         Button(
@@ -181,7 +184,7 @@ private fun EmptyAzkarContent(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Syncing...")
             } else {
-                Text("Download Now")
+                Text(if (error != null) "Try Again" else "Download Now")
             }
         }
         if (isOffline) {

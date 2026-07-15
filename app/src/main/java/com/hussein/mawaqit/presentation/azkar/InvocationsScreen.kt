@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.mawaqit.R
-import com.hussein.mawaqit.data.db.entities.invocation.AzkarItemEntity
+import com.hussein.mawaqit.domain.InvocationItem
 import com.hussein.mawaqit.presentation.shared.BackButton
 import com.hussein.mawaqit.presentation.shared.ErrorContent
 import com.hussein.mawaqit.presentation.shared.LoadingContent
@@ -40,7 +40,7 @@ import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AzkarScreen(
+fun InvocationsScreen(
     categoryId: Int,
     onBack: () -> Unit,
     viewModel: AzkarViewModel = koinViewModel(),
@@ -76,10 +76,13 @@ fun AzkarScreen(
             LoadingContent(modifier = Modifier
                 .fillMaxSize()
                 .padding(padding))
-        } else if (uiState.itemsError != null) {
-            ErrorContent(message = uiState.itemsError!!, modifier = Modifier
-                .fillMaxSize()
-                .padding(padding))
+        } else if (uiState.itemsError != null || uiState.error != null) {
+            ErrorContent(
+                message = uiState.itemsError ?: uiState.error ?: "Unknown error",
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            )
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -94,8 +97,8 @@ fun AzkarScreen(
                 itemsIndexed(
                     uiState.items,
                     key = { index, _ -> index }
-                ) { index, zikr ->
-                    ZikrItem(index = index + 1, zikr = zikr)
+                ) { index, invocation ->
+                    InvocationListItem(index = index + 1, invocation = invocation)
                 }
                 item { Spacer(Modifier.height(16.dp)) }
             }
@@ -104,9 +107,9 @@ fun AzkarScreen(
 }
 
 @Composable
-fun ZikrItem(
+fun InvocationListItem(
     index: Int,
-    zikr: AzkarItemEntity,
+    invocation: InvocationItem,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -139,7 +142,7 @@ fun ZikrItem(
             // Arabic zikr text — RTL
             Text(
                 fontFamily = quranFontFamily,
-                text = zikr.zekr,
+                text = invocation.text,
                 style = MaterialTheme.typography.headlineSmall.copy(
                     lineHeight = 40.sp,
                     fontSize = 22.sp
@@ -150,7 +153,7 @@ fun ZikrItem(
             )
 
             // Repeat count — only show if > 1
-            if (zikr.repeat != null && zikr.repeat > 1) {
+            if (invocation.repeat != null && invocation.repeat > 1) {
                 Spacer(Modifier.height(20.dp))
                 Surface(
                     modifier = Modifier.align(Alignment.CenterHorizontally),
@@ -158,7 +161,7 @@ fun ZikrItem(
                     color = MaterialTheme.colorScheme.secondaryContainer
                 ) {
                     Text(
-                        text = "Repeat ${zikr.repeat} times",
+                        text = "Repeat ${invocation.repeat} times",
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
@@ -168,10 +171,10 @@ fun ZikrItem(
             }
 
             // Bless/Benefit text
-            if (!zikr.bless.isNullOrBlank()) {
+            if (!invocation.bless.isNullOrBlank()) {
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    text = zikr.bless,
+                    text = invocation.bless,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,

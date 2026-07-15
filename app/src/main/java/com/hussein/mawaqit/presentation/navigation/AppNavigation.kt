@@ -31,7 +31,7 @@ import androidx.navigation3.ui.NavDisplay
 import com.hussein.mawaqit.R
 import com.hussein.mawaqit.infrastructure.settings.SettingsRepository
 import com.hussein.mawaqit.presentation.azkar.AzkarCategoriesScreen
-import com.hussein.mawaqit.presentation.azkar.AzkarScreen
+import com.hussein.mawaqit.presentation.azkar.InvocationsScreen
 import com.hussein.mawaqit.presentation.home.HomeScreen
 import com.hussein.mawaqit.presentation.navigation.components.BottomBarNestedScrollConnection
 import com.hussein.mawaqit.presentation.navigation.components.FloatingNavBar
@@ -206,7 +206,7 @@ fun AppNavigation(settingsRepository: SettingsRepository) {
             }
 
             entry<AzkarList> { key ->
-                AzkarScreen(
+                InvocationsScreen(
                     categoryId = key.categoryId,
                     onBack = { goBack() }
                 )

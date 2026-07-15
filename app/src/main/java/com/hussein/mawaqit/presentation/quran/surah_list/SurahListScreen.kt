@@ -131,7 +131,7 @@ fun SurahListScreen(
                     LoadingContent(Modifier.fillMaxSize())
                 }
 
-                uiState.surahs.isEmpty() -> {
+                uiState.surahs.isEmpty()  -> {
                     QuranEmptyState(
                         syncStatus = uiState.syncStatus,
                         availableTafsirSources = uiState.availableTafsirSources,

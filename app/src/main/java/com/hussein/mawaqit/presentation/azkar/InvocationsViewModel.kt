@@ -8,8 +8,8 @@ import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.hussein.mawaqit.data.db.repo.AzkarRepository
-import com.hussein.mawaqit.data.db.entities.invocation.AzkarCategoryEntity
-import com.hussein.mawaqit.data.db.entities.invocation.AzkarItemEntity
+import com.hussein.mawaqit.domain.InvocationCategory
+import com.hussein.mawaqit.domain.InvocationItem
 import com.hussein.mawaqit.infrastructure.connectivity.NetworkObserver
 import com.hussein.mawaqit.infrastructure.workers.population_workers.GenericPopulationWorker
 import com.hussein.mawaqit.presentation.shared.SyncStatus
@@ -28,9 +28,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class AzkarUiState(
-    val categories: List<AzkarCategoryEntity> = emptyList(),
-    val currentCategory: AzkarCategoryEntity? = null,
-    val items: List<AzkarItemEntity> = emptyList(),
+    val categories: List<InvocationCategory> = emptyList(),
+    val currentCategory: InvocationCategory? = null,
+    val items: List<InvocationItem> = emptyList(),
     val isLoadingItems: Boolean = false,
     val isSyncing: Boolean = false,
     val syncProgress: Float = 0f,
@@ -68,7 +68,7 @@ class AzkarViewModel(
         if (categoryId == null) {
             flowOf(state)
         } else {
-            azkarRepository.getItemsForCategory(categoryId)
+            azkarRepository.getInvocationsByCategory(categoryId)
                 .map { items -> state.copy(items = items, isLoadingItems = false) }
                 .onStart { emit(state.copy(isLoadingItems = true)) }
                 .catch { e -> emit(state.copy(isLoadingItems = false, itemsError = e.message)) }
@@ -89,9 +89,19 @@ class AzkarViewModel(
                 .collect { infos ->
                     val info = infos.firstOrNull() ?: return@collect
                     when (info.state) {
-                        WorkInfo.State.RUNNING, WorkInfo.State.ENQUEUED -> {
+                        WorkInfo.State.RUNNING -> {
                             val progress = info.progress.getFloat(GenericPopulationWorker.KEY_PROGRESS, 0f)
                             _syncState.update { it.copy(isSyncing = true, progress = progress, error = null) }
+                        }
+                        WorkInfo.State.ENQUEUED -> {
+                            // If it's a retry (runAttemptCount > 0), don't show as active syncing
+                            // so UI doesn't stay stuck in loading.
+                            if (info.runAttemptCount > 0) {
+                                val error = info.progress.getString("error") ?: "Sync retrying..."
+                                _syncState.update { it.copy(isSyncing = false, error = error) }
+                            } else {
+                                _syncState.update { it.copy(isSyncing = true, progress = 0f, error = null) }
+                            }
                         }
                         WorkInfo.State.SUCCEEDED -> {
                             _syncState.update { it.copy(isSyncing = false, progress = 1f) }

@@ -1,11 +1,12 @@
 package com.hussein.mawaqit.infrastructure.workers.population_workers.strategies
 
 import android.util.Log
+import com.hussein.mawaqit.data.db.entities.invocation.InvocationCategoryEntity
+import com.hussein.mawaqit.data.db.entities.invocation.InvocationCategoryType
+import com.hussein.mawaqit.data.db.entities.invocation.InvocationEntity
 import com.hussein.mawaqit.data.db.repo.AzkarRepository
-import com.hussein.mawaqit.data.db.entities.invocation.AzkarCategoryEntity
-import com.hussein.mawaqit.data.db.entities.invocation.AzkarItemEntity
 import com.hussein.mawaqit.data.remote.RemoteService
-import com.hussein.mawaqit.data.remote.dto.AzkarCategoryDto
+import com.hussein.mawaqit.data.remote.dto.InvocationCategoryDto
 import com.hussein.mawaqit.infrastructure.workers.population_workers.DataPopulationStrategy
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -22,38 +23,41 @@ class AzkarPopulationStrategy(
 
     override suspend fun execute(onProgress: suspend (Float) -> Unit) {
         try {
-            Log.d(TAG, "Fetching Azkar from remote API: $AZKAR_URL")
-            val azkarDto: List<AzkarCategoryDto> = RemoteService.getClient().get(AZKAR_URL).body()
+            Log.d(TAG, "Fetching Azkar from remote API: $INVOCATIONS_URL")
+            val invocationCategoryDto: List<InvocationCategoryDto> =
+                RemoteService.getClient().get(INVOCATIONS_URL).body()
 
-            val categories = mutableListOf<AzkarCategoryEntity>()
-            val items = mutableListOf<AzkarItemEntity>()
+            val categories = mutableListOf<InvocationCategoryEntity>()
+            val items = mutableListOf<InvocationEntity>()
 
-            azkarDto.forEachIndexed { index, categoryDto ->
+            invocationCategoryDto.forEachIndexed { index, categoryDto ->
                 categories.add(
-                    AzkarCategoryEntity(
+                    InvocationCategoryEntity(
                         id = categoryDto.id,
-                        title = categoryDto.title,
-                        highlight = categoryDto.highlight
+                        name = categoryDto.title,
+                        type = InvocationCategoryType.valueOf(categoryDto.type),
+                        highlight = categoryDto.highlight,
+                        sortOrder = categoryDto.sortOrder
                     )
                 )
 
                 categoryDto.content.forEach { itemDto ->
                     items.add(
-                        AzkarItemEntity(
+                        InvocationEntity(
                             categoryId = categoryDto.id,
-                            zekr = itemDto.zekr,
-                            repeat = itemDto.repeat,
-                            bless = itemDto.bless
+                            content = itemDto.text,
+                            benefit = itemDto.bless,
+                            repeatCount = itemDto.repeat,
                         )
                     )
                 }
 
-                if (azkarDto.isNotEmpty()) {
-                    onProgress((index + 1) / azkarDto.size.toFloat())
+                if (invocationCategoryDto.isNotEmpty()) {
+                    onProgress((index + 1) / invocationCategoryDto.size.toFloat())
                 }
             }
 
-            repository.saveAzkar(categories, items)
+            repository.saveInvocations(categories, items)
             Log.d(TAG, "Population complete: ${categories.size} categories, ${items.size} items")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to populate Azkar", e)
@@ -62,7 +66,7 @@ class AzkarPopulationStrategy(
     }
 
     companion object {
-        private const val TAG = "AzkarPopulation"
-        private const val AZKAR_URL = "https://dvtajbmeveppcffgfnog.supabase.co/storage/v1/object/public/assets/azkar/azkar.json"
+        private const val TAG = "INVOCATIONS_POPULATION"
+        private const val INVOCATIONS_URL = "https://dvtajbmeveppcffgfnog.supabase.co/storage/v1/object/public/assets/invocations/invocations.json"
     }
 }
