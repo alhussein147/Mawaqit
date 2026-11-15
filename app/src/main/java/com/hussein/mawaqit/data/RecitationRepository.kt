@@ -20,12 +20,12 @@ class RecitationRepository(
     fun getRadioSources(): Flow<List<AudioSourceEntity>> = audioSourceDao.getRadioSources()
 
     fun ayahUrl(reciter: AudioSourceEntity, surahNumber: Int, ayahNumber: Int): String? {
-        val baseUrl = reciter.ayahBaseUrl ?: return null
+        val baseUrl = reciter.ayahBaseUrl?.trimEnd('/') ?: return null
         return "$baseUrl/${surahNumber}_${ayahNumber}.mp3"
     }
 
     fun surahUrl(reciter: AudioSourceEntity, surahNumber: Int): String? {
-        val baseUrl = reciter.surahBaseUrl ?: return null
+        val baseUrl = reciter.surahBaseUrl?.trimEnd('/') ?: return null
         return "$baseUrl/${surahNumber.toString().padStart(3, '0')}.mp3"
     }
 

@@ -1,10 +1,13 @@
 package com.hussein.mawaqit.presentation.qiblah
 
 import android.content.Context
+import android.content.Intent
+import android.location.LocationManager
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.provider.Settings
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
@@ -14,6 +17,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -24,6 +28,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -37,7 +43,9 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
@@ -51,7 +59,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.hussein.mawaqit.R
 import com.hussein.mawaqit.presentation.shared.BackButton
 import com.hussein.mawaqit.ui.theme.MawaqitTheme
@@ -67,10 +79,31 @@ fun QiblahRoute(
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var isGpsEnabled by remember {
+        val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        mutableStateOf(lm.isProviderEnabled(LocationManager.GPS_PROVIDER))
+    }
 
-    DisposableEffect(Unit) {
-        viewModel.start()
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+                isGpsEnabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        
         onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            viewModel.stop()
+        }
+    }
+
+    LaunchedEffect(isGpsEnabled) {
+        if (isGpsEnabled) {
+            viewModel.start()
+        } else {
             viewModel.stop()
         }
     }
@@ -134,14 +167,23 @@ fun QiblahRoute(
         },
         containerColor = MaterialTheme.colorScheme.surfaceContainerLowest
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            StatusPill(isAligned)
+        if (!isGpsEnabled) {
+            GpsDisabledOverlay(
+                padding = padding,
+                onEnableClick = {
+                    val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                    context.startActivity(intent)
+                }
+            )
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                StatusPill(isAligned)
 
             if (state.accuracy < 2) {
                 AccuracyWarning()
@@ -193,15 +235,81 @@ fun QiblahRoute(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            InfoCard(
-                heading = state.compassHeading,
-                qiblahAngle = state.qiblahAngle,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
+                InfoCard(
+                    heading = state.compassHeading,
+                    qiblahAngle = state.qiblahAngle,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
         }
     }
 
 
+}
+
+@Composable
+fun GpsDisabledOverlay(
+    padding: PaddingValues,
+    onEnableClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(padding)
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Surface(
+            modifier = Modifier.size(120.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = ImageVector.vectorResource(R.drawable.ic_error),
+                    contentDescription = null,
+                    modifier = Modifier.size(64.dp),
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Text(
+            text = stringResource(R.string.qiblah_gps_required_title),
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = stringResource(R.string.qiblah_gps_required_desc),
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Button(
+            onClick = onEnableClick,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary
+            )
+        ) {
+            Text(
+                text = stringResource(R.string.enable_gps),
+                modifier = Modifier.padding(vertical = 8.dp),
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
 }
 
 @Composable
@@ -217,7 +325,7 @@ private fun AccuracyWarning() {
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Icon(
-                imageVector = ImageVector.vectorResource(com.hussein.mawaqit.R.drawable.ic_error),
+                imageVector = ImageVector.vectorResource(R.drawable.ic_error),
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.error,
                 modifier = Modifier.size(16.dp)

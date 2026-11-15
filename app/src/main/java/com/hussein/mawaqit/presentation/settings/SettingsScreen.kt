@@ -54,7 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.batoulapps.adhan2.CalculationMethod
-import com.hussein.core.models.SavedLocation
+import com.hussein.core.models.UserLocation
 import com.hussein.mawaqit.R
 import com.hussein.mawaqit.infrastructure.location.CurrentLocationFetcher
 import com.hussein.mawaqit.infrastructure.settings.AppColorScheme
@@ -81,7 +81,7 @@ fun SettingsScreen(
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val locationState by viewModel.locationState.collectAsStateWithLifecycle()
-    val savedLocation by viewModel.savedLocation.collectAsStateWithLifecycle()
+    val savedLocation by viewModel.userLocation.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
     val topAppBarScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -155,7 +155,7 @@ fun SettingsScreen(
                 SettingsContent(
                     settings = settings!!,
                     locationState = locationState,
-                    savedLocation = savedLocation,
+                    userLocation = savedLocation,
                     onUpdateLocationTapped = ::onUpdateLocationTapped,
                     onLocationErrorDismissed = { viewModel.resetLocationState() },
                     onMethodChanged = viewModel::onCalculationMethodChanged,
@@ -253,7 +253,7 @@ fun SettingsScreen(
 @Composable
 private fun SettingsContent(
     settings: AppSettings,
-    savedLocation: SavedLocation?,
+    userLocation: UserLocation?,
     locationState: SettingsViewModel.LocationUpdateState,
     onMethodChanged: (CalculationMethod) -> Unit,
     onThemeChanged: (AppTheme) -> Unit,
@@ -285,7 +285,7 @@ private fun SettingsContent(
             SettingSectionHeader(stringResource(R.string.location))
             LocationRow(
                 locationState = locationState,
-                savedLocation = savedLocation,
+                userLocation = userLocation,
                 onUpdateTapped = onUpdateLocationTapped,
                 onErrorDismissed = onLocationErrorDismissed
             )
@@ -330,7 +330,7 @@ private fun SettingsContent(
 @Composable
 private fun LocationRow(
     locationState: SettingsViewModel.LocationUpdateState,
-    savedLocation: SavedLocation?,
+    userLocation: UserLocation?,
     onUpdateTapped: () -> Unit,
     onErrorDismissed: () -> Unit
 ) {
@@ -340,7 +340,7 @@ private fun LocationRow(
 
     val displayLocation = when (locationState) {
         is SettingsViewModel.LocationUpdateState.Success -> locationState.location
-        else -> savedLocation
+        else -> userLocation
     }
     Surface(
         color = MaterialTheme.colorScheme.surfaceColorAtElevation(2.dp),

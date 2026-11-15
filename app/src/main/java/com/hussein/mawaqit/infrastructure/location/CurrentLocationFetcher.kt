@@ -16,26 +16,15 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import com.hussein.core.models.UserLocation
 import com.hussein.mawaqit.data.remote.RemoteService
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import kotlin.coroutines.resume
 import kotlin.time.Duration.Companion.milliseconds
 
-@Serializable
-data class UserLocation(
-    @SerialName("lat")
-    val latitude: Double,
-    @SerialName("lon")
-    val longitude: Double,
-    val altitude: Double? = null,
-    @SerialName("city")
-    val city: String
-)
 
 class CurrentLocationFetcher(private val context: Context) {
 
@@ -116,7 +105,7 @@ class CurrentLocationFetcher(private val context: Context) {
     private suspend fun requestFreshLocation(
         fusedClient: FusedLocationProviderClient
     ): UserLocation? {
-        val latLng = suspendCancellableCoroutine<Pair<Double, Double>?> { cont ->
+        val latLng = suspendCancellableCoroutine<Triple<Double, Double, Double>?> { cont ->
             val request = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5_000L)
                 .setMaxUpdates(1)
                 .setWaitForAccurateLocation(false)
@@ -127,7 +116,7 @@ class CurrentLocationFetcher(private val context: Context) {
                     fusedClient.removeLocationUpdates(this)
                     val loc = result.lastLocation
                     if (cont.isActive) {
-                        cont.resume(loc?.let { it.latitude to it.longitude })
+                        cont.resume(loc?.let { Triple(it.latitude, it.longitude, it.altitude) })
                     }
                 }
             }
@@ -146,7 +135,8 @@ class CurrentLocationFetcher(private val context: Context) {
         return UserLocation(
             latitude = latLng.first,
             longitude = latLng.second,
-            city = resolveCityName(latLng.first, latLng.second)
+            altitude = latLng.third,
+            cityName = resolveCityName(latLng.first, latLng.second)
         )
     }
 
@@ -154,9 +144,9 @@ class CurrentLocationFetcher(private val context: Context) {
     private suspend fun getLastKnownLocation(
         fusedClient: FusedLocationProviderClient
     ): UserLocation? {
-        val latLng = suspendCancellableCoroutine<Pair<Double, Double>?> { cont ->
+        val latLng = suspendCancellableCoroutine<Triple<Double, Double, Double>?> { cont ->
             fusedClient.lastLocation.addOnSuccessListener { loc ->
-                if (cont.isActive) cont.resume(loc?.let { it.latitude to it.longitude })
+                if (cont.isActive) cont.resume(loc?.let { Triple(it.latitude, it.longitude, it.altitude) })
             }.addOnFailureListener {
                 if (cont.isActive) cont.resume(null)
             }
@@ -165,7 +155,8 @@ class CurrentLocationFetcher(private val context: Context) {
         return UserLocation(
             latitude = latLng.first,
             longitude = latLng.second,
-            city = resolveCityName(latLng.first, latLng.second)
+            altitude = latLng.third,
+            cityName = resolveCityName(latLng.first, latLng.second)
         )
     }
 
@@ -173,7 +164,7 @@ class CurrentLocationFetcher(private val context: Context) {
         return try {
             val response: UserLocation = RemoteService.getClient().get(IP_API_URL).body()
             val cityName = resolveCityName(response.latitude, response.longitude)
-            response.copy(city = cityName)
+            response.copy(cityName = cityName)
         } catch (e: Exception) {
             Log.e(TAG, "Error fetching IP location: ${e.message}")
             null

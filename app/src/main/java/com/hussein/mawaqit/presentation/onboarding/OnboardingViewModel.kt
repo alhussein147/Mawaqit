@@ -11,7 +11,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.batoulapps.adhan2.CalculationMethod
 import com.hussein.core.LocationRepository
-import com.hussein.core.models.SavedLocation
+import com.hussein.core.models.UserLocation
 import com.hussein.mawaqit.infrastructure.connectivity.NetworkObserver
 import com.hussein.mawaqit.infrastructure.location.CurrentLocationFetcher
 import com.hussein.mawaqit.infrastructure.settings.AppSettings
@@ -31,7 +31,7 @@ import kotlinx.coroutines.launch
 data class OnboardingUiState(
     val page: OnboardingPage = OnboardingPage.WELCOME,
     val isLoadingLocation: Boolean = false,
-    val savedLocation: SavedLocation? = null,
+    val userLocation: UserLocation? = null,
     val errorMessage: String? = null,
     val populationProgress: Float = 0f,
     val isQuranPopulating: Boolean = false,
@@ -242,7 +242,7 @@ class OnboardingViewModel(
                     onSuccess = { location ->
                         it.copy(
                             isLoadingLocation = false,
-                            savedLocation = location
+                            userLocation = location
                         )
                     },
                     onFailure = { error ->

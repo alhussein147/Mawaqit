@@ -1,6 +1,5 @@
 package com.hussein.mawaqit.infrastructure.workers
 
-
 import android.content.Context
 import android.util.Log
 import androidx.work.CoroutineWorker
@@ -9,6 +8,7 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.hussein.mawaqit.data.RecitationRepository
 import com.hussein.mawaqit.data.remote.DownloadService
+import kotlinx.coroutines.CancellationException
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.io.File
@@ -45,15 +45,20 @@ class SurahDownloadWorker(
         val file = repo.surahFile(reciterId, surahNumber)
 
         // Already downloaded — nothing to do
-        if (file.exists()) {
+        if (file.exists() && file.length() > 0) {
             return Result.success(workDataOf(KEY_FILE_PATH to file.absolutePath))
         }
 
+        val parentDir = file.parentFile ?: return Result.failure()
+        if (!parentDir.exists()) {
+            parentDir.mkdirs()
+        }
+        val tempFile = File(parentDir, "${file.name}.tmp")
+
         return try {
             val url = repo.surahUrl(reciter, surahNumber) ?: return Result.failure()
-            Log.d("DownloadWorkManager", "doWork:$url ")
+            Log.d("DownloadWorkManager", "doWork: $url")
             
-            val tempFile = File(file.parent, "${file.name}.tmp")
             var lastProgress = -1f
             val downloadResult = DownloadService.downloadFile(
                 url = url,
@@ -61,26 +66,48 @@ class SurahDownloadWorker(
                 onProgress = { progress ->
                     if (progress - lastProgress >= 0.01f || progress == 1f) {
                         lastProgress = progress
-                        setProgress(workDataOf(KEY_PROGRESS to progress))
+                        try {
+                            setProgress(workDataOf(KEY_PROGRESS to progress))
+                        } catch (e: Exception) {
+                            Log.w("DownloadWorkManager", "Failed to update progress", e)
+                        }
                     }
                 }
             )
 
             if (downloadResult.isSuccess) {
-                if (tempFile.renameTo(file)) {
+                if (file.exists()) file.delete()
+                val moved = if (tempFile.renameTo(file)) {
+                    true
+                } else {
+                    try {
+                        tempFile.copyTo(file, overwrite = true)
+                        tempFile.delete()
+                        true
+                    } catch (e: Exception) {
+                        Log.e("DownloadWorkManager", "Failed to copy temp file to target", e)
+                        false
+                    }
+                }
+
+                if (moved) {
                     Result.success(workDataOf(KEY_FILE_PATH to file.absolutePath))
                 } else {
-                    tempFile.delete()
+                    if (tempFile.exists()) tempFile.delete()
                     Result.failure()
                 }
             } else {
                 Log.e("DownloadWorkManager", "Failed to download", downloadResult.exceptionOrNull())
-                tempFile.delete()
+                if (tempFile.exists()) tempFile.delete()
                 Result.failure()
             }
+        } catch (e: CancellationException) {
+            Log.i("DownloadWorkManager", "Worker cancelled")
+            if (tempFile.exists()) tempFile.delete()
+            throw e
         } catch (e: Exception) {
             Log.e("DownloadWorkManager", "Error in Worker", e)
-            file.delete()
+            if (tempFile.exists()) tempFile.delete()
             Result.failure()
         }
     }

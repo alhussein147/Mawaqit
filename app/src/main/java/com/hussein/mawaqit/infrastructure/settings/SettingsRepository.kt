@@ -112,17 +112,7 @@ class SettingsRepository(private val context: Context) {
         context.dataStore.edit { it[KEY_ONBOARDING_DONE] = true }
     }
 
-    val isQuranPopulated: Flow<Boolean> = context.dataStore.data.map { prefs ->
-        prefs[KEY_QURAN_POPULATED_DONE] ?: false
-    }
 
-    suspend fun isQuranPopulated(): Boolean =
-        isQuranPopulated.firstOrNull() ?: false
-
-    // TODO:  rename
-    suspend fun setQuranPopulated() {
-        context.dataStore.edit { it[KEY_QURAN_POPULATED_DONE] = true }
-    }
 }
 
 

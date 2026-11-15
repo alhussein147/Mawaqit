@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
@@ -125,7 +126,6 @@ fun AzkarCategoriesScreen(
                 
                 items(remainingCategories, key = { it.first }) { (id, title) ->
                     CategoryListItem(
-                        index = id,
                         title = title,
                         onClick = { onCategorySelected(id) }
                     )
@@ -241,7 +241,7 @@ private fun FeaturedAzkarCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(24.dp),
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.End
         ) {
@@ -270,71 +270,30 @@ private fun FeaturedAzkarCard(
 
 @Composable
 private fun CategoryListItem(
-    index: Int,
     title: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     Surface(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth(),
-        shape = MawaqitTheme.appShapes.medium,
-        color = MaterialTheme.colorScheme.surfaceContainer,
+        color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(12.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 14.dp),
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Surface(
-                modifier = Modifier.size(42.dp),
-                shape = MawaqitTheme.appShapes.small,
-                color = MaterialTheme.colorScheme.secondaryContainer
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = ImageVector.vectorResource(R.drawable.ic_placeholder),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-
-            Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Rtl),
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.End,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(3.dp))
-                Text(
-                    text = "Collection ${index + 1}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Surface(
-                shape = MawaqitTheme.appShapes.circle,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-            ) {
-                Text(
-                    text = (index + 1).toString(),
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge.copy(textDirection = TextDirection.Rtl),
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Start,
+                modifier = Modifier.fillMaxWidth()
+            )
 
         }
     }

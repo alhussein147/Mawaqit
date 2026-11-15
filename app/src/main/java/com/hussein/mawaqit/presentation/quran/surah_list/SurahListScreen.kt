@@ -45,6 +45,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hussein.mawaqit.R
 import com.hussein.mawaqit.domain.models.Surah
+import com.hussein.mawaqit.infrastructure.services.PlaybackSource
+import com.hussein.mawaqit.presentation.quran.components.SurahMediaPlayerBar
 import com.hussein.mawaqit.presentation.quran.components.SurahReciterPickerSheet
 import com.hussein.mawaqit.presentation.quran.surah_list.components.QuranEmptyState
 import com.hussein.mawaqit.presentation.shared.LoadingContent
@@ -126,87 +128,108 @@ fun SurahListScreen(
             }
         },
         content = {
-            when {
-                uiState.isLoading -> {
-                    LoadingContent(Modifier.fillMaxSize())
-                }
+            Box(modifier = Modifier.fillMaxSize()) {
+                when {
+                    uiState.isLoading -> {
+                        LoadingContent(Modifier.fillMaxSize())
+                    }
 
-                uiState.surahs.isEmpty()  -> {
-                    QuranEmptyState(
-                        syncStatus = uiState.syncStatus,
-                        availableTafsirSources = uiState.availableTafsirSources,
-                        selectedTafsirSource = uiState.selectedTafsirSource,
-                        onTafsirSourceSelected = { surahListViewModel.selectTafsirSource(it) },
-                        onSyncClick = { surahListViewModel.syncQuranData() },
-                    )
-                }
-
-                else -> {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
-                            .then(modifier),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(
-                            start = 16.dp,
-                            end = 16.dp,
-                            bottom = 24.dp
+                    uiState.surahs.isEmpty() -> {
+                        QuranEmptyState(
+                            syncStatus = uiState.syncStatus,
+                            availableTafsirSources = uiState.availableTafsirSources,
+                            selectedTafsirSource = uiState.selectedTafsirSource,
+                            onTafsirSourceSelected = { surahListViewModel.selectTafsirSource(it) },
+                            onSyncClick = { surahListViewModel.syncQuranData() },
                         )
-                    ) {
-                        uiState.lastRead?.let { last ->
-                            item(key = "continue_reading") {
-                                ContinueReadingCard(
-                                    lastRead = last,
-                                    onClick = {
-                                        onSurahSelected(
-                                            last.surahNumber,
-                                            last.ayahNumber
+                    }
+
+                    else -> {
+                        val isSurahPlaying = playbackState.source is PlaybackSource.Surah
+                        val bottomPadding = if (isSurahPlaying) 160.dp else 24.dp
+
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
+                                .then(modifier),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            contentPadding = PaddingValues(
+                                start = 16.dp,
+                                end = 16.dp,
+                                bottom = bottomPadding
+                            )
+                        ) {
+                            uiState.lastRead?.let { last ->
+                                item(key = "continue_reading") {
+                                    ContinueReadingCard(
+                                        lastRead = last,
+                                        onClick = {
+                                            onSurahSelected(
+                                                last.surahNumber,
+                                                last.ayahNumber
+                                            )
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 8.dp)
+                                    )
+                                }
+                            }
+
+                            items(
+                                items = uiState.surahs,
+                                key = { it.number }
+                            ) { surah ->
+                                val itemState =
+                                    surahStates[surah.number] ?: SurahItemState.NotDownloaded
+                                SurahRow(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    surah = surah,
+                                    itemState = itemState,
+                                    onPlayPause = {
+                                        when (itemState) {
+                                            SurahItemState.Playing,
+                                            SurahItemState.Paused -> globalPlayerViewModel.togglePlayPause()
+
+                                            SurahItemState.Downloaded -> globalPlayerViewModel.playSurah(
+                                                surah.number
+                                            )
+
+                                            else -> Unit
+                                        }
+                                    },
+                                    onDownload = {
+                                        surahToDownload = surah.number
+                                        showReciterPicker = true
+                                    },
+                                    onCancel = { workId ->
+                                        globalPlayerViewModel.cancelDownload(
+                                            workId
                                         )
                                     },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(top = 8.dp)
+                                    onClick = { onSurahSelected(surah.number, null) },
                                 )
                             }
                         }
-
-                        items(
-                            items = uiState.surahs,
-                            key = { it.number }
-                        ) { surah ->
-                            val itemState =
-                                surahStates[surah.number] ?: SurahItemState.NotDownloaded
-                            SurahRow(
-                                modifier = Modifier.fillMaxWidth(),
-                                surah = surah,
-                                itemState = itemState,
-                                onPlayPause = {
-                                    when (itemState) {
-                                        SurahItemState.Playing,
-                                        SurahItemState.Paused -> globalPlayerViewModel.togglePlayPause()
-
-                                        SurahItemState.Downloaded -> globalPlayerViewModel.playSurah(
-                                            surah.number
-                                        )
-
-                                        else -> Unit
-                                    }
-                                },
-                                onDownload = {
-                                    surahToDownload = surah.number
-                                    showReciterPicker = true
-                                },
-                                onCancel = { workId ->
-                                    globalPlayerViewModel.cancelDownload(
-                                        workId
-                                    )
-                                },
-                                onClick = { onSurahSelected(surah.number, null) },
-                            )
-                        }
                     }
                 }
+
+                SurahMediaPlayerBar(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 80.dp),
+                    playbackState = playbackState,
+                    selectedReciter = selectedReciter,
+                    onPlayPause = globalPlayerViewModel::togglePlayPause,
+                    onSeek = globalPlayerViewModel::seekTo,
+                    onClose = globalPlayerViewModel::stop,
+                    onPrevious = globalPlayerViewModel::playPreviousSurah,
+                    onNext = globalPlayerViewModel::playNextSurah,
+                    onClickSurah = { surahNumber ->
+                        onSurahSelected(surahNumber, null)
+                    }
+                )
             }
         }
     )
@@ -274,6 +297,10 @@ private fun SurahRow(
                     text = surah.nameTransliterated,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "${surah.numberOfAyahs} Ayahs",
+                    style = MaterialTheme.typography.bodySmall,
                 )
             }
 
@@ -409,9 +436,7 @@ private fun ContinueReadingCard(
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = "${lastRead.surahName} • Ayah ${lastRead.ayahNumber}",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontFamily = quranFontFamily
-                    ),
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
@@ -434,5 +459,3 @@ private fun ContinueReadingCard(
         }
     }
 }
-
-

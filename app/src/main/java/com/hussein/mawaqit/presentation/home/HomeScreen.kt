@@ -320,14 +320,16 @@ private fun TodayPrayersSection(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Column {
+                    Column() {
                         Text(
                             text = hijriDate,
                             style = MaterialTheme.typography.titleLarge,
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
-                            fontWeight = FontWeight.ExtraBold
+                            fontWeight = FontWeight.ExtraBold,
+                            maxLines = 2,
+                            overflow = TextOverflow.StartEllipsis
                         )
                         Text(
                             text = "$completedCount of ${prayers.size} prayers completed",
@@ -342,15 +344,18 @@ private fun TodayPrayersSection(
 
                     activePrayer?.let { prayer ->
                         Surface(
+                            modifier = Modifier.weight(1f),
                             shape = CircleShape,
                             color = MaterialTheme.colorScheme.primary,
                         ) {
                             Text(
                                 text = prayer.time.formatTime(),
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                modifier = Modifier.padding(horizontal = 2.dp, vertical = 16.dp),
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.Black,
-                                color = MaterialTheme.colorScheme.onPrimary
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                maxLines = 1,
+                                overflow = TextOverflow.StartEllipsis , textAlign = TextAlign.Center
                             )
                         }
                     }

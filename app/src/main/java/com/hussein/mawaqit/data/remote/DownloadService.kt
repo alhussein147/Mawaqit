@@ -2,8 +2,8 @@ package com.hussein.mawaqit.data.remote
 
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsChannel
-import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentLength
+import io.ktor.http.isSuccess
 import io.ktor.utils.io.readAvailable
 import java.io.File
 
@@ -20,7 +20,7 @@ object DownloadService {
         return runCatching {
             val response = client.get(url)
 
-            if (response.status != HttpStatusCode.OK) {
+            if (!response.status.isSuccess()) {
                 error("Download failed: ${response.status}")
             }
 
@@ -41,8 +41,6 @@ object DownloadService {
                     }
                 }
             }
-        }.also {
-            RemoteService.close()
         }
     }
 

@@ -9,9 +9,10 @@ import android.hardware.SensorManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hussein.core.LocationRepository
-import com.hussein.mawaqit.infrastructure.location.UserLocation
+import com.hussein.core.models.UserLocation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.lang.Math.toDegrees
 import java.lang.Math.toRadians
@@ -22,22 +23,22 @@ import kotlin.math.sin
 data class QiblahState(
     val compassHeading: Float = 0f,
     val qiblahAngle: Float = 0f,
-    val accuracy: Int = 0 // 0: unreliable, 1: low, 2: medium, 3: high
+    val accuracy: Int = 0, // 0: unreliable, 1: low, 2: medium, 3: high
+    val errorMessage: String? = null
 )
 
 class QiblahViewModel(
     private val locationRepository: LocationRepository,
-    context: Context
+    private val qiblahHelper: QiblahHelper
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(QiblahState())
     val state = _state.asStateFlow()
 
-    private val qiblahHelper = QiblahHelper(context) { heading, qiblahAngle, accuracy ->
-        _state.value = QiblahState(heading, qiblahAngle, accuracy)
-    }
-
     init {
+        qiblahHelper.onUpdate = { heading, qiblahAngle, accuracy ->
+            _state.update { it.copy(compassHeading = heading, qiblahAngle = qiblahAngle, accuracy = accuracy) }
+        }
         viewModelScope.launch {
             locationRepository.locationFlow.collect { savedLocation ->
                 savedLocation?.let {
@@ -45,8 +46,7 @@ class QiblahViewModel(
                         UserLocation(
                             latitude = it.latitude,
                             longitude = it.longitude,
-                            altitude = 0.0,
-                            city = it.cityName
+                            cityName = it.cityName
                         )
                     )
                 }
@@ -90,9 +90,10 @@ object QiblahCalculator {
  * corrected for magnetic declination at the user's location.
  */
 class QiblahHelper(
-    context: Context,
-    private val onUpdate: (compassHeading: Float, qiblahBearing: Float, accuracy: Int) -> Unit
+    context: Context
 ) : SensorEventListener {
+
+    var onUpdate: ((compassHeading: Float, qiblahBearing: Float, accuracy: Int) -> Unit)? = null
 
     private val sensorManager =
         context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -115,11 +116,13 @@ class QiblahHelper(
             .getQiblahBearing(location.latitude, location.longitude)
             .toFloat()
 
+        if (location.altitude == null) return
+
         location.altitude?.let {
             magneticDeclination = GeomagneticField(
                 location.latitude.toFloat(),
                 location.longitude.toFloat(),
-                location.altitude.toFloat(),
+                location.altitude!!.toFloat(),
                 System.currentTimeMillis()
             ).declination
         }
@@ -156,7 +159,7 @@ class QiblahHelper(
         // Angle to rotate the Qiblah needle relative to current heading
         val relativeBearing = (qiblahBearing - azimuth + 360) % 360
 
-        onUpdate(azimuth, relativeBearing, currentAccuracy)
+        onUpdate?.invoke(azimuth, relativeBearing, currentAccuracy)
     }
 
     private fun lowPass(newValue: Float, oldValue: Float): Float {

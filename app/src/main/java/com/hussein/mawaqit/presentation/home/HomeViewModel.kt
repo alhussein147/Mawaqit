@@ -6,7 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.batoulapps.adhan2.CalculationMethod
 import com.hussein.core.LocationRepository
 import com.hussein.core.PrayerTimeCalculator
-import com.hussein.core.models.SavedLocation
+import com.hussein.core.models.UserLocation
 import com.hussein.core.utils.HijriDateCalculator
 import com.hussein.mawaqit.data.db.repo.QuranDatabaseRepository
 import com.hussein.mawaqit.domain.location.RefreshLocationUseCase
@@ -105,7 +105,7 @@ class HomeViewModel(
     }
 
     @OptIn(ExperimentalTime::class)
-    fun loadPrayers(location: SavedLocation?, calculationMethod: CalculationMethod) {
+    fun loadPrayers(location: UserLocation?, calculationMethod: CalculationMethod) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
 
@@ -125,7 +125,7 @@ class HomeViewModel(
                     )
                 lastKnownDate = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
 
-                val hijriDate = HijriDateCalculator.toHijriDateString(now)
+                val hijriDate = HijriDateCalculator.toHijriDateString(now , calculationMethod)
 
                 _uiState.update {
                     it.copy(

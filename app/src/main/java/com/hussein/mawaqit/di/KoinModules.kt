@@ -30,6 +30,7 @@ import com.hussein.mawaqit.infrastructure.workers.prayer.PrayerSchedulerManager
 import com.hussein.mawaqit.presentation.azkar.AzkarViewModel
 import com.hussein.mawaqit.presentation.home.HomeViewModel
 import com.hussein.mawaqit.presentation.onboarding.OnboardingViewModel
+import com.hussein.mawaqit.presentation.qiblah.QiblahHelper
 import com.hussein.mawaqit.presentation.qiblah.QiblahViewModel
 import com.hussein.mawaqit.presentation.quran.bookmarks.BookmarksViewModel
 import com.hussein.mawaqit.presentation.quran.reading.QuranReadingViewModel
@@ -167,10 +168,12 @@ val appModule = module {
         )
     }
 
+    factory { QiblahHelper(androidContext()) }
+
     viewModel {
         QiblahViewModel(
             locationRepository = get(),
-            context = androidContext()
+            qiblahHelper = get()
         )
     }
 
@@ -178,6 +181,7 @@ val appModule = module {
         GlobalPlayerViewModel(
             application = androidApplication(),
             recitationRepository = get(),
+            quranDatabaseRepository = get(),
             workManager = get()
         )
     }

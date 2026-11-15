@@ -7,7 +7,7 @@ import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.hussein.core.models.SavedLocation
+import com.hussein.core.models.UserLocation
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
@@ -27,13 +27,14 @@ class LocationRepository(private val context: Context) {
     }
 
 
-    val locationFlow: Flow<SavedLocation?> = context.locationDataStore.data.map { prefs ->
+    val locationFlow: Flow<UserLocation?> = context.locationDataStore.data.map { prefs ->
         val lat = prefs[KEY_LATITUDE]  ?: return@map null
         val lng = prefs[KEY_LONGITUDE] ?: return@map null
-        SavedLocation(
+        val cityName = prefs[KEY_CITY_NAME] ?: "Unknown"
+        UserLocation(
             latitude = lat,
             longitude = lng,
-            cityName = prefs[KEY_CITY_NAME] ?: "Unknown"
+            cityName = cityName
         )
     }
 
@@ -41,21 +42,30 @@ class LocationRepository(private val context: Context) {
     suspend fun hasLocation(): Boolean =
         context.locationDataStore.data.firstOrNull()?.get(KEY_LATITUDE) != null
 
-    /** One-shot read — returns the saved [SavedLocation], or null. */
-    suspend fun getSavedLocation(): SavedLocation? = locationFlow.firstOrNull()
+    /** One-shot read — returns the saved [UserLocation], or null. */
+    suspend fun getSavedLocation(): UserLocation? = locationFlow.firstOrNull()
 
     /**
      * Persists [latitude] and [longitude], reverse-geocodes a city name,
-     * and returns the saved [SavedLocation].
+     * and returns the saved [UserLocation].
      */
-    suspend fun saveLocation(latitude: Double, longitude: Double , cityName:String): SavedLocation =
+    suspend fun saveLocation(
+        latitude: Double,
+        longitude: Double,
+        cityName: String
+    ): UserLocation =
         withContext(Dispatchers.IO) {
             context.locationDataStore.edit { prefs ->
                 prefs[KEY_LATITUDE]  = latitude
                 prefs[KEY_LONGITUDE] = longitude
                 prefs[KEY_CITY_NAME] = cityName
             }
-            SavedLocation(latitude, longitude, cityName)
+            UserLocation(
+                latitude = latitude,
+                longitude = longitude,
+                altitude = null,
+                cityName = cityName
+            )
         }
 }
 

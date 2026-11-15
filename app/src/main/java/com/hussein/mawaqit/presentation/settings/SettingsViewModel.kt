@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.batoulapps.adhan2.CalculationMethod
 import com.hussein.core.LocationRepository
-import com.hussein.core.models.SavedLocation
+import com.hussein.core.models.UserLocation
 import com.hussein.mawaqit.infrastructure.alarm_manager.PrayerAlarmManager
 import com.hussein.mawaqit.infrastructure.location.CurrentLocationFetcher
 import com.hussein.mawaqit.infrastructure.settings.AppColorScheme
@@ -35,12 +35,12 @@ class SettingsViewModel(
     private val _locationState = MutableStateFlow<LocationUpdateState>(LocationUpdateState.Idle)
     val locationState: StateFlow<LocationUpdateState> = _locationState.asStateFlow()
 
-    private val _savedLocation = MutableStateFlow<SavedLocation?>(null)
-    val savedLocation: StateFlow<SavedLocation?> = _savedLocation.asStateFlow()
+    private val _userLocation = MutableStateFlow<UserLocation?>(null)
+    val userLocation: StateFlow<UserLocation?> = _userLocation.asStateFlow()
 
     init {
         viewModelScope.launch {
-            _savedLocation.value = locationRepository.getSavedLocation()
+            _userLocation.value = locationRepository.getSavedLocation()
         }
     }
 
@@ -101,11 +101,11 @@ class SettingsViewModel(
                     val saved = locationRepository.saveLocation(
                         latitude = userLocation.latitude,
                         longitude = userLocation.longitude,
-                        cityName = userLocation.city
+                        cityName = userLocation.cityName
                     )
                     // Reschedule prayer alarms for the new location
                     prayerSchedulerManager.enqueueImmediate()
-                    _savedLocation.value = saved
+                    _userLocation.value = saved
                     _locationState.update { LocationUpdateState.Success(saved) }
                     Log.d(TAG, "fetchAndSaveLocation- newLocation: $saved ")
                 } else {
@@ -124,7 +124,7 @@ class SettingsViewModel(
     sealed interface LocationUpdateState {
         data object Idle : LocationUpdateState
         data object Fetching : LocationUpdateState
-        data class Success(val location: SavedLocation) : LocationUpdateState
+        data class Success(val location: UserLocation) : LocationUpdateState
         data class Error(val message: String) : LocationUpdateState
     }
 }

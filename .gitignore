@@ -1,17 +1,30 @@
+# Built artifacts
+[Bb]uild/
+captures/
+.externalNativeBuild/
+.cxx/
+.kotlin/
+.artifacts/
+.agents/
+.codegraph/
+
+# Gradle
+.gradle/
+local.properties
+
+# Android Studio / IntelliJ
+.idea/
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
+*.iws
+*.ipr
+.navigation/
+
+# OS specific
 .DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
-/.kotlin/errors/errors-1781734842679.log
-/.kotlin/errors/errors-1782077011669.log
-/.codegraph/.gitignore
+
+# Keys
+*.keystore
+!debug.keystore
+
+# Others
+google-services.json

@@ -75,10 +75,13 @@ import com.hussein.mawaqit.R
 import com.hussein.mawaqit.data.db.entities.AudioSourceEntity
 import com.hussein.mawaqit.domain.models.Ayah
 import com.hussein.mawaqit.domain.models.Bookmark
+import com.hussein.mawaqit.infrastructure.services.PlaybackSource
 import com.hussein.mawaqit.infrastructure.settings.QuranTextAlignment
+import com.hussein.mawaqit.presentation.quran.components.SurahMediaPlayerBar
 import com.hussein.mawaqit.presentation.shared.BackButton
 import com.hussein.mawaqit.presentation.shared.ErrorContent
 import com.hussein.mawaqit.presentation.shared.LoadingContent
+import com.hussein.mawaqit.presentation.util.GlobalPlayerViewModel
 import com.hussein.mawaqit.ui.theme.MawaqitTheme
 import com.hussein.mawaqit.ui.theme.quranFontFamily
 import kotlinx.coroutines.FlowPreview
@@ -88,6 +91,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
+import org.koin.compose.koinInject
 import kotlin.time.Duration.Companion.milliseconds
 
 
@@ -99,9 +103,14 @@ fun QuranReadingScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToTafsir: (String) -> Unit,
     scrollToAyah: Int? = null,
-    viewModel: QuranReadingViewModel = koinViewModel()) {
+    viewModel: QuranReadingViewModel = koinViewModel(),
+    globalPlayerViewModel: GlobalPlayerViewModel = koinInject()
+) {
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val globalPlaybackState by globalPlayerViewModel.playbackState.collectAsStateWithLifecycle()
+    val globalSelectedReciter by globalPlayerViewModel.selectedReciter.collectAsStateWithLifecycle()
+
     val readerState = uiState.readerState
     val fontSize = uiState.fontSize
     val quranTextAlignment = uiState.textAlignment
@@ -215,6 +224,9 @@ fun QuranReadingScreen(
                 )
             },
             onPlayPause = {
+                if (globalPlaybackState.isPlaying) {
+                    globalPlayerViewModel.togglePlayPause()
+                }
                 if (playingAyah == ayah.numberInSurah && recitationState !is AyahRecitationState.Idle) {
                     viewModel.stopAyah()
                 } else {
@@ -284,42 +296,62 @@ fun QuranReadingScreen(
             )
         }
     ) { paddingValues ->
-        when (val state = readerState) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            when (val state = readerState) {
+                is QuranReaderUiState.Success -> {
+                    val surah = state.surah
+                    val isSurahPlaying = globalPlaybackState.source is PlaybackSource.Surah
+                    val bottomPadding = if (isSurahPlaying) 120.dp else 32.dp
 
-            is QuranReaderUiState.Success -> {
-                val surah = state.surah
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    contentPadding = PaddingValues(bottom = 32.dp, start = 6.dp, end = 6.dp),
-                    state = listState
-                ) {
-                    item {
-                        FlowingAyahBlock(
-                            ayahs = surah.ayahs,
-                            fontSize = fontSize,
-                            quranTextAlignment = quranTextAlignment,
-                            bookmarks = bookmarks,
-                            surahIndex = surahIndex,
-                            onTap = { ayah -> viewModel.selectAyah(ayah) },
-                            onTextLayout = { layout -> textLayoutResult = layout },
-                            highlightedAyah = highlightedAyah
-                        )
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = bottomPadding, start = 6.dp, end = 6.dp),
+                        state = listState
+                    ) {
+                        item {
+                            FlowingAyahBlock(
+                                ayahs = surah.ayahs,
+                                fontSize = fontSize,
+                                quranTextAlignment = quranTextAlignment,
+                                bookmarks = bookmarks,
+                                surahIndex = surahIndex,
+                                onTap = { ayah -> viewModel.selectAyah(ayah) },
+                                onTextLayout = { layout -> textLayoutResult = layout },
+                                highlightedAyah = highlightedAyah
+                            )
+                        }
                     }
+                }
+
+                QuranReaderUiState.Idle, QuranReaderUiState.Loading -> {
+                    LoadingContent(
+                        modifier = Modifier.fillMaxSize(),
+                        backgroundColor = Color.Transparent
+                    )
+                }
+
+                is QuranReaderUiState.Error -> {
+                    ErrorContent(message = state.message, modifier = Modifier.fillMaxSize())
                 }
             }
 
-            QuranReaderUiState.Idle, QuranReaderUiState.Loading -> {
-                LoadingContent(
-                    modifier = Modifier.fillMaxSize(),
-                    backgroundColor = Color.Transparent
-                )
-            }
-
-            is QuranReaderUiState.Error -> {
-                ErrorContent(message = state.message, modifier = Modifier.fillMaxSize())
-            }
+            SurahMediaPlayerBar(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .padding(bottom = 8.dp),
+                playbackState = globalPlaybackState,
+                selectedReciter = globalSelectedReciter,
+                onPlayPause = globalPlayerViewModel::togglePlayPause,
+                onSeek = globalPlayerViewModel::seekTo,
+                onClose = globalPlayerViewModel::stop,
+                onPrevious = globalPlayerViewModel::playPreviousSurah,
+                onNext = globalPlayerViewModel::playNextSurah
+            )
         }
     }
 }
@@ -377,17 +409,13 @@ private fun FlowingAyahBlock(
         text = annotated,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(vertical = 16.dp, horizontal = 8.dp),
         style = TextStyle(
             fontSize = fontSize.sp,
-            lineHeight = (fontSize * 2.2).sp,
-            textAlign = when (quranTextAlignment) {
-                QuranTextAlignment.Start -> TextAlign.Start
-                QuranTextAlignment.Center -> TextAlign.Center
-                QuranTextAlignment.End -> TextAlign.End
-            },
+            lineHeight = (fontSize * 2).sp,
+            textAlign = TextAlign.Justify,
             textDirection = TextDirection.Rtl,
-            fontFamily = quranFontFamily
+            fontFamily = quranFontFamily 
         ),
         onClick = { offset ->
             annotated.getStringAnnotations(tag, offset, offset).firstOrNull()?.let { ann ->
