@@ -1,0 +1,17 @@
+[
+    {
+        "id": "mukhtasar",
+        "name": "Tafsir Al-Mukhtasar",
+        "nameAr":"تفسير المختصر",
+        "language": "ar",
+        "url":"https://dvtajbmeveppcffgfnog.supabase.co/storage/v1/object/public/assets/tafsir/mukhtasar.json"
+    },
+    {
+        "id": "muyasser",
+        "name": "Tafsir Al-Muyasser",
+        "nameAr":"تفسير الميسر",
+        "language": "ar",
+        "url":"https://dvtajbmeveppcffgfnog.supabase.co/storage/v1/object/public/assets/tafsir/muyassar.json"
+
+    }
+]
