@@ -164,13 +164,9 @@ fun RadioEmptyState(
             .padding(24.dp),
         contentAlignment = Alignment.Center
     ) {
-        ElevatedCard(
+        Surface(
             modifier = Modifier.fillMaxWidth(),
-            shape = MawaqitTheme.appShapes.large,
-            colors = CardDefaults.elevatedCardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-            )
-        ) {
+            shape = MawaqitTheme.appShapes.large, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

@@ -5,13 +5,14 @@ import com.hussein.mawaqit.data.db.entities.invocation.InvocationCategoryEntity
 import com.hussein.mawaqit.data.db.entities.invocation.InvocationCategoryType
 import com.hussein.mawaqit.data.db.entities.invocation.InvocationEntity
 import com.hussein.mawaqit.data.db.repo.AzkarRepository
+import com.hussein.mawaqit.data.remote.ApiEndpoints
 import com.hussein.mawaqit.data.remote.RemoteService
 import com.hussein.mawaqit.data.remote.dto.InvocationCategoryDto
 import com.hussein.mawaqit.infrastructure.workers.population_workers.DataPopulationStrategy
 import io.ktor.client.call.body
 import io.ktor.client.request.get
 
-class AzkarPopulationStrategy(
+class InvocationsPopulationStrategy(
     private val repository: AzkarRepository
 ) : DataPopulationStrategy {
 
@@ -23,9 +24,9 @@ class AzkarPopulationStrategy(
 
     override suspend fun execute(onProgress: suspend (Float) -> Unit) {
         try {
-            Log.d(TAG, "Fetching Azkar from remote API: $INVOCATIONS_URL")
+            Log.d(TAG, "Fetching Azkar from remote API: ${ApiEndpoints.Assets.INVOCATIONS_URL}")
             val invocationCategoryDto: List<InvocationCategoryDto> =
-                RemoteService.getClient().get(INVOCATIONS_URL).body()
+                RemoteService.getClient().get(ApiEndpoints.Assets.INVOCATIONS_URL).body()
 
             val categories = mutableListOf<InvocationCategoryEntity>()
             val items = mutableListOf<InvocationEntity>()
@@ -67,6 +68,5 @@ class AzkarPopulationStrategy(
 
     companion object {
         private const val TAG = "INVOCATIONS_POPULATION"
-        private const val INVOCATIONS_URL = "https://dvtajbmeveppcffgfnog.supabase.co/storage/v1/object/public/assets/invocations/invocations.json"
     }
 }

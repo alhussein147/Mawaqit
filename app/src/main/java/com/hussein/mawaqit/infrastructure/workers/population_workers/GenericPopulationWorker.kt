@@ -93,14 +93,15 @@ class GenericPopulationWorker(
             Result.success()
         } catch (e: Exception) {
             Log.e(TAG, "Population failed for ${strategy.name}", e)
-            setProgress(workDataOf("error" to (e.message ?: "Unknown error")))
+            val errorMessage = e.message ?: "Failed to sync ${strategyName ?: "Data"}"
+            setProgress(workDataOf("error" to errorMessage))
             NotificationUtils.showWorkerCompletionNotification(
                 applicationContext,
                 "Data Sync",
                 "Failed to sync ${strategyName ?: "Data"}: ${e.message}",
                 false
             )
-            Result.retry()
+            Result.failure(workDataOf("error" to errorMessage))
         }
     }
 }

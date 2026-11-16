@@ -6,6 +6,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.hussein.mawaqit.data.db.AppDatabase.Companion.DB_NAME
+import com.hussein.mawaqit.data.remote.ApiEndpoints
 import com.hussein.mawaqit.data.remote.DownloadService
 import com.hussein.mawaqit.infrastructure.notification.NotificationUtils
 import kotlinx.coroutines.Dispatchers
@@ -24,7 +25,7 @@ class DatabasePopulationWorker(
     }
 
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-        val url = "https://dvtajbmeveppcffgfnog.supabase.co/storage/v1/object/public/assets/db/mawaqit.db"
+        val url = ApiEndpoints.Assets.DATABASE_URL
         val dbFile = applicationContext.getDatabasePath(DB_NAME)
         val tempFile = File(applicationContext.cacheDir, "temp_$DB_NAME")
 

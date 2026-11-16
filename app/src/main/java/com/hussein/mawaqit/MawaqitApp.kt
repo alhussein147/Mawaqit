@@ -25,14 +25,6 @@ class MawaqitApp : Application(), Configuration.Provider, KoinComponent {
             )
         }
         NotificationUtils.ensureChannelsCreated(this)
-        try {
-            javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory(
-                com.hussein.mawaqit.data.remote.RemoteService.sslContext.socketFactory
-            )
-            javax.net.ssl.HttpsURLConnection.setDefaultHostnameVerifier { _, _ -> true }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
     }
 
     override val workManagerConfiguration: Configuration

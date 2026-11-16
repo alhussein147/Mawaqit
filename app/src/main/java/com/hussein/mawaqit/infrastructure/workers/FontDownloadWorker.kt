@@ -3,6 +3,7 @@ package com.hussein.mawaqit.infrastructure.workers
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.hussein.mawaqit.data.remote.ApiEndpoints
 import com.hussein.mawaqit.data.remote.RemoteService
 import com.hussein.mawaqit.infrastructure.fonts.DynamicFontManager
 import io.ktor.client.request.get
@@ -29,8 +30,8 @@ class FontDownloadWorker(
         }
 
         val fonts = listOf(
-            FontInfo("regular.ttf", REGULAR_FONT_URL),
-            FontInfo("bold.ttf", BOLD_FONT_URL)
+            FontInfo("regular.ttf", ApiEndpoints.Assets.Fonts.REGULAR_FONT_URL),
+            FontInfo("bold.ttf", ApiEndpoints.Assets.Fonts.BOLD_FONT_URL)
         )
 
         return try {
@@ -59,10 +60,4 @@ class FontDownloadWorker(
     }
 
     private data class FontInfo(val name: String, val url: String)
-
-    companion object {
-        // REPLACE THESE WITH YOUR ACTUAL CDN URLs
-        private const val REGULAR_FONT_URL = "https://dvtajbmeveppcffgfnog.supabase.co/storage/v1/object/public/assets/fonts/regular.ttf"
-        private const val BOLD_FONT_URL = "https://dvtajbmeveppcffgfnog.supabase.co/storage/v1/object/public/assets/fonts/bold.ttf"
-    }
 }

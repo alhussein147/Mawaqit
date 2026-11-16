@@ -5,6 +5,7 @@ import com.hussein.mawaqit.data.db.AppDatabase
 import com.hussein.mawaqit.data.db.entities.TafsirSourceEntity
 import com.hussein.mawaqit.data.mappers.toAyah
 import com.hussein.mawaqit.data.mappers.toTafsir
+import com.hussein.mawaqit.data.remote.ApiEndpoints
 import com.hussein.mawaqit.data.remote.RemoteService
 import com.hussein.mawaqit.data.remote.dto.TafsirSourceDto
 import com.hussein.mawaqit.domain.models.AyahWithTafsir
@@ -24,7 +25,7 @@ class TafsirRepository(
 
     suspend fun syncTafsirSources() {
         try {
-            val dtos: List<TafsirSourceDto> = RemoteService.getClient().get(TAFSIR_SOURCES_URL).body()
+            val dtos: List<TafsirSourceDto> = RemoteService.getClient().get(ApiEndpoints.Assets.TAFSIR_SOURCES_URL).body()
             
             db.withTransaction {
                 dtos.forEach { dto ->
@@ -88,9 +89,5 @@ class TafsirRepository(
                 tafsir = tafsirs[ayah.numberInSurah]?.toTafsir()
             )
         }
-    }
-
-    companion object {
-        private const val TAFSIR_SOURCES_URL = "https://dvtajbmeveppcffgfnog.supabase.co/storage/v1/object/public/assets/tafsir/sources.json"
     }
 }

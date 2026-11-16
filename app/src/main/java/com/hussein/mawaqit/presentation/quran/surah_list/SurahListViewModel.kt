@@ -133,56 +133,57 @@ class SurahListViewModel(
 
     private fun observeSyncProgress() {
         viewModelScope.launch {
-            // We'll observe by tags since we are chaining
-            workerManager.getWorkInfosByTagFlow(QURAN_SYNC_TAG)
+            workerManager.getWorkInfosForUniqueWorkFlow(QURAN_TAFSIR_WORK_NAME)
                 .collect { infos ->
-                    val info = infos.firstOrNull() ?: return@collect
-                    updateSyncState(info, stage = 0)
-                }
-        }
-        viewModelScope.launch {
-            workerManager.getWorkInfosByTagFlow(TAFSIR_SYNC_TAG)
-                .collect { infos ->
-                    val info = infos.firstOrNull() ?: return@collect
-                    if (info.state != WorkInfo.State.ENQUEUED) {
-                        updateSyncState(info, stage = 1)
-                    }
-                }
-        }
-        viewModelScope.launch {
-            workerManager.getWorkInfosByTagFlow(AUDIO_SOURCE_SYNC_TAG)
-                .collect { infos ->
-                    val info = infos.firstOrNull() ?: return@collect
-                    if (info.state != WorkInfo.State.ENQUEUED) {
-                        updateSyncState(info, stage = 2)
-                    }
-                }
-        }
-    }
+                    if (infos.isEmpty()) return@collect
 
-    private fun updateSyncState(info: WorkInfo, stage: Int) {
-        val totalStages = 3
-        when (info.state) {
-            WorkInfo.State.RUNNING -> {
-                val progress = info.progress.getFloat(GenericPopulationWorker.KEY_PROGRESS, 0f)
-                val totalProgress = (stage + progress) / totalStages
-                _syncStatus.update { it.copy(isSyncing = true, progress = totalProgress, error = null) }
-            }
-            WorkInfo.State.SUCCEEDED -> {
-                if (stage == totalStages - 1) {
-                    _syncStatus.update { it.copy(isSyncing = false, progress = 1f) }
+                    val failedInfo = infos.find { it.state == WorkInfo.State.FAILED || it.state == WorkInfo.State.CANCELLED }
+                    if (failedInfo != null) {
+                        val error = failedInfo.outputData.getString("error")
+                            ?: failedInfo.progress.getString("error")
+                            ?: "Failed to download Quran data. Please check your network connection and try again."
+                        _syncStatus.update { it.copy(isSyncing = false, error = error) }
+                        return@collect
+                    }
+
+                    val isAnyActive = infos.any { it.state == WorkInfo.State.RUNNING || it.state == WorkInfo.State.ENQUEUED }
+                    if (isAnyActive) {
+                        val quranInfo = infos.find { it.tags.contains(QURAN_SYNC_TAG) }
+                        val tafsirInfo = infos.find { it.tags.contains(TAFSIR_SYNC_TAG) }
+                        val audioInfo = infos.find { it.tags.contains(AUDIO_SOURCE_SYNC_TAG) }
+
+                        var totalProgress = 0f
+                        if (quranInfo != null) {
+                            val p0 = quranInfo.progress.getFloat(GenericPopulationWorker.KEY_PROGRESS, 0f)
+                            if (quranInfo.state == WorkInfo.State.SUCCEEDED) totalProgress += 1f / 3f
+                            else if (quranInfo.state == WorkInfo.State.RUNNING) totalProgress += p0 / 3f
+                        }
+                        if (tafsirInfo != null) {
+                            val p1 = tafsirInfo.progress.getFloat(GenericPopulationWorker.KEY_PROGRESS, 0f)
+                            if (tafsirInfo.state == WorkInfo.State.SUCCEEDED) totalProgress += 1f / 3f
+                            else if (tafsirInfo.state == WorkInfo.State.RUNNING) totalProgress += p1 / 3f
+                        }
+                        if (audioInfo != null) {
+                            val p2 = audioInfo.progress.getFloat(GenericPopulationWorker.KEY_PROGRESS, 0f)
+                            if (audioInfo.state == WorkInfo.State.SUCCEEDED) totalProgress += 1f / 3f
+                            else if (audioInfo.state == WorkInfo.State.RUNNING) totalProgress += p2 / 3f
+                        }
+                        _syncStatus.update { it.copy(isSyncing = true, progress = totalProgress, error = null) }
+                        return@collect
+                    }
+
+                    val isAllSucceeded = infos.all { it.state == WorkInfo.State.SUCCEEDED }
+                    if (isAllSucceeded) {
+                        _syncStatus.update { it.copy(isSyncing = false, progress = 1f, error = null) }
+                    }
                 }
-            }
-            WorkInfo.State.FAILED -> {
-                val error = info.outputData.getString("error") ?: "Sync failed"
-                _syncStatus.update { it.copy(isSyncing = false, error = error) }
-            }
-            else -> {}
         }
     }
 
     fun syncQuranData() {
         viewModelScope.launch {
+            _syncStatus.update { it.copy(isSyncing = true, error = null, progress = 0f) }
+
             val quranRequest = OneTimeWorkRequestBuilder<GenericPopulationWorker>()
                 .addTag(QURAN_SYNC_TAG)
                 .setInputData(workDataOf(GenericPopulationWorker.KEY_STRATEGY_NAME to "Quran"))
@@ -205,8 +206,8 @@ class SurahListViewModel(
                 .build()
 
             workerManager.beginUniqueWork(
-                "quran_tafsir_population",
-                ExistingWorkPolicy.KEEP,
+                QURAN_TAFSIR_WORK_NAME,
+                ExistingWorkPolicy.REPLACE,
                 quranRequest
             ).then(tafsirRequest)
                 .then(audioSourceRequest)
@@ -214,7 +215,22 @@ class SurahListViewModel(
         }
     }
 
+    fun syncAudioSources() {
+        val audioSourceRequest = OneTimeWorkRequestBuilder<GenericPopulationWorker>()
+            .addTag(AUDIO_SOURCE_SYNC_TAG)
+            .setInputData(workDataOf(GenericPopulationWorker.KEY_STRATEGY_NAME to "AudioSource"))
+            .build()
+
+        workerManager.enqueueUniqueWork(
+            AUDIO_SOURCE_SYNC_WORK_NAME,
+            ExistingWorkPolicy.KEEP,
+            audioSourceRequest
+        )
+    }
+
     companion object {
+        private const val QURAN_TAFSIR_WORK_NAME = "quran_tafsir_population"
+        private const val AUDIO_SOURCE_SYNC_WORK_NAME = "audio_source_population_sync"
         private const val QURAN_SYNC_TAG = "quran_sync"
         private const val TAFSIR_SYNC_TAG = "tafsir_sync"
         private const val AUDIO_SOURCE_SYNC_TAG = "audio_source_sync"

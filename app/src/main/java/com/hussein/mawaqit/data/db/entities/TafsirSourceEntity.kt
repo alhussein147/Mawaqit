@@ -2,6 +2,7 @@ package com.hussein.mawaqit.data.db.entities
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.hussein.mawaqit.data.remote.ApiEndpoints
 
 @Entity(
     tableName = "tafsir_sources"
@@ -22,7 +23,7 @@ data class TafsirSourceEntity(
             name = "Tafsir Al-Mukhtasar",
             nameAr = "تفسير المختصر",
             lang = "ar",
-            url = "https://dvtajbmeveppcffgfnog.supabase.co/storage/v1/object/public/assets/tafsir/mukhtasar.json"
+            url = ApiEndpoints.Assets.MUKHTASAR_TAFSIR_URL
         )
     }
 }

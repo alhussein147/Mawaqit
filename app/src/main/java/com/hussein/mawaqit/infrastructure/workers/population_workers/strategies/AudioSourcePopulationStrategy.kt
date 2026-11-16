@@ -3,6 +3,7 @@ package com.hussein.mawaqit.infrastructure.workers.population_workers.strategies
 import android.util.Log
 import com.hussein.mawaqit.data.db.AppDatabase
 import com.hussein.mawaqit.data.db.entities.AudioSourceEntity
+import com.hussein.mawaqit.data.remote.ApiEndpoints
 import com.hussein.mawaqit.data.remote.RemoteService
 import com.hussein.mawaqit.data.remote.dto.AudioSourceDto
 import com.hussein.mawaqit.infrastructure.workers.population_workers.DataPopulationStrategy
@@ -21,8 +22,8 @@ class AudioSourcePopulationStrategy(
 
     override suspend fun execute(onProgress: suspend (Float) -> Unit) {
         try {
-            Log.d(TAG, "Fetching Audio Sources from remote API: $AUDIO_SOURCES_URL")
-            val audioSourcesDto: List<AudioSourceDto> = RemoteService.getClient().get(AUDIO_SOURCES_URL).body()
+            Log.d(TAG, "Fetching Audio Sources from remote API: ${ApiEndpoints.Assets.AUDIO_SOURCES_URL}")
+            val audioSourcesDto: List<AudioSourceDto> = RemoteService.getClient().get(ApiEndpoints.Assets.AUDIO_SOURCES_URL).body()
 
             val audioSources = audioSourcesDto.map { dto ->
                 AudioSourceEntity(
@@ -47,6 +48,5 @@ class AudioSourcePopulationStrategy(
 
     companion object {
         private const val TAG = "AudioSourcePopulation"
-        private const val AUDIO_SOURCES_URL = "https://dvtajbmeveppcffgfnog.supabase.co/storage/v1/object/public/assets/audio/sources.json"
     }
 }

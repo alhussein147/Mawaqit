@@ -121,7 +121,7 @@ fun QuranEmptyState(
                     modifier = Modifier.fillMaxWidth()
                 )
             } else {
-                Button (
+                Button(
                     onClick = onSyncClick,
                     enabled = selectedTafsirSource != null,
                     modifier = Modifier
@@ -135,7 +135,7 @@ fun QuranEmptyState(
                     )
                     Spacer(Modifier.width(12.dp))
                     Text(
-                        text = "Download Quran Data",
+                        text = if (syncStatus.error != null) "Retry Downloading Quran Data" else "Download Quran Data",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -143,12 +143,30 @@ fun QuranEmptyState(
 
                 if (syncStatus.error != null) {
                     Spacer(Modifier.height(16.dp))
-                    Text(
-                        text = syncStatus.error,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.Center
-                    )
+                    Surface(
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        shape = MawaqitTheme.appShapes.small,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(com.hussein.mawaqit.R.drawable.ic_error),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                text = syncStatus.error,
+                                color = MaterialTheme.colorScheme.onErrorContainer,
+                                style = MaterialTheme.typography.bodyMedium,
+                                textAlign = TextAlign.Start
+                            )
+                        }
+                    }
                 }
             }
         }

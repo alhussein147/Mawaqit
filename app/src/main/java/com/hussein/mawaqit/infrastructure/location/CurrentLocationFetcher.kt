@@ -17,6 +17,7 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.hussein.core.models.UserLocation
+import com.hussein.mawaqit.data.remote.ApiEndpoints
 import com.hussein.mawaqit.data.remote.RemoteService
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -34,7 +35,6 @@ class CurrentLocationFetcher(private val context: Context) {
         private const val GEOCODER_TIMEOUT_MS = 5_000L
         private const val IP_API_TIMEOUT_MS = 5_000L
         private const val LAST_KNOWN_TIMEOUT_MS = 2_000L
-        private const val IP_API_URL = "http://ip-api.com/json/"
 
         fun isLocationEnabled(context: Context): Boolean {
             val lm = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
@@ -162,7 +162,7 @@ class CurrentLocationFetcher(private val context: Context) {
 
     private suspend fun fetchIpLocation(): UserLocation? {
         return try {
-            val response: UserLocation = RemoteService.getClient().get(IP_API_URL).body()
+            val response: UserLocation = RemoteService.getClient().get(ApiEndpoints.External.IP_API_URL).body()
             val cityName = resolveCityName(response.latitude, response.longitude)
             response.copy(cityName = cityName)
         } catch (e: Exception) {

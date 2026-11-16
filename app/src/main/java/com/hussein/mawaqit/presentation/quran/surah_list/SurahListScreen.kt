@@ -200,8 +200,12 @@ fun SurahListScreen(
                                         }
                                     },
                                     onDownload = {
-                                        surahToDownload = surah.number
-                                        showReciterPicker = true
+                                        if (playbackState.availableReciters.isNotEmpty()) {
+                                            surahToDownload = surah.number
+                                            showReciterPicker = true
+                                        } else {
+                                            surahListViewModel.syncAudioSources()
+                                        }
                                     },
                                     onCancel = { workId ->
                                         globalPlayerViewModel.cancelDownload(

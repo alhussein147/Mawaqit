@@ -4,6 +4,7 @@ import android.util.Log
 import com.hussein.mawaqit.data.db.AppDatabase
 import com.hussein.mawaqit.data.db.entities.AyahEntity
 import com.hussein.mawaqit.data.db.entities.SurahEntity
+import com.hussein.mawaqit.data.remote.ApiEndpoints
 import com.hussein.mawaqit.data.remote.RemoteService
 import com.hussein.mawaqit.data.remote.dto.QuranSurahDto
 import com.hussein.mawaqit.infrastructure.workers.population_workers.DataPopulationStrategy
@@ -22,8 +23,8 @@ class QuranPopulationStrategy(
 
     override suspend fun execute(onProgress: suspend (Float) -> Unit) {
         try {
-            Log.d(TAG, "Fetching Quran from remote API: $QURAN_URL")
-            val surahsDto: List<QuranSurahDto> = RemoteService.getClient().get(QURAN_URL).body()
+            Log.d(TAG, "Fetching Quran from remote API: ${ApiEndpoints.Assets.QURAN_URL}")
+            val surahsDto: List<QuranSurahDto> = RemoteService.getClient().get(ApiEndpoints.Assets.QURAN_URL).body()
 
             val surahs = mutableListOf<SurahEntity>()
             val ayahs = mutableListOf<AyahEntity>()
@@ -70,6 +71,5 @@ class QuranPopulationStrategy(
 
     companion object {
         private const val TAG = "QuranPopulation"
-        private const val QURAN_URL = "https://dvtajbmeveppcffgfnog.supabase.co/storage/v1/object/public/assets/quran/quran.json"
     }
 }

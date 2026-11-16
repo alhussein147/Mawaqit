@@ -22,7 +22,7 @@ import com.hussein.mawaqit.infrastructure.workers.SurahDownloadWorker
 import com.hussein.mawaqit.infrastructure.workers.population_workers.DataPopulationStrategy
 import com.hussein.mawaqit.infrastructure.workers.population_workers.GenericPopulationWorker
 import com.hussein.mawaqit.infrastructure.workers.population_workers.strategies.AudioSourcePopulationStrategy
-import com.hussein.mawaqit.infrastructure.workers.population_workers.strategies.AzkarPopulationStrategy
+import com.hussein.mawaqit.infrastructure.workers.population_workers.strategies.InvocationsPopulationStrategy
 import com.hussein.mawaqit.infrastructure.workers.population_workers.strategies.QuranPopulationStrategy
 import com.hussein.mawaqit.infrastructure.workers.population_workers.strategies.TafsirPopulationStrategy
 import com.hussein.mawaqit.infrastructure.workers.prayer.DailyPrayerWorker
@@ -86,7 +86,7 @@ val appModule = module {
     factory<DataPopulationStrategy>(named("tafsir")) { params ->
         get<TafsirPopulationStrategy> { parametersOf(params.getOrNull<TafsirSourceEntity>() ?: TafsirSourceEntity.MUKHTASAR) }
     }
-    factory<DataPopulationStrategy>(named("azkar")) { AzkarPopulationStrategy(get()) }
+    factory<DataPopulationStrategy>(named("azkar")) { InvocationsPopulationStrategy(get()) }
     factory<DataPopulationStrategy>(named("audio_source")) { AudioSourcePopulationStrategy(get()) }
     single { getAll<DataPopulationStrategy>() }
 
